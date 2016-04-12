@@ -101,6 +101,11 @@ class OpenLbr(eventBusClient.eventBusClient):
     ELECTIVE_6LoRH           = 0xA0
     CRITICAL_6LoRH           = 0x80
 
+    TYPE_6LoRH_BIER_15       = 0x0F
+    TYPE_6LoRH_BIER_16       = 0x10
+    TYPE_6LoRH_BIER_17       = 0x11
+    TYPE_6LoRH_BIER_18       = 0x12
+    TYPE_6LoRH_BIER_19       = 0x13
     TYPE_6LoRH_IP_IN_IP      = 0x06
     TYPE_6LoRH_RPI           = 0x05
     TYPE_6LoRH_RH3_0         = 0x00
@@ -444,6 +449,7 @@ class OpenLbr(eventBusClient.eventBusClient):
 
         # the 6lowpan packet contains 4 parts
         # 1. Page Dispatch (page 1)
+        # TODO : BIER 6LoRH
         # 2. RH3 6LoRH(s)
         # 3. RPI 6LoRH (maybe elided)
         # 4. IPinIP 6LoRH (maybe elided)
@@ -458,14 +464,21 @@ class OpenLbr(eventBusClient.eventBusClient):
         else:
             compressReference = lowpan['src_addr']
 
+        # ============================ BIER 6LoRH ==================================
+            bier_6lorh_type = self.TYPE_6LoRH_BIER_15
+            s = 0
+            bitmap = [0x01, 0x23, 0x45, 0x67]
+            returnVal += [self.ELECTIVE_6LoRH | s, bier_6lorh_type]
+            returnVal += bitmap
 
+        # =======================2. RH3 6LoRH(s) ==============================
         # destination address
         if len(lowpan['route'])>1:
             # source route needed, get prefix from compression Reference
             if (len(compressReference)==16): 
                 prefix=compressReference[:8]
 
-            # =======================3. RH3 6LoRH(s) ============================== 
+
             sizeUnitType = 0xff
             size     = 0
             hopList  = []
@@ -540,7 +553,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             returnVal += [self.CRITICAL_6LoRH|(size-1),sizeUnitType]
             returnVal += hopList
 
-        # ===================== 2. IPinIP 6LoRH ===============================
+        # ===================== 3. RPI and IPinIP 6LoRH ===============================
 
         if lowpan['src_addr'][:8] != [187, 187, 0, 0, 0, 0, 0, 0]:
             # add RPI 
