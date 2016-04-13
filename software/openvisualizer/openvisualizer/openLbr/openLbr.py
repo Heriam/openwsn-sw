@@ -644,8 +644,6 @@ class OpenLbr(eventBusClient.eventBusClient):
         # payload
         returnVal           += lowpan['payload']
 
-        print returnVal
-
         return returnVal
     
     #===== 6LoWPAN -> IPv6
