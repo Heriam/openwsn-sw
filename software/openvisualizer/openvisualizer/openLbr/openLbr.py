@@ -465,6 +465,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             compressReference = lowpan['src_addr']
 
         # ============================ BIER 6LoRH ==================================
+        if len(lowpan['route']) > 1:
             bier_6lorh_type = self.TYPE_6LoRH_BIER_15
             s = 0
             bitmap = [0x01, 0x23, 0x45, 0x67]
@@ -482,6 +483,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             sizeUnitType = 0xff
             size     = 0
             hopList  = []
+
 
             for hop in list(reversed(lowpan['route'][1:])):
                 size += 1
@@ -641,6 +643,8 @@ class OpenLbr(eventBusClient.eventBusClient):
 
         # payload
         returnVal           += lowpan['payload']
+
+        print returnVal
 
         return returnVal
     

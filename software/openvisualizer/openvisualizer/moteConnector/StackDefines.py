@@ -108,5 +108,5 @@ errorDescriptions = {
   60: "sixtop return code {0} at sixtop state {1} ",
   61: "there are {0} cells to request mote",
   62: "the cells reserved to request mote contains slot {0} and slot {1}",
-  63: "bier header forwarded. Bitmap : {0}{1}"
+  63: "bier header forwarded. Bitmap (as 16 bits integers) : {0}, {1}"
 }
