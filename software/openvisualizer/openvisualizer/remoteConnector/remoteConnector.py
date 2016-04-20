@@ -3,13 +3,18 @@
 #  
 # Released under the BSD 3-Clause license as published at the link below.
 # https://openwsn.atlassian.net/wiki/display/OW/License
+
+'''
+Contains the remoteConnector class for --rover mode to enable
+connection with remote rovers.
+'''
+
 import logging
 log = logging.getLogger('remoteConnector')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
 import threading
-import json
 import zmq
 
 from pydispatch import dispatcher
@@ -18,7 +23,7 @@ from pydispatch import dispatcher
 class remoteConnector():
 
     def __init__(self, zmqport=50000):
-        
+
         # log
         log.info("creating instance")
 
@@ -60,19 +65,13 @@ class remoteConnector():
 
 
     def _recvdFromRemote(self):
-        count=0
         while True:
             event = self.subscriber.recv_json()
-            if count > 10:
-                log.info("Received remote event\n"+json.dumps(event)+"\nDispatching to event bus")
-                count = 0
             dispatcher.send(
                 sender  =  event['sender'].encode("utf8"),
                 signal  =  event['signal'].encode("utf8"),
                 data    =  event['data']
             )
-            count+=1
-
 
     
     #======================== public ==========================================

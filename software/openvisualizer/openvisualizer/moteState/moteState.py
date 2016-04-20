@@ -13,7 +13,7 @@ log = logging.getLogger('moteState')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
-import copy
+
 import time
 import threading
 import json
