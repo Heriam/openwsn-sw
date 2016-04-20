@@ -10,7 +10,7 @@ connection with remote rovers.
 '''
 
 import logging
-log = logging.getLogger('remoteConnector')
+log = logging.getLogger('remoteConnectorServer')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
@@ -20,7 +20,7 @@ import zmq
 from pydispatch import dispatcher
 
 
-class remoteConnector():
+class remoteConnectorServer():
 
     def __init__(self, zmqport=50000):
 
@@ -35,7 +35,7 @@ class remoteConnector():
         self._subcribedDataForDagRoot  = False
 
         # give this thread a name
-        self.name = 'remoteConnector'
+        self.name = 'remoteConnectorServer'
 
         # initiate ZeroMQ connection
         context = zmq.Context()
