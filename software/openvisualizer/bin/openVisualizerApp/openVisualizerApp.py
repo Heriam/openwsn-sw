@@ -117,7 +117,7 @@ class OpenVisualizerApp(object):
 
         if self.roverMode :
             self.remoteConnectorServer = remoteConnectorServer.remoteConnectorServer()
-            self.openController        = openController.openController(self.moteStates)
+            self.openController        = openController.openController(self)
 
         # boot all emulated motes, if applicable
         if self.simulatorMode:
@@ -189,7 +189,7 @@ class OpenVisualizerApp(object):
         self.rpl.close()
         for probe in self.moteProbes:
             probe.close()
-                
+
     def getMoteState(self, moteid):
         '''
         Returns the moteState object for the provided connected mote.
