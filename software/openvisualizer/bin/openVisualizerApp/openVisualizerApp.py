@@ -28,6 +28,7 @@ from openvisualizer.RPL             import UDPLatency
 from openvisualizer.RPL             import topology
 from openvisualizer                 import appdirs
 from openvisualizer.remoteConnectorServer   import remoteConnectorServer
+from openvisualizer.openController  import openController
 
 import openvisualizer.openvisualizer_utils as u
     
@@ -116,7 +117,7 @@ class OpenVisualizerApp(object):
 
         if self.roverMode :
             self.remoteConnectorServer = remoteConnectorServer.remoteConnectorServer()
-
+            self.openController        = openController.openController()
 
         # boot all emulated motes, if applicable
         if self.simulatorMode:

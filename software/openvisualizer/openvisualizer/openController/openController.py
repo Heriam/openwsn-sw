@@ -19,6 +19,18 @@ from openvisualizer.eventBus      import eventBusClient
 
 class openController():
 
+    OV_SERIAL            = 'serial'
+    OV_MOTEID            = 'moteID'
+
+    SC_TARGETSLOTFRAME   = 'slotFrame'
+    SC_SLOTOFFSET        = 'slotOffset'
+    SC_CELLTYPE          = 'type'
+    SC_SHARED            = 'shared'
+    SC_CHANNELOFFSET     = 'channelOffset'
+    SC_NEIGHBOR          = 'neighbor'
+    SC_BIT               = 'bit'
+
+
     def __init__(self):
         # log
         log.info("create instance")
@@ -27,5 +39,8 @@ class openController():
         self.stateLock = threading.Lock()
         self.motelist       = []
         self.schedule       = {}
+        print "here I started :)"
 
 
+    def _print(self):
+        print "here I am invoked :)"
