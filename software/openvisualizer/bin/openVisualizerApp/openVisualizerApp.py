@@ -117,7 +117,7 @@ class OpenVisualizerApp(object):
 
         if self.roverMode :
             self.remoteConnectorServer = remoteConnectorServer.remoteConnectorServer()
-            self.openController        = openController.openController()
+            self.openController        = openController.openController(self.moteStates)
 
         # boot all emulated motes, if applicable
         if self.simulatorMode:

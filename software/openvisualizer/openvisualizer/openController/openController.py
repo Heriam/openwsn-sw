@@ -13,31 +13,45 @@ log = logging.getLogger('openController')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 import threading
+from openvisualizer.moteState import moteState
 
-
-from openvisualizer.eventBus      import eventBusClient
 
 class openController():
 
     OV_SERIAL            = 'serial'
     OV_MOTEID            = 'moteID'
+    OV_CM                = 'command'
+    OV_IPV6ADDR          = 'ipv6Addr'
+    OV_MACADDR           = 'macAddr'
 
-    SC_TARGETSLOTFRAME   = 'slotFrame'
-    SC_SLOTOFFSET        = 'slotOffset'
-    SC_CELLTYPE          = 'type'
-    SC_SHARED            = 'shared'
-    SC_CHANNELOFFSET     = 'channelOffset'
-    SC_NEIGHBOR          = 'neighbor'
-    SC_BIT               = 'bit'
+    CM_TARGETSLOTFRAME   = 'slotFrame'
+    CM_OPERATION         = 'operation'
+    CM_PARAMS            = 'params'
+
+    PARAMS_SLOTOFFSET        = 'slotOffset'
+    PARAMS_CELLTYPE          = 'type'
+    PARAMS_SHARED            = 'shared'
+    PARAMS_CHANNELOFFSET     = 'channelOffset'
+    PARAMS_NEIGHBOR          = 'neighbor'
+    PARAMS_BIT               = 'bit'
 
 
-    def __init__(self, ):
+    def __init__(self, moteStates):
         # log
         log.info("create instance")
 
         # store params
         self.stateLock = threading.Lock()
+        self.moteStates     = moteStates
         self.motelist       = []
-        self.schedule       = {}
+        self.scheduledict   = {}
+        self.trackdict      = {}
+
+
+
+    def _sendScheduleCmd(self, ovmsg):
+
+
+
 
 
