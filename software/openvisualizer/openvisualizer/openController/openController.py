@@ -31,7 +31,7 @@ class openController():
     SC_BIT               = 'bit'
 
 
-    def __init__(self):
+    def __init__(self, ):
         # log
         log.info("create instance")
 
@@ -39,8 +39,5 @@ class openController():
         self.stateLock = threading.Lock()
         self.motelist       = []
         self.schedule       = {}
-        print "here I started :)"
 
 
-    def _print(self):
-        print "here I am invoked :)"

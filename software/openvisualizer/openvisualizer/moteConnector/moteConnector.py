@@ -10,9 +10,6 @@ log.addHandler(logging.NullHandler())
 
 import threading
 import socket
-import traceback
-import sys
-import openvisualizer.openvisualizer_utils as u
 
 from pydispatch import dispatcher
 
