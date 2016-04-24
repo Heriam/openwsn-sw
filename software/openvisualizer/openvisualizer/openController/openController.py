@@ -19,22 +19,25 @@ from openvisualizer.moteState import moteState
 
 class openController():
 
-    OV_SERIAL            = 'serial'
-    OV_MOTEID            = 'moteid'
-    OV_CM                = 'command'
-    OV_IPV6ADDR          = 'ipv6Addr'
-    OV_MACADDR           = 'macAddr'
+    CMD_TARGETSLOTFRAME      = 'slotFrame'
+    CMD_OPERATION            = 'operation'
+    CMD_PARAMS               = 'params'
 
-    CM_TARGETSLOTFRAME   = 'slotFrame'
-    CM_OPERATION         = 'operation'
-    CM_PARAMS            = 'params'
-
-    PARAMS_SLOTOFFSET        = 'slotOffset'
-    PARAMS_CELLTYPE          = 'type'
-    PARAMS_SHARED            = 'shared'
-    PARAMS_CHANNELOFFSET     = 'channelOffset'
     PARAMS_NEIGHBOR          = 'neighbor'
     PARAMS_BIT               = 'bit'
+    PARAMS_CELLTYPE          = 'type'
+    PARAMS_SHARED            = 'shared'
+    PARAMS_SLOTOFFSET        = 'slotOffset'
+    PARAMS_CHANNELOFFSET     = 'channelOffset'
+
+    OPT_ADD                  = 'add'
+    OPT_DELETE               = 'delete'
+    OPT_LIST                 = 'list'
+    OPT_OVERWRITE            = 'overwrite'
+    OPT_REMAP                = 'remap'
+    OPT_CLEAR                = 'clear'
+
+    OPT_ALL = [OPT_ADD, OPT_OVERWRITE, OPT_REMAP, OPT_DELETE, OPT_LIST, OPT_CLEAR]
 
 
     def __init__(self, app):
@@ -44,18 +47,14 @@ class openController():
         # store params
         self.stateLock      = threading.Lock()
         self.app            = app
-        self.motelist       = []
-        self.scheduledict   = {}
-        self.trackdict      = {}
 
-
-    def _sendScheduleCmd(self, ovmsg):
-        moteid = ovmsg[self.OV_MOTEID]
+    def _sendSchedule(self, moteid, command):
+        # send command [<actionType>, <operation>, <params>, <targetSlotFrame>] to <moteid>
         log.info('Send Schedule Command to moteid {0}'.format(moteid))
         ms = self.app.getMoteState(moteid)
         if ms:
             log.debug('Found mote {0} in moteStates'.format(moteid))
-            ms.triggerAction(ms.TRIGGER_DAGROOT)
+            ms.triggerAction(command)
             return '{"result" : "success"}'
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))

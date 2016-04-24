@@ -13,8 +13,9 @@ import socket
 
 from pydispatch import dispatcher
 
-from openvisualizer.eventBus      import eventBusClient
-from openvisualizer.moteState     import moteState
+from openvisualizer.eventBus       import eventBusClient
+from openvisualizer.moteState      import moteState
+from openvisualizer.openController import openController
 
 import OpenParser
 import ParserException
@@ -154,9 +155,33 @@ class moteConnector(eventBusClient.eventBusClient):
                 self._sendToMoteProbe(
                     dataToSend = dataToSend,
                 )
+            elif data['action'][0]==moteState.moteState.INSTALL_SCHEDULE:
+                # this is command for 6TiSCH Scheduling
+                with self.stateLock:
+                    [success, dataToSend] = self._ScheduleToBytes(data['action'][1:])
+
+                if success == False:
+                    return
+
+                # send scheduling command to the mote
+                self._sendToMoteProbe(
+                    dataToSend=dataToSend,
+                )
             else:
                 raise SystemError('unexpected action={0}'.format(data['action']))
-    
+
+    def _ScheduleToBytes(self, data):
+        outcome    = False
+        dataToSend = [OpenParser.OpenParser.SERFRAME_PC2MOTE_SCHEDULECMD]
+
+        #set operationId
+        dataToSend += [openController.openController.OPT_ALL.index(data[0])]
+
+        #set parameters
+        dataToSend +=
+
+
+
     def _GDcommandToBytes(self,data):
         
         outcome    = False

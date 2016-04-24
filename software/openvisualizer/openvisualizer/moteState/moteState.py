@@ -411,6 +411,7 @@ class moteState(eventBusClient.eventBusClient):
     
     TRIGGER_DAGROOT     = 'DAGroot'
     SET_COMMAND         = 'imageCommand'
+    INSTALL_SCHEDULE    = 'schedule'
 
     # command for golen image:        command,       id length
     COMMAND_SET_EBPERIOD          =  ['ebPeriod',     0, 1]
