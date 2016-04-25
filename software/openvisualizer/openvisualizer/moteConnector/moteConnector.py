@@ -172,13 +172,35 @@ class moteConnector(eventBusClient.eventBusClient):
 
     def _ScheduleToBytes(self, data):
         outcome    = False
+
+        #set actionId
         dataToSend = [OpenParser.OpenParser.SERFRAME_PC2MOTE_SCHEDULECMD]
 
+        #set target slotFrameId
+        slotFrameId = openController.openController.SLOTFRAME_LIST.index(data[0])
+        dataToSend.append(slotFrameId)
+
         #set operationId
-        dataToSend += [openController.openController.OPT_ALL.index(data[0])]
+        operationId = openController.openController.OPT_LIST.index(data[1])
+        dataToSend.append(operationId)
 
         #set parameters
-        dataToSend +=
+        if operationId <= 3:
+            if len(data) >2:
+                #set cell [slotOffset, channelOffset]
+                dataToSend += data[2][openController.openController.PARAMS_CELL]
+                if operationId == 2:
+                    #set remapped cell [slotOffset, channelOffset]
+                    dataToSend += data[2][openController.openController.PARAMS_REMAPTOCELL]
+                # if operationId <= 1:
+                    #set new cell params
+
+
+
+
+
+
+
 
 
 
