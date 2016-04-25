@@ -24,13 +24,7 @@ class openController():
     CMD_OPERATION            = 'operation'
     CMD_PARAMS               = 'params'
 
-    PARAMS_BFRID             = 'BFRId'
-    PARAMS_NEIGHBOR          = 'neighbor'
-    PARAMS_BITINDEX          = 'bitIndex'
-    PARAMS_CELLTYPE          = 'type'
-    PARAMS_SHARED            = 'shared'
-    PARAMS_CELL              = 'cell'
-    PARAMS_REMAPTOCELL       = 'remaptocell'
+    SLOTFRAME_DEFAULT        = 'default'
 
     OPT_ADD                  = 'add'
     OPT_DELETE               = 'delete'
@@ -39,14 +33,20 @@ class openController():
     OPT_REMAP                = 'remap'
     OPT_CLEAR                = 'clear'
 
-    SLOTFRAME_DEFAULT        = 'default'
-    SLOTFRAME_CONTROL        = 'control'
-    SLOTFRAME_DATA           = 'data'
-    SLOTFRAME_ALL            = 'all'
+    PARAMS_BFRID             = 'BFRId'
+    PARAMS_NEIGHBOR          = 'neighbor'
+    PARAMS_BITINDEX          = 'bitIndex'
+    PARAMS_TYPE              = 'type'
+    PARAMS_SHARED            = 'shared'
+    PARAMS_CELL              = 'cell'
+    PARAMS_REMAPTOCELL       = 'remaptocell'
 
+    TYPE_RX                  = 'Rx'
+    TYPE_TX                  = 'Tx'
+
+    SLOTFRAME_LIST = [SLOTFRAME_DEFAULT]
     OPT_LIST = [OPT_ADD, OPT_OVERWRITE, OPT_REMAP, OPT_DELETE, OPT_LIST, OPT_CLEAR]
-    SLOTFRAME_LIST = [SLOTFRAME_DEFAULT, SLOTFRAME_CONTROL, SLOTFRAME_DATA, SLOTFRAME_ALL]
-
+    TYPE_LIST = [TYPE_RX, TYPE_TX]
 
     def __init__(self, app):
         # log

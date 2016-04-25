@@ -177,31 +177,55 @@ class moteConnector(eventBusClient.eventBusClient):
         dataToSend = [OpenParser.OpenParser.SERFRAME_PC2MOTE_SCHEDULECMD]
 
         #set target slotFrameId
-        slotFrameId = openController.openController.SLOTFRAME_LIST.index(data[0])
-        dataToSend.append(slotFrameId)
+        if data[0] in openController.openController.SLOTFRAME_LIST:
+            slotFrameId = openController.openController.SLOTFRAME_LIST.index(data[0])
+            dataToSend.append(slotFrameId)
+        else:
+            print "============================================="
+            print "Error ! Invalid slotFrame: " + data[0]
+            return [outcome, dataToSend]
 
         #set operationId
-        operationId = openController.openController.OPT_LIST.index(data[1])
-        dataToSend.append(operationId)
+        if data[1] in openController.openController.OPT_LIST:
+            operationId = openController.openController.OPT_LIST.index(data[1])
+            dataToSend.append(operationId)
+        else:
+            print "============================================="
+            print "Error ! Invalid operation: " + data[1]
+            return [outcome, dataToSend]
 
         #set parameters
         if operationId <= 3:
-            if len(data) >2:
-                #set cell [slotOffset, channelOffset]
-                dataToSend += data[2][openController.openController.PARAMS_CELL]
-                if operationId == 2:
-                    #set remapped cell [slotOffset, channelOffset]
-                    dataToSend += data[2][openController.openController.PARAMS_REMAPTOCELL]
-                # if operationId <= 1:
-                    #set new cell params
-
-
-
-
-
-
-
-
+            # set cell (slotOffset, channelOffset)
+            dataToSend += list(data[2][openController.openController.PARAMS_CELL])
+            if operationId == 2:
+                # set remapped cell (slotOffset, channelOffset)
+                dataToSend += list(data[2][openController.openController.PARAMS_REMAPTOCELL])
+            if operationId <= 1:
+                # set neighbor addr
+                neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
+                addList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
+                if len(addList) == 8:
+                    dataToSend += addList
+                else:
+                    print "============================================="
+                    print "Error ! Wrong address format: " + neiAddr
+                    return [outcome, dataToSend]
+                #set shared boolean
+                if data[2][openController.openController.PARAMS_SHARED]:
+                    dataToSend.append(1)
+                else:
+                    dataToSend.append(0)
+                #set cell typeId
+                typeId = openController.openController.TYPE_LIST.index(data[2][openController.openController.PARAMS_TYPE])
+                dataToSend.append(typeId)
+                #set bitIndex
+                if typeId:
+                    bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
+                    dataToSend.append(bitIndex)
+                #set BFRId
+                BFRId = data[2][openController.openController.PARAMS_BFRID]
+                dataToSend.append(BFRId)
 
 
     def _GDcommandToBytes(self,data):
