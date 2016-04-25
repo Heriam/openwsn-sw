@@ -43,10 +43,11 @@ class openController():
 
     TYPE_RX                  = 'Rx'
     TYPE_TX                  = 'Tx'
+    TYPE_SE                  = 'Se'
 
     SLOTFRAME_LIST = [SLOTFRAME_DEFAULT]
     OPT_LIST = [OPT_ADD, OPT_OVERWRITE, OPT_REMAP, OPT_DELETE, OPT_LIST, OPT_CLEAR]
-    TYPE_LIST = [TYPE_RX, TYPE_TX]
+    TYPE_LIST = [TYPE_TX, TYPE_RX, TYPE_SE]
 
     def __init__(self, app):
         # log
@@ -55,6 +56,22 @@ class openController():
         # store params
         self.stateLock      = threading.Lock()
         self.app            = app
+
+        # test
+        targetSlotFrame = self.SLOTFRAME_DEFAULT
+        operation       = self.OPT_ADD
+        params          = {
+            self.PARAMS_CELL        : (2, 0),
+            self.PARAMS_REMAPTOCELL : (2, 0),
+            self.PARAMS_TYPE        : self.TYPE_TX,
+            self.PARAMS_BITINDEX    : 3,
+            self.PARAMS_NEIGHBOR    : '14-15-92-cc-00-00-00-03 (64b)',
+            self.PARAMS_SHARED      : True,
+            self.PARAMS_BFRID       : '0123456qw987SFG#$%^)(+|{":?><12ED'
+        }
+        testCMD = [targetSlotFrame, operation, params]
+        self._sendSchedule('0002', testCMD)
+
 
     def _sendSchedule(self, moteid, command):
         # send command [<targetSlotFrame>, <operation>, <params>] to <moteid>

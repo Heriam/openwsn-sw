@@ -196,37 +196,51 @@ class moteConnector(eventBusClient.eventBusClient):
 
         #set parameters
         if operationId <= 3:
+            if len(data) <3:
+                print "============================================="
+                print "Error ! Parameters are missing!"
+                return [outcome, dataToSend]
             # set cell (slotOffset, channelOffset)
             dataToSend += list(data[2][openController.openController.PARAMS_CELL])
             if operationId == 2:
                 # set remapped cell (slotOffset, channelOffset)
                 dataToSend += list(data[2][openController.openController.PARAMS_REMAPTOCELL])
             if operationId <= 1:
-                # set neighbor addr
-                neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
-                addList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
-                if len(addList) == 8:
-                    dataToSend += addList
-                else:
-                    print "============================================="
-                    print "Error ! Wrong address format: " + neiAddr
-                    return [outcome, dataToSend]
-                #set shared boolean
-                if data[2][openController.openController.PARAMS_SHARED]:
-                    dataToSend.append(1)
-                else:
-                    dataToSend.append(0)
-                #set cell typeId
-                typeId = openController.openController.TYPE_LIST.index(data[2][openController.openController.PARAMS_TYPE])
+                # set cell typeId
+                typeId = openController.openController.TYPE_LIST.index(
+                    data[2][openController.openController.PARAMS_TYPE])
                 dataToSend.append(typeId)
-                #set bitIndex
-                if typeId:
-                    bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
-                    dataToSend.append(bitIndex)
-                #set BFRId
-                BFRId = data[2][openController.openController.PARAMS_BFRID]
-                dataToSend.append(BFRId)
+                if typeId <2:
+                    # set bitIndex only when Tx
+                    if typeId==0:
+                        bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
+                        dataToSend.append(bitIndex)
+                    # set neighbor addr
+                    neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
+                    addList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
+                    if len(addList) == 8:
+                        dataToSend += addList
+                    else:
+                        print "============================================="
+                        print "Error ! Wrong address format: " + neiAddr
+                        return [outcome, dataToSend]
+                    #set shared boolean
+                    if data[2][openController.openController.PARAMS_SHARED]:
+                        dataToSend.append(1)
+                    else:
+                        dataToSend.append(0)
+                    #set BFRId
+                    BFRId = data[2][openController.openController.PARAMS_BFRID]
+                    dataToSend.append([ord(c) for c in list(str(BFRId))])
+        elif len(data) > 2:
+            print "============================================="
+            print "Error ! Unexpected content: " + data[2:]
+            return [outcome, dataToSend]
 
+        # the command is legal if I got here
+        outcome = True
+        print dataToSend
+        return [outcome, dataToSend]
 
     def _GDcommandToBytes(self,data):
         
