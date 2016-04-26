@@ -260,7 +260,10 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             states = {}
 
-        self.app.openController
+        #TODO: remove test
+        from openvisualizer.openController import openController
+        self.openController = openController.openController(self.app)
+        self.openController._sendSchedule(moteid, self.openController.testCMD)
 
         return states
 

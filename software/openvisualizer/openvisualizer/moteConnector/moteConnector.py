@@ -243,7 +243,7 @@ class moteConnector(eventBusClient.eventBusClient):
                         dataToSend.append(0)
                     # set BFRId
                     BFRId = data[2][openController.openController.PARAMS_BFRID]
-                    dataToSend.append([ord(c) for c in list(str(BFRId))])
+                    dataToSend += [ord(c) for c in list(str(BFRId))]
             except AttributeError as errs:
                 print "============================================="
                 print "Error ! Cannot find parameter! " + errs

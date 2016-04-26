@@ -53,7 +53,7 @@ class openController():
         self.stateLock      = threading.Lock()
         self.app            = app
 
-        # test
+        # todo: remove test
         targetSlotFrame = self.SLOTFRAME_DEFAULT
         operation       = self.OPT_ADD
         params          = {
