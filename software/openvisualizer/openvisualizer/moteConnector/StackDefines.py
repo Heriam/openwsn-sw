@@ -72,7 +72,7 @@ errorDescriptions = {
   21: "there is no sent packet in queue",
   22: "there is no received packet in queue",
   23: "schedule overflown",
-  24: "BIER message forwarded to upper layer. First 16 bits of the bitmap : {0:b}, {1:b}",
+  24: "BIER message forwarded to upper layer. First 16 bits of the bitmap : {0:08b}{1:08b}",
   25: "wrong celltype {0} at slotOffset {1}",
   26: "unsupported IEEE802.15.4 parameter {1} at location {0}",
   27: "got desynchronized at slotOffset {0}",
