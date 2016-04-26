@@ -106,6 +106,7 @@ class OpenLbr(eventBusClient.eventBusClient):
     TYPE_6LoRH_BIER_17       = 0x11
     TYPE_6LoRH_BIER_18       = 0x12
     TYPE_6LoRH_BIER_19       = 0x13
+    TYPE_6LoRH_BIER_20       = 0x14
     TYPE_6LoRH_IP_IN_IP      = 0x06
     TYPE_6LoRH_RPI           = 0x05
     TYPE_6LoRH_RH3_0         = 0x00
@@ -468,8 +469,8 @@ class OpenLbr(eventBusClient.eventBusClient):
         if len(lowpan['route']) > 1:
             bier_6lorh_type = self.TYPE_6LoRH_BIER_15
             s = 0
-            bitmap = [0x01, 0x23, 0x45, 0x67]
-            returnVal += [self.ELECTIVE_6LoRH | s, bier_6lorh_type]
+            bitmap = [0x1F]
+            returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
             returnVal += bitmap
 
         # =======================2. RH3 6LoRH(s) ==============================

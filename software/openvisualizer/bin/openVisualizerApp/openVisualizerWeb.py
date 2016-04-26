@@ -69,6 +69,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.engine          = SimEngine.SimEngine()
         self.websrv          = websrv
         self.roverMode       = roverMode
+        self.ctrlMode        = app.ctrlMode
 
         #used for remote motes :
         self.roverMotes    = {}
@@ -259,12 +260,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             states = {}
-
-        #TODO: remove test
-        from openvisualizer.openController import openController
-        self.openController = openController.openController(self.app)
-        self.openController._sendSchedule(moteid, self.openController.testCMD)
-
         return states
 
     def _setWiresharkDebug(self, enabled):
