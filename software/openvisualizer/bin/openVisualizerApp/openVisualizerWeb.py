@@ -259,6 +259,9 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             states = {}
+
+        self.app.openController
+
         return states
 
     def _setWiresharkDebug(self, enabled):

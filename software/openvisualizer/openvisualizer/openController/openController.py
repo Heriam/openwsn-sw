@@ -24,30 +24,26 @@ class openController():
     CMD_OPERATION            = 'operation'
     CMD_PARAMS               = 'params'
 
-    SLOTFRAME_DEFAULT        = 'default'
-
-    OPT_ADD                  = 'add'
-    OPT_DELETE               = 'delete'
-    OPT_LIST                 = 'list'
-    OPT_OVERWRITE            = 'overwrite'
-    OPT_REMAP                = 'remap'
-    OPT_CLEAR                = 'clear'
-
     PARAMS_BFRID             = 'BFRId'
     PARAMS_NEIGHBOR          = 'neighbor'
     PARAMS_BITINDEX          = 'bitIndex'
     PARAMS_TYPE              = 'type'
     PARAMS_SHARED            = 'shared'
-    PARAMS_CELL              = 'cell'
+    PARAMS_CELLLIST          = 'cellList'
     PARAMS_REMAPTOCELL       = 'remaptocell'
 
-    TYPE_RX                  = 'Rx'
-    TYPE_TX                  = 'Tx'
-    TYPE_SE                  = 'Se'
+    SLOTFRAME_DEFAULT        = 0
 
-    SLOTFRAME_LIST = [SLOTFRAME_DEFAULT]
-    OPT_LIST = [OPT_ADD, OPT_OVERWRITE, OPT_REMAP, OPT_DELETE, OPT_LIST, OPT_CLEAR]
-    TYPE_LIST = [TYPE_TX, TYPE_RX, TYPE_SE]
+    OPT_ADD                  = 0
+    OPT_OVERWRITE            = 1
+    OPT_REMAP                = 2
+    OPT_DELETE               = 3
+    OPT_LIST                 = 4
+    OPT_CLEAR                = 5
+
+    TYPE_RX                  = 0
+    TYPE_TX                  = 1
+
 
     def __init__(self, app):
         # log
@@ -61,16 +57,15 @@ class openController():
         targetSlotFrame = self.SLOTFRAME_DEFAULT
         operation       = self.OPT_ADD
         params          = {
-            self.PARAMS_CELL        : (2, 0),
-            self.PARAMS_REMAPTOCELL : (2, 0),
+            self.PARAMS_CELLLIST    : [(2, 0), (5, 0)],
+            self.PARAMS_REMAPTOCELL : [(3, 0), (6, 0)],
             self.PARAMS_TYPE        : self.TYPE_TX,
             self.PARAMS_BITINDEX    : 3,
             self.PARAMS_NEIGHBOR    : '14-15-92-cc-00-00-00-03 (64b)',
             self.PARAMS_SHARED      : True,
             self.PARAMS_BFRID       : '0123456qw987SFG#$%^)(+|{":?><12ED'
         }
-        testCMD = [targetSlotFrame, operation, params]
-        self._sendSchedule('0002', testCMD)
+        self.testCMD = [targetSlotFrame, operation, params]
 
 
     def _sendSchedule(self, moteid, command):

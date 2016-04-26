@@ -10,6 +10,7 @@ top-level UI module.  See main() for startup use.
 '''
 import sys
 import os
+import signal
 import logging
 import json
 
@@ -75,7 +76,7 @@ class OpenVisualizerApp(object):
                 self.numMotes = len(topo['motes'])
             except Exception as err:
                 print err
-                app.close()
+                self.close()
                 os.kill(os.getpid(), signal.SIGTERM)
 
         
