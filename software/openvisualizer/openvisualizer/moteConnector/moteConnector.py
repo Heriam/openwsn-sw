@@ -244,9 +244,9 @@ class moteConnector(eventBusClient.eventBusClient):
                     # set BFRId
                     BFRId = data[2][openController.openController.PARAMS_BFRID]
                     dataToSend += [ord(c) for c in list(str(BFRId))]
-            except AttributeError as errs:
+            except AttributeError as err:
                 print "============================================="
-                print "Error ! Cannot find parameter! " + errs
+                print "Error ! Cannot find parameter! " + err
                 return [outcome, dataToSend]
         elif len(data) > 2:
             print "============================================="
@@ -255,7 +255,7 @@ class moteConnector(eventBusClient.eventBusClient):
 
         # the command is legal if I got here
         outcome = True
-        print dataToSend
+        log.debug("Sent schedule CMD: " + str(dataToSend))
         return [outcome, dataToSend]
 
     def _GDcommandToBytes(self,data):

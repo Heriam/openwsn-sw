@@ -260,6 +260,13 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             states = {}
+
+        #todo: remove test
+        if self.ctrlMode:
+            from openvisualizer.openController import openController
+            self.opencontroller = openController.openController(self.app)
+            self.opencontroller._sendSchedule(moteid, self.opencontroller.testCMD)
+
         return states
 
     def _setWiresharkDebug(self, enabled):
