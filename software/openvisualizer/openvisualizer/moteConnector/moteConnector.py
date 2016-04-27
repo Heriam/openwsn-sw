@@ -173,10 +173,10 @@ class moteConnector(eventBusClient.eventBusClient):
     def _ScheduleToBytes(self, data):
         outcome    = False
 
-        #set actionId
+        #set 0. actionId
         dataToSend = [OpenParser.OpenParser.SERFRAME_PC2MOTE_SCHEDULECMD]
 
-        #set target slotFrameId
+        #set 1. target slotFrameId
         if str(data[0]).isdigit():
             dataToSend.append(int(data[0]))
         else:
@@ -184,7 +184,7 @@ class moteConnector(eventBusClient.eventBusClient):
             print "Error ! Invalid slotFrame: " + data[0]
             return [outcome, dataToSend]
 
-        #set operationId
+        #set 2. operationId
         operationId = data[1]
         if operationId >=0 and operationId <= 5:
             dataToSend.append(operationId)
@@ -200,13 +200,22 @@ class moteConnector(eventBusClient.eventBusClient):
                 print "Error ! Parameters are missing!"
                 return [outcome, dataToSend]
             try:
+                # set 3. neighbor addr
+                neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
+                addrList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
+                if len(addrList) == 8:
+                    dataToSend += addrList
+                else:
+                    print "============================================="
+                    print "Error ! Wrong address format: " + neiAddr
+                    return [outcome, dataToSend]
                 # set cell numbers
                 cellList = data[2][openController.openController.PARAMS_CELLLIST]
                 dataToSend.append(len(cellList))
-                # set cell list [(slotOffset, channelOffset), ...]
+                # set 4. cell list [(slotOffset, channelOffset), ...]
                 dataToSend += sum([list(cell) for cell in cellList], [])
                 if operationId == 2:
-                    # set remapped cell list [(slotOffset, channelOffset), ...]
+                    # set 5. remapped cell list [(slotOffset, channelOffset), ...]
                     recellist = data[2][openController.openController.PARAMS_REMAPTOCELL]
                     if len(recellist) == len(cellList):
                         dataToSend += sum([list(cell) for cell in recellist], [])
@@ -215,7 +224,7 @@ class moteConnector(eventBusClient.eventBusClient):
                         print "Error ! CellLists does not match for remapping!"
                         return [outcome, dataToSend]
                 if operationId <= 1:
-                    # set cell typeId
+                    # set 6. cell typeId
                     typeId = data[2][openController.openController.PARAMS_TYPE]
                     if str(typeId).isdigit():
                         dataToSend.append(int(typeId))
@@ -223,30 +232,25 @@ class moteConnector(eventBusClient.eventBusClient):
                         print "============================================="
                         print "Error ! Invalid cell typeId:" + typeId
                         return [outcome, dataToSend]
-                    # set bitIndex only when Tx
+                    # set 7. bitIndex only when Tx
                     if typeId:
                         bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
                         dataToSend.append(bitIndex)
-                    # set neighbor addr
-                    neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
-                    addList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
-                    if len(addList) == 8:
-                        dataToSend += addList
-                    else:
-                        print "============================================="
-                        print "Error ! Wrong address format: " + neiAddr
-                        return [outcome, dataToSend]
-                    # set shared boolean
+                    # set 8. shared boolean
                     if data[2][openController.openController.PARAMS_SHARED]:
                         dataToSend.append(1)
                     else:
                         dataToSend.append(0)
-                    # set BFRId
-                    BFRId = data[2][openController.openController.PARAMS_BFRID]
-                    dataToSend += [ord(c) for c in list(str(BFRId))]
+                    # # set 9. BFRId
+                    # BFRId = data[2][openController.openController.PARAMS_BFRID]
+                    # dataToSend += [ord(c) for c in list(str(BFRId))]
             except AttributeError as err:
                 print "============================================="
                 print "Error ! Cannot find parameter! " + err
+                return [outcome, dataToSend]
+            except:
+                print "============================================="
+                print "Unrecognized error in parameters !"
                 return [outcome, dataToSend]
         elif len(data) > 2:
             print "============================================="
