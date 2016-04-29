@@ -112,4 +112,9 @@ errorDescriptions = {
   61: "sixtop return code {0} at sixtop state {1} ",
   62: "there are {0} cells to request mote",
   63: "the cells reserved to request mote contains slot {0} and slot {1}",
+  64: "schedule CMD: slotFrame: {0}, operation: {1}",
+  65: "schedule CMD: slotOffset: {0}, channelOffset: {1}",
+  66: "schedule CMD: remap to slotOffset: {0}, channelOffset: {1}",
+  67: "schedule CMD: cellType: {0}, shared: {1}",
+  68: "schedule CMD: bitIndex: {0}",
 }

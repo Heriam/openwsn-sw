@@ -29,7 +29,7 @@ class openController():
     PARAMS_BITINDEX          = 'bitIndex'
     PARAMS_TYPE              = 'type'
     PARAMS_SHARED            = 'shared'
-    PARAMS_CELLLIST          = 'cellList'
+    PARAMS_CELL              = 'cell'
     PARAMS_REMAPTOCELL       = 'remaptocell'
 
     SLOTFRAME_DEFAULT        = 0
@@ -57,11 +57,10 @@ class openController():
         targetSlotFrame = self.SLOTFRAME_DEFAULT
         operation       = self.OPT_ADD
         params          = {
-            self.PARAMS_CELLLIST    : [(2, 0), (5, 0)],
-            self.PARAMS_REMAPTOCELL : [(3, 0), (6, 0)],
+            self.PARAMS_CELL    : (2, 0),
+            self.PARAMS_REMAPTOCELL : (3, 0),
             self.PARAMS_TYPE        : self.TYPE_TX,
             self.PARAMS_BITINDEX    : 3,
-            self.PARAMS_NEIGHBOR    : '14-15-92-cc-00-00-00-03 (64b)',
             self.PARAMS_SHARED      : True,
             self.PARAMS_BFRID       : '0123456qw987SFG#$%^)(+|{":?><12ED'
         }

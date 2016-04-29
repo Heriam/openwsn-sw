@@ -161,6 +161,7 @@ class moteConnector(eventBusClient.eventBusClient):
                     [success, dataToSend] = self._ScheduleToBytes(data['action'][1:])
 
                 if success == False:
+                    print "dataToSend: " + str(dataToSend)
                     return
 
                 # send scheduling command to the mote
@@ -201,30 +202,23 @@ class moteConnector(eventBusClient.eventBusClient):
                 return [outcome, dataToSend]
             try:
                 # set 3. neighbor addr
-                neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
-                addrList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
-                if len(addrList) == 8:
-                    dataToSend += addrList
-                else:
-                    print "============================================="
-                    print "Error ! Wrong address format: " + neiAddr
-                    return [outcome, dataToSend]
-                # set cell numbers
-                cellList = data[2][openController.openController.PARAMS_CELLLIST]
-                dataToSend.append(len(cellList))
-                # set 4. cell list [(slotOffset, channelOffset), ...]
-                dataToSend += sum([list(cell) for cell in cellList], [])
+                # neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
+                # addrList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
+                # if len(addrList) == 8:
+                #     dataToSend += addrList
+                # else:
+                #     print "============================================="
+                #     print "Error ! Wrong address format: " + neiAddr
+                #     return [outcome, dataToSend]
+                # set 3. cell (slotOffset, channelOffset)
+                cell = data[2][openController.openController.PARAMS_CELL]
+                dataToSend += list(cell)
                 if operationId == 2:
-                    # set 5. remapped cell list [(slotOffset, channelOffset), ...]
-                    recellist = data[2][openController.openController.PARAMS_REMAPTOCELL]
-                    if len(recellist) == len(cellList):
-                        dataToSend += sum([list(cell) for cell in recellist], [])
-                    else:
-                        print "============================================="
-                        print "Error ! CellLists does not match for remapping!"
-                        return [outcome, dataToSend]
+                    # set 4. remapped cell
+                    remapcell = data[2][openController.openController.PARAMS_REMAPTOCELL]
+                    dataToSend += list(remapcell)
                 if operationId <= 1:
-                    # set 6. cell typeId
+                    # set 5. cell typeId
                     typeId = data[2][openController.openController.PARAMS_TYPE]
                     if str(typeId).isdigit():
                         dataToSend.append(int(typeId))
@@ -232,15 +226,15 @@ class moteConnector(eventBusClient.eventBusClient):
                         print "============================================="
                         print "Error ! Invalid cell typeId:" + typeId
                         return [outcome, dataToSend]
-                    # set 7. bitIndex only when Tx
-                    if typeId:
-                        bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
-                        dataToSend.append(bitIndex)
-                    # set 8. shared boolean
+                    # set 6. shared boolean
                     if data[2][openController.openController.PARAMS_SHARED]:
                         dataToSend.append(1)
                     else:
                         dataToSend.append(0)
+                    # set 7. bitIndex only when Tx
+                    if typeId:
+                        bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
+                        dataToSend.append(bitIndex)
                     # # set 9. BFRId
                     # BFRId = data[2][openController.openController.PARAMS_BFRID]
                     # dataToSend += [ord(c) for c in list(str(BFRId))]
@@ -259,7 +253,7 @@ class moteConnector(eventBusClient.eventBusClient):
 
         # the command is legal if I got here
         outcome = True
-        log.debug("Sent schedule CMD: " + str(dataToSend))
+        print "Sent schedule CMD: " + str(dataToSend)
         return [outcome, dataToSend]
 
     def _GDcommandToBytes(self,data):
