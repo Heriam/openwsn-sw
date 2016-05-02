@@ -24,7 +24,7 @@ class openController():
     CMD_OPERATION            = 'operation'
     CMD_PARAMS               = 'params'
 
-    PARAMS_BFRID             = 'BFRId'
+    PARAMS_TRACKID           = 'trackId'
     PARAMS_NEIGHBOR          = 'neighbor'
     PARAMS_BITINDEX          = 'bitIndex'
     PARAMS_TYPE              = 'type'
@@ -60,9 +60,9 @@ class openController():
             self.PARAMS_CELL    : (2, 0),
             self.PARAMS_REMAPTOCELL : (3, 0),
             self.PARAMS_TYPE        : self.TYPE_TX,
-            self.PARAMS_BITINDEX    : 3,
-            self.PARAMS_SHARED      : True,
-            self.PARAMS_BFRID       : '0123456qw987SFG#$%^)(+|{":?><12ED'
+            self.PARAMS_BITINDEX    : 0x3051,
+            self.PARAMS_SHARED      : False,
+            self.PARAMS_TRACKID     : 0xAF,
         }
         self.testCMD = [targetSlotFrame, operation, params]
 

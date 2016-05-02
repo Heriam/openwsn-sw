@@ -231,13 +231,12 @@ class moteConnector(eventBusClient.eventBusClient):
                         dataToSend.append(1)
                     else:
                         dataToSend.append(0)
-                    # set 7. bitIndex only when Tx
-                    if typeId:
-                        bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
-                        dataToSend.append(bitIndex)
-                    # # set 9. BFRId
-                    # BFRId = data[2][openController.openController.PARAMS_BFRID]
-                    # dataToSend += [ord(c) for c in list(str(BFRId))]
+                    # set 7. bitIndex
+                    bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
+                    dataToSend += [bitIndex >> i & 0xff for i in (8, 0)]
+                    # # set 8. trackId
+                    trackId = data[2][openController.openController.PARAMS_TRACKID]
+                    dataToSend += [trackId]
             except AttributeError as err:
                 print "============================================="
                 print "Error ! Cannot find parameter! " + err
