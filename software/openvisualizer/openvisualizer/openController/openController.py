@@ -34,15 +34,21 @@ class openController():
 
     SLOTFRAME_DEFAULT        = 0
 
-    OPT_ADD                  = 0
-    OPT_OVERWRITE            = 1
-    OPT_REMAP                = 2
-    OPT_DELETE               = 3
-    OPT_LIST                 = 4
-    OPT_CLEAR                = 5
+    OPT_ADD                  = 'add'
+    OPT_OVERWRITE            = 'overwrite'
+    OPT_REMAP                = 'remap'
+    OPT_DELETE               = 'delete'
+    OPT_LIST                 = 'list'
+    OPT_CLEAR                = 'clear'
+    OPT_ALL = [OPT_ADD, OPT_OVERWRITE, OPT_REMAP, OPT_DELETE, OPT_LIST, OPT_CLEAR]
 
-    TYPE_RX                  = 0
-    TYPE_TX                  = 1
+    TYPE_OFF                 = 'off'
+    TYPE_TX                  = 'tx'
+    TYPE_RX                  = 'rx'
+    TYPE_TXRX                = 'txrx'
+    TYPE_SERIALRX            = 'serialrx'
+    TYPE_MORESERIALRX        = 'moreserx'
+    TYPE_ALL = [TYPE_OFF, TYPE_TX, TYPE_RX, TYPE_TXRX, TYPE_SERIALRX, TYPE_MORESERIALRX]
 
 
     def __init__(self, app):
@@ -53,18 +59,84 @@ class openController():
         self.stateLock      = threading.Lock()
         self.app            = app
 
-        # todo: remove test
+
+    def _initiateSimSchedule(self):
+        # initiate schedules
+        log.info('initiate schedule')
+        iniSlot = 10
+        # Bit0, Slot4: 1 --> 2
         targetSlotFrame = self.SLOTFRAME_DEFAULT
-        operation       = self.OPT_ADD
-        params          = {
-            self.PARAMS_CELL    : (2, 0),
-            self.PARAMS_REMAPTOCELL : (3, 0),
-            self.PARAMS_TYPE        : self.TYPE_TX,
-            self.PARAMS_BITINDEX    : 0x3051,
-            self.PARAMS_SHARED      : False,
-            self.PARAMS_TRACKID     : 0xAF,
+        operation = self.OPT_ADD
+        params = {
+            self.PARAMS_CELL: (iniSlot, 0),
+            self.PARAMS_TYPE: self.TYPE_TX,
+            self.PARAMS_BITINDEX: 0,
+            self.PARAMS_SHARED: False,
+            self.PARAMS_TRACKID: 1,
+            }
+        self._sendSchedule('0001',[targetSlotFrame, operation, params])
+        params[self.PARAMS_TYPE] = self.TYPE_RX
+        self._sendSchedule('0002', [targetSlotFrame, operation, params])
+        iniSlot+=1
+        # Bit1, Slot5: 1 --> 3
+        params = {
+            self.PARAMS_CELL: (iniSlot, 0),
+            self.PARAMS_TYPE: self.TYPE_TX,
+            self.PARAMS_BITINDEX: 1,
+            self.PARAMS_SHARED: False,
+            self.PARAMS_TRACKID: 1,
         }
-        self.testCMD = [targetSlotFrame, operation, params]
+        self._sendSchedule('0001', [targetSlotFrame, operation, params])
+        params[self.PARAMS_TYPE] = self.TYPE_RX
+        self._sendSchedule('0003', [targetSlotFrame, operation, params])
+        iniSlot+=1
+        # Bit2, Slot6: 2 --> 3
+        params = {
+            self.PARAMS_CELL: (iniSlot, 0),
+            self.PARAMS_TYPE: self.TYPE_TX,
+            self.PARAMS_BITINDEX: 2,
+            self.PARAMS_SHARED: False,
+            self.PARAMS_TRACKID: 1,
+        }
+        self._sendSchedule('0002', [targetSlotFrame, operation, params])
+        params[self.PARAMS_TYPE] = self.TYPE_RX
+        self._sendSchedule('0003', [targetSlotFrame, operation, params])
+        iniSlot += 1
+        # Bit2, Slot7: 3 --> 2
+        params = {
+            self.PARAMS_CELL: (iniSlot, 0),
+            self.PARAMS_TYPE: self.TYPE_TX,
+            self.PARAMS_BITINDEX: 2,
+            self.PARAMS_SHARED: False,
+            self.PARAMS_TRACKID: 1,
+        }
+        self._sendSchedule('0003', [targetSlotFrame, operation, params])
+        params[self.PARAMS_TYPE] = self.TYPE_RX
+        self._sendSchedule('0002', [targetSlotFrame, operation, params])
+        iniSlot += 1
+        # Bit3, Slot8: 2 --> 4
+        params = {
+            self.PARAMS_CELL: (iniSlot, 0),
+            self.PARAMS_TYPE: self.TYPE_TX,
+            self.PARAMS_BITINDEX: 3,
+            self.PARAMS_SHARED: False,
+            self.PARAMS_TRACKID: 1,
+        }
+        self._sendSchedule('0002', [targetSlotFrame, operation, params])
+        params[self.PARAMS_TYPE] = self.TYPE_RX
+        self._sendSchedule('0004', [targetSlotFrame, operation, params])
+        iniSlot += 1
+        # Bit4, Slot9: 3 --> 4
+        params = {
+            self.PARAMS_CELL: (iniSlot, 0),
+            self.PARAMS_TYPE: self.TYPE_TX,
+            self.PARAMS_BITINDEX: 4,
+            self.PARAMS_SHARED: False,
+            self.PARAMS_TRACKID: 1,
+        }
+        self._sendSchedule('0003', [targetSlotFrame, operation, params])
+        params[self.PARAMS_TYPE] = self.TYPE_RX
+        self._sendSchedule('0004', [targetSlotFrame, operation, params])
 
 
     def _sendSchedule(self, moteid, command):
@@ -78,7 +150,6 @@ class openController():
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             return '{"result" : "fail"}'
-
 
 
 

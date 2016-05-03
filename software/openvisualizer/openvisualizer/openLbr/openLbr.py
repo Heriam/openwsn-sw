@@ -469,8 +469,8 @@ class OpenLbr(eventBusClient.eventBusClient):
         bitmap = []
         if len(lowpan['route']) > 1:
             bier_6lorh_type = self.TYPE_6LoRH_BIER_16
-            s = 1
-            bitmap = [0xf8, 0x00, 0x00, 0x00]
+            s = 0
+            bitmap = [0xF8, 0x00]
             returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
             returnVal += bitmap
 
@@ -646,7 +646,9 @@ class OpenLbr(eventBusClient.eventBusClient):
         # payload
         returnVal           += lowpan['payload']
 
-        if bitmap :
+        if len(bitmap) == 1:
+            print 'Sent message with bitmap : {0:08b}'.format(bitmap[0])
+        elif len(bitmap) >= 2:
             print 'Sent message with bitmap : {0:08b}{1:08b}'.format(bitmap[0], bitmap[1])
 
         return returnVal

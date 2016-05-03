@@ -186,13 +186,8 @@ class moteConnector(eventBusClient.eventBusClient):
             return [outcome, dataToSend]
 
         #set 2. operationId
-        operationId = data[1]
-        if operationId >=0 and operationId <= 5:
-            dataToSend.append(operationId)
-        else:
-            print "============================================="
-            print "Error ! Invalid operation: " + data[1]
-            return [outcome, dataToSend]
+        operationId = openController.openController.OPT_ALL.index(data[1])
+        dataToSend.append(operationId)
 
         #set parameters
         if operationId <= 3:
@@ -219,13 +214,8 @@ class moteConnector(eventBusClient.eventBusClient):
                     dataToSend += list(remapcell)
                 if operationId <= 1:
                     # set 5. cell typeId
-                    typeId = data[2][openController.openController.PARAMS_TYPE]
-                    if str(typeId).isdigit():
-                        dataToSend.append(int(typeId))
-                    else:
-                        print "============================================="
-                        print "Error ! Invalid cell typeId:" + typeId
-                        return [outcome, dataToSend]
+                    typeId = openController.openController.TYPE_ALL.index(data[2][openController.openController.PARAMS_TYPE])
+                    dataToSend.append(typeId)
                     # set 6. shared boolean
                     if data[2][openController.openController.PARAMS_SHARED]:
                         dataToSend.append(1)

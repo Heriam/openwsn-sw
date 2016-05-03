@@ -44,6 +44,7 @@ from openvisualizer.eventBus      import eventBusClient
 from openvisualizer.SimEngine     import SimEngine
 from openvisualizer.BspEmulator   import VcdLogger
 from openvisualizer import ovVersion
+from openvisualizer.openController import openController
 from coap import coap
 import time
 import socket
@@ -70,6 +71,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv          = websrv
         self.roverMode       = roverMode
         self.ctrlMode        = app.ctrlMode
+        self.opencontroller = openController.openController(self.app)
 
         #used for remote motes :
         self.roverMotes    = {}
@@ -129,11 +131,42 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv.route(path='/topology/connections',   method='DELETE',callback=self._topologyConnectionsDelete)
         self.websrv.route(path='/topology/route',         method='GET',   callback=self._topologyRouteRetrieve)
         self.websrv.route(path='/static/<filepath:path>',                 callback=self._serverStatic)
-        if self.roverMode :
+        if self.roverMode:
             self.websrv.route(path='/testbench',                          callback=self._showTestbench)
             self.websrv.route(path='/updateroverlist/:updatemsg',         callback=self._updateRoverList)
             self.websrv.route(path='/motesdiscovery/:srcdstip',           callback=self._motesDiscovery)
+        if self.ctrlMode:
+            self.websrv.route(path='/controller',                         callback=self._showController)
+            self.websrv.route(path='/installschedule/:cmd',               callback=self._installSchedule)
 
+    @view('controller.tmpl')
+    def _showController(self, moteid = None):
+        '''
+            Handles the path calculation and resource management of the mesh network
+        '''
+
+        motelist = []
+        for ms in self.app.moteStates:
+            addr = ms.getStateElem(moteState.moteState.ST_IDMANAGER).get16bAddr()
+            if addr:
+                motelist.append(''.join(['%02x' % b for b in addr]))
+            else:
+                motelist.append(ms.moteConnector.serialport)
+
+        tmplData = {
+            'motelist': motelist,
+            'requested_mote': moteid if moteid else 'none',
+            'roverMode': self.roverMode,
+            'ctrlMode' : self.ctrlMode,
+        }
+        return tmplData
+
+    def _installSchedule(self, cmd):
+        if cmd == 'inischedule':
+            self.opencontroller._initiateSimSchedule()
+            return '{"result" : "success"}'
+        else:
+            return '{"result" : "fail"}'
 
     @view('testbench.tmpl')
     def _showTestbench(self):
@@ -148,6 +181,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'myifdict'  : myifdict,
             'roverlist' : self.roverlist,
             'roverMode' : self.roverMode,
+            'ctrlMode' : self.ctrlMode,
         }
         return tmplData
 
@@ -209,6 +243,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'motelist'       : motelist,
             'requested_mote' : moteid if moteid else 'none',
             'roverMode'      : self.roverMode,
+            'ctrlMode': self.ctrlMode,
         }
         return tmplData
 
@@ -261,12 +296,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             states = {}
 
-        #todo: remove test
-        if self.ctrlMode:
-            from openvisualizer.openController import openController
-            self.opencontroller = openController.openController(self.app)
-            self.opencontroller._sendSchedule(moteid, self.opencontroller.testCMD)
-
         return states
 
     def _setWiresharkDebug(self, enabled):
@@ -292,6 +321,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         '''
         tmplData = self._getEventData().copy()
         tmplData['roverMode'] = self.roverMode
+        tmplData['ctrlMode'] = self.ctrlMode
         return tmplData
 
     def _showDAG(self):
@@ -300,7 +330,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
 
     @view('routing.tmpl')
     def _showRouting(self):
-        return {'roverMode' : self.roverMode}
+        return {'roverMode' : self.roverMode, 'ctrlMode' : self.ctrlMode}
 
     @view('topology.tmpl')
     def _topologyPage(self):
@@ -308,7 +338,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         Retrieve the HTML/JS page.
         '''
 
-        return {'roverMode' : self.roverMode}
+        return {'roverMode' : self.roverMode, 'ctrlMode' : self.ctrlMode}
 
     def _topologyData(self):
         '''
