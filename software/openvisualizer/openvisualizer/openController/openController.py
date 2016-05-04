@@ -63,7 +63,7 @@ class openController():
     def _initiateSimSchedule(self):
         # initiate schedules
         log.info('initiate schedule')
-        iniSlot = 10
+        iniSlot = 4
         # Bit0, Slot4: 1 --> 2
         targetSlotFrame = self.SLOTFRAME_DEFAULT
         operation = self.OPT_ADD
@@ -78,7 +78,21 @@ class openController():
         params[self.PARAMS_TYPE] = self.TYPE_RX
         self._sendSchedule('0002', [targetSlotFrame, operation, params])
         iniSlot+=1
-        # Bit1, Slot5: 1 --> 3
+        # Bit0, Slot5: 1 --> 2
+        targetSlotFrame = self.SLOTFRAME_DEFAULT
+        operation = self.OPT_ADD
+        params = {
+            self.PARAMS_CELL: (iniSlot, 0),
+            self.PARAMS_TYPE: self.TYPE_TX,
+            self.PARAMS_BITINDEX: 0,
+            self.PARAMS_SHARED: False,
+            self.PARAMS_TRACKID: 1,
+        }
+        self._sendSchedule('0001', [targetSlotFrame, operation, params])
+        params[self.PARAMS_TYPE] = self.TYPE_RX
+        self._sendSchedule('0002', [targetSlotFrame, operation, params])
+        iniSlot += 1
+        # Bit1, Slot6: 1 --> 3
         params = {
             self.PARAMS_CELL: (iniSlot, 0),
             self.PARAMS_TYPE: self.TYPE_TX,
@@ -90,7 +104,7 @@ class openController():
         params[self.PARAMS_TYPE] = self.TYPE_RX
         self._sendSchedule('0003', [targetSlotFrame, operation, params])
         iniSlot+=1
-        # Bit2, Slot6: 2 --> 3
+        # Bit2, Slot7: 2 --> 3
         params = {
             self.PARAMS_CELL: (iniSlot, 0),
             self.PARAMS_TYPE: self.TYPE_TX,
@@ -102,7 +116,7 @@ class openController():
         params[self.PARAMS_TYPE] = self.TYPE_RX
         self._sendSchedule('0003', [targetSlotFrame, operation, params])
         iniSlot += 1
-        # Bit2, Slot7: 3 --> 2
+        # Bit2, Slot8: 3 --> 2
         params = {
             self.PARAMS_CELL: (iniSlot, 0),
             self.PARAMS_TYPE: self.TYPE_TX,
@@ -114,7 +128,7 @@ class openController():
         params[self.PARAMS_TYPE] = self.TYPE_RX
         self._sendSchedule('0002', [targetSlotFrame, operation, params])
         iniSlot += 1
-        # Bit3, Slot8: 2 --> 4
+        # Bit3, Slot9: 2 --> 4
         params = {
             self.PARAMS_CELL: (iniSlot, 0),
             self.PARAMS_TYPE: self.TYPE_TX,
@@ -126,7 +140,7 @@ class openController():
         params[self.PARAMS_TYPE] = self.TYPE_RX
         self._sendSchedule('0004', [targetSlotFrame, operation, params])
         iniSlot += 1
-        # Bit4, Slot9: 3 --> 4
+        # Bit4, Slot10: 3 --> 4
         params = {
             self.PARAMS_CELL: (iniSlot, 0),
             self.PARAMS_TYPE: self.TYPE_TX,
@@ -150,6 +164,5 @@ class openController():
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             return '{"result" : "fail"}'
-
 
 
