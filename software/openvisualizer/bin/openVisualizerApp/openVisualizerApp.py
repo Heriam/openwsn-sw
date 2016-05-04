@@ -10,6 +10,7 @@ top-level UI module.  See main() for startup use.
 '''
 import sys
 import os
+import signal
 import logging
 import json
 
@@ -28,6 +29,7 @@ from openvisualizer.RPL             import UDPLatency
 from openvisualizer.RPL             import topology
 from openvisualizer                 import appdirs
 from openvisualizer.remoteConnectorServer   import remoteConnectorServer
+from openvisualizer.openController  import openController
 
 import openvisualizer.openvisualizer_utils as u
     
@@ -37,7 +39,7 @@ class OpenVisualizerApp(object):
     top-level functionality for several UI clients.
     '''
     
-    def __init__(self,confdir,datadir,logdir,simulatorMode,numMotes,trace,debug,simTopology,iotlabmotes, pathTopo, roverMode):
+    def __init__(self,confdir,datadir,logdir,simulatorMode,numMotes,trace,debug,simTopology,iotlabmotes, pathTopo, roverMode, ctrlMode):
         
         # store params
         self.confdir              = confdir
@@ -50,6 +52,7 @@ class OpenVisualizerApp(object):
         self.iotlabmotes          = iotlabmotes
         self.pathTopo             = pathTopo
         self.roverMode            = roverMode
+        self.ctrlMode             = ctrlMode
 
         # local variables
         self.eventBusMonitor      = eventBusMonitor.eventBusMonitor()
@@ -74,7 +77,7 @@ class OpenVisualizerApp(object):
                 self.numMotes = len(topo['motes'])
             except Exception as err:
                 print err
-                app.close()
+                self.close()
                 os.kill(os.getpid(), signal.SIGTERM)
 
         
@@ -117,6 +120,9 @@ class OpenVisualizerApp(object):
         if self.roverMode :
             self.remoteConnectorServer = remoteConnectorServer.remoteConnectorServer()
 
+        if self.ctrlMode:
+            self.openController = openController.openController(self)
+            print 'Initialising openController on CtrlMode'
 
         # boot all emulated motes, if applicable
         if self.simulatorMode:
@@ -188,7 +194,7 @@ class OpenVisualizerApp(object):
         self.rpl.close()
         for probe in self.moteProbes:
             probe.close()
-                
+
     def getMoteState(self, moteid):
         '''
         Returns the moteState object for the provided connected mote.
@@ -272,7 +278,9 @@ def main(parser=None, roverMode=False):
                            'sim      = {0}'.format(argspace.simulatorMode),
                            'simCount = {0}'.format(argspace.numMotes),
                            'trace    = {0}'.format(argspace.trace),
+                           'ctrl    = {0}'.format(argspace.ctrlMode),
                            'debug    = {0}'.format(argspace.debug)],
+
             )))
     log.info('Using external dirs:\n\t{0}'.format(
             '\n    '.join(['conf     = {0}'.format(confdir),
@@ -285,6 +293,7 @@ def main(parser=None, roverMode=False):
         confdir         = confdir,
         datadir         = datadir,
         logdir          = logdir,
+        roverMode       = roverMode,
         simulatorMode   = argspace.simulatorMode,
         numMotes        = argspace.numMotes,
         trace           = argspace.trace,
@@ -292,7 +301,7 @@ def main(parser=None, roverMode=False):
         simTopology     = argspace.simTopology,
         iotlabmotes     = argspace.iotlabmotes,
         pathTopo        = argspace.pathTopo,
-        roverMode       = roverMode
+        ctrlMode        = argspace.ctrlMode
     )
 
 def _addParserArgs(parser):
@@ -344,6 +353,12 @@ def _addParserArgs(parser):
         action     = 'store',
         help       = 'a topology can be loaded from a json file'
     )
+    parser.add_argument('-c', '--controller',
+                        dest='ctrlMode',
+                        default=False,
+                        action='store_true',
+                        help='controller mode, to enable centralized PCE'
+                        )
 
 
 def _forceSlashSep(ospath, debug):

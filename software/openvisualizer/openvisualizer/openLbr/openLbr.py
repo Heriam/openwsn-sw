@@ -106,6 +106,7 @@ class OpenLbr(eventBusClient.eventBusClient):
     TYPE_6LoRH_BIER_17       = 0x11
     TYPE_6LoRH_BIER_18       = 0x12
     TYPE_6LoRH_BIER_19       = 0x13
+    TYPE_6LoRH_BIER_20       = 0x14
     TYPE_6LoRH_IP_IN_IP      = 0x06
     TYPE_6LoRH_RPI           = 0x05
     TYPE_6LoRH_RH3_0         = 0x00
@@ -471,11 +472,10 @@ class OpenLbr(eventBusClient.eventBusClient):
         # ============================ BIER 6LoRH ==================================
         if len(lowpan['route']) > 1:
             bier_6lorh_type = self.TYPE_6LoRH_BIER_16
-            s = 1
-            bitmap = [0xf8, 0x00, 0x00, 0x00]
+            s = 0
+            bitmap = [0xF8, 0x00]
             returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
             returnVal += bitmap
-
 
         # # =======================2. RH3 6LoRH(s) ==============================
         # # destination address
@@ -649,7 +649,9 @@ class OpenLbr(eventBusClient.eventBusClient):
         # payload
         returnVal           += lowpan['payload']
 
-        if bitmap :
+        if len(bitmap) == 1:
+            print 'Sent message with bitmap : {0:08b}'.format(bitmap[0])
+        elif len(bitmap) >= 2:
             print 'Sent message with bitmap : {0:08b}{1:08b}'.format(bitmap[0], bitmap[1])
 
         return returnVal

@@ -62,6 +62,10 @@
                 %if roverMode == True :
                     <li><a href="/testbench"><i class="fa fa-tasks"></i><span class="hidden-tablet"> Testbench</span></a></li>
                 %end
+                %if ctrlMode == True :
+                    <li><a href="/controller"><i class="fa fa-retweet"></i><span class="hidden-tablet"> Controller</span></a></li>
+                %end
+
                 <li><span class="ovVersion">version {{ ovVersion }}</span></li>
             </ul>
         </div>

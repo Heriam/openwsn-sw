@@ -10,14 +10,12 @@ log.addHandler(logging.NullHandler())
 
 import threading
 import socket
-import traceback
-import sys
-import openvisualizer.openvisualizer_utils as u
 
 from pydispatch import dispatcher
 
-from openvisualizer.eventBus      import eventBusClient
-from openvisualizer.moteState     import moteState
+from openvisualizer.eventBus       import eventBusClient
+from openvisualizer.moteState      import moteState
+from openvisualizer.openController import openController
 
 import OpenParser
 import ParserException
@@ -157,9 +155,96 @@ class moteConnector(eventBusClient.eventBusClient):
                 self._sendToMoteProbe(
                     dataToSend = dataToSend,
                 )
+            elif data['action'][0]==moteState.moteState.INSTALL_SCHEDULE:
+                # this is command for 6TiSCH Scheduling
+                with self.stateLock:
+                    [success, dataToSend] = self._ScheduleToBytes(data['action'][1:])
+
+                if success == False:
+                    print "dataToSend: " + str(dataToSend)
+                    return
+
+                # send scheduling command to the mote
+                self._sendToMoteProbe(
+                    dataToSend=dataToSend,
+                )
             else:
                 raise SystemError('unexpected action={0}'.format(data['action']))
-    
+
+    def _ScheduleToBytes(self, data):
+        outcome    = False
+
+        #set 0. actionId
+        dataToSend = [OpenParser.OpenParser.SERFRAME_PC2MOTE_SCHEDULECMD]
+
+        #set 1. target slotFrameId
+        if str(data[0]).isdigit():
+            dataToSend.append(int(data[0]))
+        else:
+            print "============================================="
+            print "Error ! Invalid slotFrame: " + data[0]
+            return [outcome, dataToSend]
+
+        #set 2. operationId
+        operationId = openController.openController.OPT_ALL.index(data[1])
+        dataToSend.append(operationId)
+
+        #set parameters
+        if operationId <= 3:
+            if len(data) <3:
+                print "============================================="
+                print "Error ! Parameters are missing!"
+                return [outcome, dataToSend]
+            try:
+                # set 3. neighbor addr
+                # neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
+                # addrList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
+                # if len(addrList) == 8:
+                #     dataToSend += addrList
+                # else:
+                #     print "============================================="
+                #     print "Error ! Wrong address format: " + neiAddr
+                #     return [outcome, dataToSend]
+                # set 3. cell (slotOffset, channelOffset)
+                cell = data[2][openController.openController.PARAMS_CELL]
+                dataToSend += list(cell)
+                if operationId == 2:
+                    # set 4. remapped cell
+                    remapcell = data[2][openController.openController.PARAMS_REMAPTOCELL]
+                    dataToSend += list(remapcell)
+                if operationId <= 1:
+                    # set 5. cell typeId
+                    typeId = openController.openController.TYPE_ALL.index(data[2][openController.openController.PARAMS_TYPE])
+                    dataToSend.append(typeId)
+                    # set 6. shared boolean
+                    if data[2][openController.openController.PARAMS_SHARED]:
+                        dataToSend.append(1)
+                    else:
+                        dataToSend.append(0)
+                    # set 7. bitIndex
+                    bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
+                    dataToSend += [bitIndex >> i & 0xff for i in (8, 0)]
+                    # # set 8. trackId
+                    trackId = data[2][openController.openController.PARAMS_TRACKID]
+                    dataToSend += [trackId]
+            except AttributeError as err:
+                print "============================================="
+                print "Error ! Cannot find parameter! " + err
+                return [outcome, dataToSend]
+            except:
+                print "============================================="
+                print "Unrecognized error in parameters !"
+                return [outcome, dataToSend]
+        elif len(data) > 2:
+            print "============================================="
+            print "Error ! Unexpected content: " + data[2:]
+            return [outcome, dataToSend]
+
+        # the command is legal if I got here
+        outcome = True
+        print "Sent schedule CMD: " + str(dataToSend)
+        return [outcome, dataToSend]
+
     def _GDcommandToBytes(self,data):
         
         outcome    = False
@@ -258,6 +343,6 @@ class moteConnector(eventBusClient.eventBusClient):
                       data          = ''.join([chr(c) for c in dataToSend])
                       )
             
-        except socket.error:
+        except socket.error as err:
             log.error(err)
             pass

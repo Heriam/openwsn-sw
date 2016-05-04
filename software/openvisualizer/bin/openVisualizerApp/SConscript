@@ -64,6 +64,8 @@ def uiRunner(target, source, env):
         argList.append('-p {0}'.format(env['PORTOPT']))
     if env['ROVEROPT']:
         argList.append('--rover')
+    if env['CTRLOPT']:
+        argList.append('--controller')
     
     result = 0
     try:

@@ -53,6 +53,7 @@ Targets:
           --nosimcopy   Skips copying simulation firmware at startup from the
                         openwsn-fw directory.
           --ovdebug     Enable debug mode; more detailed logging
+          --controller  Enable centralized controller mode
 
         Web UI only
           --host=<address> Web server listens on IP address;
@@ -162,6 +163,12 @@ AddOption('--ovdebug',
     default   = False,
     action    = 'store_true')
 runnerEnv['DEBUGOPT'] = GetOption('debugOpt')
+
+AddOption('--controller',
+    dest      = 'ctrlOpt',
+    default   = False,
+    action    = 'store_true')
+runnerEnv['CTRLOPT'] = GetOption('ctrlOpt')
 
 # These options are used only by the web runner. We define them here for
 # simplicity, but they must be removed from non-web use in the runner 
