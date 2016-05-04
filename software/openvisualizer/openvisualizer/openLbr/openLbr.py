@@ -448,6 +448,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         
         :returns: A list of bytes representing the 6LoWPAN packet.
         '''
+        bitmap = []
         returnVal            = []
 
         # the 6lowpan packet contains 4 parts
@@ -468,7 +469,6 @@ class OpenLbr(eventBusClient.eventBusClient):
             compressReference = lowpan['src_addr']
 
         # ============================ BIER 6LoRH ==================================
-        bitmap = []
         if len(lowpan['route']) > 1:
             bier_6lorh_type = self.TYPE_6LoRH_BIER_16
             s = 1
