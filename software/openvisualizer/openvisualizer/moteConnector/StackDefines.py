@@ -114,11 +114,9 @@ errorDescriptions = {
   63: "sixtop return code {0} at sixtop state {1} ",
   64: "there are {0} cells to request mote",
   65: "the cells reserved to request mote contains slot {0} and slot {1}",
-  66: "Schedule CMD received at mote: {0:02X}{1:02X}",
-  67: "| slotFrame: {0}, operation: {1}",
-  68: "| slotOffset: {0}, channelOffset: {1}",
-  69: "| remap to slotOffset: {0}, channelOffset: {1}",
-  70: "| cellType: {0}, shared: {1}",
-  71: "| bitIndex: {0:08b}{1:08b}",
-  72: "| trackID: {0}",
+  66: "| requested cell SlotOff:{0} is not available",
+  67: "| requested cell (SlotOff:{0}, ChannelOff:{1}) is unscheduled",
+  68: "| requested operationID {0} is not supported",
+
+  80: "# active cells for Tx: {0}, Rx: {1}",
 }

@@ -242,7 +242,7 @@ class moteConnector(eventBusClient.eventBusClient):
 
         # the command is legal if I got here
         outcome = True
-        print "Sent schedule CMD: " + str(dataToSend)
+        print self.serialport + ": Sent schedule CMD: " + str(dataToSend)
         return [outcome, dataToSend]
 
     def _GDcommandToBytes(self,data):

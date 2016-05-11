@@ -137,7 +137,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.websrv.route(path='/motesdiscovery/:srcdstip',           callback=self._motesDiscovery)
         if self.ctrlMode:
             self.websrv.route(path='/controller',                         callback=self._showController)
-            self.websrv.route(path='/installschedule/:cmd',               callback=self._installSchedule)
+            self.websrv.route(path='/schedule/:cmd',                      callback=self._schedule)
 
     @view('controller.tmpl')
     def _showController(self, moteid = None):
@@ -161,10 +161,25 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         }
         return tmplData
 
-    def _installSchedule(self, cmd):
-        if cmd == 'inischedule':
+    def _schedule(self, cmd):
+        if cmd == "inischedule":
             self.opencontroller._initiateSimSchedule()
-            return '{"result" : "success"}'
+            return '{"result" : "init success"}'
+        elif cmd =="owrtschedule":
+            self.opencontroller._addDetSlot("0001", "0003", 5, 1, opt=self.opencontroller.OPT_OVERWRITE)
+            return '{"result" : "add/owrt success"}'
+        elif cmd =="delschedule":
+            self.opencontroller._deleteDetSlot(None, "0002", 5)
+            return '{"result" : "delt success"}'
+        elif cmd =="remapschedule":
+            self.opencontroller._remapDetSlot("0001", "0003", 5, 11)
+            return '{"result" : "remap success"}'
+        elif cmd =="clearschedule":
+            self.opencontroller._clearDetFrame(["0001", "0002", "0003", "0004"])
+            return '{"result" : "clear success"}'
+        elif cmd == "listschedule":
+            self.opencontroller._listDetSlot(["0001","0002","0003","0004"])
+            return '{"result" : "list success"}'
         else:
             return '{"result" : "fail"}'
 
