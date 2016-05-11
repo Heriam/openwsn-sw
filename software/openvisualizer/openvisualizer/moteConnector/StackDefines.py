@@ -114,8 +114,8 @@ errorDescriptions = {
   63: "sixtop return code {0} at sixtop state {1} ",
   64: "there are {0} cells to request mote",
   65: "the cells reserved to request mote contains slot {0} and slot {1}",
-  66: "| requested cell SlotOff:{0} is not available",
-  67: "| requested cell (SlotOff:{0}, ChannelOff:{1}) is unscheduled",
+  66: "| requested cell SlotOffset {0} is not available",
+  67: "| requested cell SlotOffset {0} is unscheduled",
   68: "| requested operationID {0} is not supported",
 
   80: "# active cells for Tx: {0}, Rx: {1}",
