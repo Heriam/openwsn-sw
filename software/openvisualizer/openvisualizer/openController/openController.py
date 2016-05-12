@@ -24,13 +24,17 @@ class openController():
     CMD_OPERATION            = 'operation'
     CMD_PARAMS               = 'params'
 
-    PARAMS_TRACKID           = 'trackId'
+    PARAMS_TRACKID           = 'trackID'
     PARAMS_NEIGHBOR          = 'neighbor'
     PARAMS_BITINDEX          = 'bitIndex'
     PARAMS_TYPE              = 'type'
     PARAMS_SHARED            = 'shared'
-    PARAMS_CELL              = 'cell'
+    PARAMS_CELL              = 'cells'
     PARAMS_REMAPTOCELL       = 'remaptocell'
+    PARAMS_TXMOTEID          = 'txMoteID'
+    PARAMS_RXMOTELIST        = 'rxMoteList'
+    PARAMS_SLOTOFF           = 'slotOffset'
+    PARAMS_CHANNELOFF        = 'channelOffset'
 
     SLOTFRAME_DEFAULT        = 1   #id of slotframe
 
@@ -60,56 +64,86 @@ class openController():
         self.app            = app
 
 
-    def _initiateSimSchedule(self):
+
+#   =============== public ==========================
+
+
+    def initiateSimSchedule(self):
         # initiate schedules
         log.info('initiate schedule')
         # Bit0, Slot4: 1 --> 2
-        self._addDetSlot('0001', '0002', 4, 0)
+        self._addDetSlot('0001', ['0002'], 4, 0)
         # Bit0, Slot5: 1 --> 2
-        self._addDetSlot('0001', '0002', 5, 0)
+        self._addDetSlot('0001', ['0002'], 5, 0)
         # Bit1, Slot6: 1 --> 3
-        self._addDetSlot('0001', '0003', 6, 1)
+        self._addDetSlot('0001', ['0003'], 6, 1)
         # Bit2, Slot7: 2 --> 3
-        self._addDetSlot('0002', '0003', 7, 2)
+        self._addDetSlot('0002', ['0003'], 7, 2)
         # Bit2, Slot8: 3 --> 2
-        self._addDetSlot('0003', '0002', 8, 2)
+        self._addDetSlot('0003', ['0002'], 8, 2)
         # Bit3, Slot9: 2 --> 4
-        self._addDetSlot('0002', '0004', 9, 3)
+        self._addDetSlot('0002', ['0004'], 9, 3)
         # Bit4, Slot10: 3 --> 4
-        self._addDetSlot('0003', '0004', 10, 4)
+        self._addDetSlot('0003', ['0004'], 10, 4)
 
-    def _addDetSlot(self, txMote, rxMote, slotOff, bitIndex, opt = OPT_ADD, trackID = 1, targetSlotFrame = SLOTFRAME_DEFAULT, channelOff = 0):
+
+    def installNewSchedule(self, scheduleDict):
+        moteList    = self.app.getMoteList()
+        slotFrame   = scheduleDict[self.CMD_TARGETSLOTFRAME]
+        slotList    = scheduleDict[self.PARAMS_CELL]
+        self._clearDetFrame(moteList, slotFrame)
+        for slotEntry in slotList:
+            self._addDetSlot(
+                slotEntry[self.PARAMS_TXMOTEID],     # txMote
+                slotEntry[self.PARAMS_RXMOTELIST],   # rxMoteList
+                slotEntry[self.PARAMS_SLOTOFF],      # slotOffset
+                slotEntry[self.PARAMS_BITINDEX],     # bitIndex
+                self.OPT_ADD,                        # operation
+                slotEntry[self.PARAMS_TRACKID],      # trackID
+                slotFrame,                           # slotFrame
+                slotEntry[self.PARAMS_CHANNELOFF],   # channelOffset
+                slotEntry[self.PARAMS_SHARED]        # shared
+            )
+
+
+#   ================= private =======================
+    # schedule operations
+
+    def _addDetSlot(self, txMote, rxMoteList, slotOff, bitIndex, opt = OPT_ADD, trackID = 1, targetSlotFrame = SLOTFRAME_DEFAULT, channelOff = 0, shared = False):
         params = {
             self.PARAMS_CELL: (slotOff, channelOff),
             self.PARAMS_TYPE: self.TYPE_TX,
             self.PARAMS_BITINDEX: bitIndex,
-            self.PARAMS_SHARED: False,
+            self.PARAMS_SHARED: shared,
             self.PARAMS_TRACKID: trackID,
         }
         if txMote:
             self._sendSchedule(txMote, [targetSlotFrame, opt, params])
-        if rxMote:
+        if rxMoteList:
             params[self.PARAMS_TYPE] = self.TYPE_RX
-            self._sendSchedule(rxMote, [targetSlotFrame, opt, params])
+            for rxMote in rxMoteList:
+                self._sendSchedule(rxMote, [targetSlotFrame, opt, params])
 
-    def _remapDetSlot(self, txMote, rxMote, slotOff, remapSlotOff, channelOff = 0, remapChannel = 0, targetSlotFrame = SLOTFRAME_DEFAULT):
+    def _remapDetSlot(self, txMote, rxMoteList, slotOff, remapSlotOff, channelOff = 0, remapChannel = 0, targetSlotFrame = SLOTFRAME_DEFAULT):
         params = {
             self.PARAMS_CELL: (slotOff, channelOff),
             self.PARAMS_REMAPTOCELL: (remapSlotOff, remapChannel)
         }
         if txMote:
             self._sendSchedule(txMote, [targetSlotFrame, self.OPT_REMAP, params])
-        if rxMote:
-            self._sendSchedule(rxMote, [targetSlotFrame, self.OPT_REMAP, params])
+        if rxMoteList:
+            for rxMote in rxMoteList:
+                self._sendSchedule(rxMote, [targetSlotFrame, self.OPT_REMAP, params])
 
-    def _deleteDetSlot(self, txMote, rxMote, slotOff, channelOff = 0, targetSlotFrame = SLOTFRAME_DEFAULT):
+    def _deleteDetSlot(self, txMote, rxMoteList, slotOff, channelOff = 0, targetSlotFrame = SLOTFRAME_DEFAULT):
         params = {
             self.PARAMS_CELL: (slotOff, channelOff),
         }
         if txMote:
             self._sendSchedule(txMote, [targetSlotFrame, self.OPT_DELETE, params])
-        if rxMote:
-            self._sendSchedule(rxMote, [targetSlotFrame, self.OPT_DELETE, params])
+        if rxMoteList:
+            for rxMote in rxMoteList:
+                self._sendSchedule(rxMote, [targetSlotFrame, self.OPT_DELETE, params])
 
     def _listDetSlot(self, moteList, targetSlotFrame = SLOTFRAME_DEFAULT):
         for moteId in moteList:

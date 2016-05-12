@@ -211,7 +211,7 @@ class OpenVisualizerApp(object):
         else:
             return None
 
-    def refreshMotes(self, roverMotes):
+    def refreshRoverMotes(self, roverMotes):
         '''Connect the list of roverMotes to openvisualiser.
 
         :param roverMotes : list of the roverMotes to add
@@ -231,6 +231,16 @@ class OpenVisualizerApp(object):
             moteState.moteState(mc) for mc in self.moteConnectors
         ]
         self.remoteConnectorServer.initRoverConn(roverMotes)
+
+    def getMoteList(self):
+        motelist = []
+        for ms in self.moteStates:
+            addr = ms.getStateElem(moteState.moteState.ST_IDMANAGER).get16bAddr()
+            if addr:
+                motelist.append(''.join(['%02x' % b for b in addr]))
+            else:
+                motelist.append(ms.moteConnector.serialport)
+        return motelist
 
 
 #============================ main ============================================
