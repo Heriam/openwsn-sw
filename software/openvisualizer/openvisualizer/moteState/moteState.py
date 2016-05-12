@@ -182,6 +182,11 @@ class StateScheduleRow(StateElem):
         self.data[0]['lastUsedAsn'].update(notif.lastUsedAsn_0_1,
                                            notif.lastUsedAsn_2_3,
                                            notif.lastUsedAsn_4)
+        self.data[0]['bitIndex']            = '-'
+        self.data[0]['trackID']             = '-'
+        if notif.trackID:
+            self.data[0]['trackID']         = notif.trackID
+            self.data[0]['bitIndex']        = notif.bitIndex
 
 class StateBackoff(StateElem):
     
@@ -483,6 +488,8 @@ class moteState(eventBusClient.eventBusClient):
                                                         'numTx',
                                                         'numTxACK',
                                                         'lastUsedAsn',
+                                                        'trackID',
+                                                        'bitIndex'
                                                     ]
                                                 )
                                               )

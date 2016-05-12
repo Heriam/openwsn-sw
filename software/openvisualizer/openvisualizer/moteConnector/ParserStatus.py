@@ -127,7 +127,7 @@ class ParserStatus(Parser.Parser):
                                     3,
                                     6,
                                     'ScheduleRow',
-                                    '<BHBBBBQQBBBBHH',
+                                    '<BHBBBBQQBBBBHHBH',
                                     [
                                         'row',                       # B
                                         'slotOffset',                # H 
@@ -143,6 +143,8 @@ class ParserStatus(Parser.Parser):
                                         'lastUsedAsn_4',             # B
                                         'lastUsedAsn_2_3',           # H
                                         'lastUsedAsn_0_1',           # H
+                                        'trackID',                   # B
+                                        'bitIndex',                  # H
                                     ],
                                 )
         self._addFieldsParser   (
@@ -269,7 +271,7 @@ class ParserStatus(Parser.Parser):
                 
                 # map to name tuple
                 returnTuple = self.named_tuple[key.name](*fields)
-                
+
                 # log
                 if log.isEnabledFor(logging.DEBUG):
                     log.debug("parsed into {0}".format(returnTuple))
