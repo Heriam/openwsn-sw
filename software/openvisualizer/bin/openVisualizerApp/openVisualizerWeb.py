@@ -215,7 +215,10 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         try:
             self.roverMotes[roverip] = ''
             conntest.connect((roverip, 5683))
-            response = self.client.PUT('coap://[{0}]/pcinfo'.format(roverip), payload=[ord(c) for c in (myip+';50000;'+roverip)])
+            if ':' in roverip :
+                response = self.client.PUT('coap://[{0}]/pcinfo'.format(roverip), payload=[ord(c) for c in (myip + ';50000;' + roverip)])
+            else :
+                response = self.client.PUT('coap://{0}/pcinfo'.format(roverip), payload=[ord(c) for c in (myip + ';50000;' + roverip)])
             payload = ''.join([chr(b) for b in response])
             self.roverMotes[roverip]=json.loads(payload)
             self.roverMotes[roverip] = [rm+'@'+roverip for rm in self.roverMotes[roverip]]

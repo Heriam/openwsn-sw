@@ -120,6 +120,12 @@ class OpenVisualizerApp(object):
         # create a remoteConnector to connect to rovers
         if self.roverMode :
             self.remoteConnectorServer = remoteConnectorServer.remoteConnectorServer()
+            print 'roverMode enabled'
+
+        # start the controller if in controller mode
+        if self.ctrlMode:
+            self.openController = openController.openController(self)
+            print 'CtrlMode enabled'
 
         # boot all emulated motes, if applicable
         if self.simulatorMode:
@@ -180,10 +186,6 @@ class OpenVisualizerApp(object):
                                 {'logDir': _forceSlashSep(self.logdir, self.debug)})
             OVtracer.OVtracer()
 
-        # start the controller if in controller mode
-        if self.ctrlMode:
-            self.openController = openController.openController(self)
-            print 'Initialising openController on CtrlMode'
         
     #======================== public ==========================================
     
