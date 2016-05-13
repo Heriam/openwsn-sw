@@ -69,11 +69,13 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.roverMode       = roverMode
         self.ctrlMode        = app.ctrlMode
 
-        #used for remote motes :
-        self.roverMotes      = {}
-        self.roverlist       = []
+        # define routes
         self._defineRoutes()
+
+        # used for remote motes :
         if roverMode :
+            self.roverMotes = {}
+            self.roverlist = []
             self.client = coap.coap()
             self.client.respTimeout = 2
             self.client.ackTimeout = 2
