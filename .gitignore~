@@ -13,3 +13,5 @@ test_report_*.xml
 
 *.vcd
 /software/openApps/ietf90client/*.config
+/software/openvisualizer/bin/openVisualizerApp/web_files/templates/topology.tmpl
+/software/openvisualizer/bin/openVisualizerApp/sim_files/
