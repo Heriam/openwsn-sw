@@ -582,7 +582,7 @@ class moteState(eventBusClient.eventBusClient):
         return returnVal
     
     def triggerAction(self,action):
-        
+
         # dispatch
         self.dispatch(
             signal        = 'cmdToMote',

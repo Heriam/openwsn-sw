@@ -7,8 +7,9 @@
 '''
 Contains
 '''
-
+import os
 import logging
+import json
 log = logging.getLogger('openController')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
@@ -62,30 +63,10 @@ class openController():
         # store params
         self.stateLock      = threading.Lock()
         self.app            = app
-
+        self.schedule       = {}
 
 
 #   =============== public ==========================
-
-
-    def initiateSimSchedule(self):
-        # initiate schedules
-        log.info('initiate schedule')
-        # Bit0, Slot4: 1 --> 2
-        self._addDetSlot('0001', ['0002'], 4, 0)
-        # Bit0, Slot5: 1 --> 2
-        self._addDetSlot('0001', ['0002'], 5, 0)
-        # Bit1, Slot6: 1 --> 3
-        self._addDetSlot('0001', ['0003'], 6, 1)
-        # Bit2, Slot7: 2 --> 3
-        self._addDetSlot('0002', ['0003'], 7, 2)
-        # Bit2, Slot8: 3 --> 2
-        self._addDetSlot('0003', ['0002'], 8, 2)
-        # Bit3, Slot9: 2 --> 4
-        self._addDetSlot('0002', ['0004'], 9, 3)
-        # Bit4, Slot10: 3 --> 4
-        self._addDetSlot('0003', ['0004'], 10, 4)
-
 
     def installNewSchedule(self, scheduleDict):
         moteList    = self.app.getMoteList()
@@ -105,6 +86,11 @@ class openController():
                 slotEntry[self.PARAMS_SHARED]        # shared
             )
 
+    def updateDefaultSchedule(self):
+        self.schedule.clear()
+        with open(os.getcwd() + '/openvisualizer/openController/schedule.json') as json_file:
+            self.schedule = json.load(json_file)
+            self.installNewSchedule(self.schedule)
 
 #   ================= private =======================
     # schedule operations
@@ -164,5 +150,6 @@ class openController():
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             return '{"result" : "fail"}'
+
 
 

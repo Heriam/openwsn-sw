@@ -64,59 +64,20 @@
 
 	            <div class="row">
                 	<div class="col-lg-12">
-                        <button id="inischedule_btn" type="button" class="btn btn-default btn-xs">Install Schedule</button>
-                        <button id="owrtschedule_btn" type="button" class="btn btn-default btn-xs">Overwrite Slot</button>
-                        <button id="delschedule_btn" type="button" class="btn btn-default btn-xs">Delete Slot</button>
-                        <button id="remapschedule_btn" type="button" class="btn btn-default btn-xs">Remap Slot</button>
+                        <button id="reschedule_btn" type="button" class="btn btn-default btn-xs">Reset Schedule</button>
                         <button id="clearschedule_btn" type="button" class="btn btn-default btn-xs">Clear Schedule</button>
 
                         <script>
-		                    $( "#inischedule_btn" )
+		                    $( "#reschedule_btn" )
 		                        .button()
 			                    .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"inischedule",
+                                        url: "/schedule/"+"resetschedule@",
                                         success: schedule,
                                         error: errorOnAjax
                                     });
                                     console.log('Installed new schedule');
-		                    });
-
-		                    $( "#owrtschedule_btn" )
-		                        .button()
-			                    .click(function( event ) {
-                                    $.ajax({
-                                        dataType: "json",
-                                        url: "/schedule/"+"owrtschedule",
-                                        success: schedule,
-                                        error: errorOnAjax
-                                    });
-                                    console.log('Overwritten schedule');
-		                    });
-
-		                    $( "#delschedule_btn" )
-		                        .button()
-			                    .click(function( event ) {
-                                    $.ajax({
-                                        dataType: "json",
-                                        url: "/schedule/"+"delschedule",
-                                        success: schedule,
-                                        error: errorOnAjax
-                                    });
-                                    console.log('Overwritten schedule');
-		                    });
-
-		                    $( "#remapschedule_btn" )
-		                        .button()
-			                    .click(function( event ) {
-                                    $.ajax({
-                                        dataType: "json",
-                                        url: "/schedule/"+"remapschedule",
-                                        success: schedule,
-                                        error: errorOnAjax
-                                    });
-                                    console.log('Overwritten schedule');
 		                    });
 
 		                    $( "#clearschedule_btn" )
@@ -124,7 +85,7 @@
 			                    .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"clearschedule",
+                                        url: "/schedule/"+"clearschedule@",
                                         success: schedule,
                                         error: errorOnAjax
                                     });
@@ -171,7 +132,7 @@
                                         var scheduleData = evt.target.result;
                                         $.ajax({
                                             dataType: "json",
-                                            url: "/scheduledata/"+scheduleData,
+                                            url: "/schedule/"+"uploadschedule"+"@"+scheduleData,
                                             success: schedule,
                                             error: errorOnAjax
                                         });

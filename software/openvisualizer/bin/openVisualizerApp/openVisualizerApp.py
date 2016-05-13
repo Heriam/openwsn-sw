@@ -117,12 +117,9 @@ class OpenVisualizerApp(object):
             moteState.moteState(mc) for mc in self.moteConnectors
         ]
 
+        # create a remoteConnector to connect to rovers
         if self.roverMode :
             self.remoteConnectorServer = remoteConnectorServer.remoteConnectorServer()
-
-        if self.ctrlMode:
-            self.openController = openController.openController(self)
-            print 'Initialising openController on CtrlMode'
 
         # boot all emulated motes, if applicable
         if self.simulatorMode:
@@ -137,7 +134,6 @@ class OpenVisualizerApp(object):
                     moteHandler.hwSupply.INTR_SWITCHON
                 )
             self.simengine.resume()
-
        
         # import the topology from the json file
         if self.pathTopo and self.simulatorMode:
@@ -183,6 +179,11 @@ class OpenVisualizerApp(object):
                                 os.path.join(self.confdir,'trace.conf'),
                                 {'logDir': _forceSlashSep(self.logdir, self.debug)})
             OVtracer.OVtracer()
+
+        # start the controller if in controller mode
+        if self.ctrlMode:
+            self.openController = openController.openController(self)
+            print 'Initialising openController on CtrlMode'
         
     #======================== public ==========================================
     

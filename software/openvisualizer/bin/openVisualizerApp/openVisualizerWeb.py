@@ -68,7 +68,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv          = websrv
         self.roverMode       = roverMode
         self.ctrlMode        = app.ctrlMode
-        self.opencontroller  = openController.openController(self.app)
 
         #used for remote motes :
         self.roverMotes      = {}
@@ -98,6 +97,11 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                 self._showMoteview(moteid)
                 self._getMoteData(moteid)
                 self._toggleDAGroot(moteid)
+
+        # used for controller mode
+        if self.ctrlMode:
+            self.openController = self.app.openController
+            self.openController.updateDefaultSchedule()
 
 
     #======================== public ==========================================
@@ -135,8 +139,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.websrv.route(path='/motesdiscovery/:srcdstip',           callback=self._motesDiscovery)
         if self.ctrlMode:
             self.websrv.route(path='/controller',                         callback=self._showController)
-            self.websrv.route(path='/schedule/:cmd',                      callback=self._schedule)
-            self.websrv.route(path='/scheduledata/:data',                 callback=self._installSchedule)
+            self.websrv.route(path='/schedule/:cmddata',                  callback=self._schedule)
 
     @view('controller.tmpl')
     def _showController(self, moteid = None):
@@ -145,7 +148,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         '''
 
         motelist = self.app.getMoteList()
-
         tmplData = {
             'motelist': motelist,
             'requested_mote': moteid if moteid else 'none',
@@ -154,41 +156,28 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         }
         return tmplData
 
-    def _schedule(self, cmd):
-        if cmd == "inischedule":
-            self.opencontroller.initiateSimSchedule()
-            return '{"result" : "init success"}'
-        elif cmd =="owrtschedule":
-            self.opencontroller._addDetSlot("0001", ["0003"], 5, 1, opt=self.opencontroller.OPT_OVERWRITE)
-            return '{"result" : "add/owrt success"}'
-        elif cmd =="delschedule":
-            self.opencontroller._deleteDetSlot(None, ["0002"], 5)
-            return '{"result" : "delt success"}'
-        elif cmd =="remapschedule":
-            self.opencontroller._remapDetSlot("0001", ["0003"], 5, 11)
-            return '{"result" : "remap success"}'
-        elif cmd =="clearschedule":
-            self.opencontroller._clearDetFrame(["0001", "0002", "0003", "0004"])
-            return '{"result" : "clear success"}'
-        elif cmd == "listschedule":
-            self.opencontroller._listDetSlot(["0001","0002","0003","0004"])
-            return '{"result" : "list success"}'
+    def _schedule(self, cmddata):
+        cmd, data = cmddata.split('@')
+        motelist = self.app.getMoteList()
+
+        if cmd =="resetschedule":
+            self.openController.updateDefaultSchedule()
+            return '{"result" : "ScheduleConf updated"}'
+        elif cmd == "clearschedule":
+            self.openController._clearDetFrame(motelist)
+            return '{"result" : "Schedule cleared"}'
+        elif cmd == "uploadschedule":
+            self.openController.installNewSchedule(json.loads(data))
+            return '{"result" : "Schedule uploaded"}'
         else:
             return '{"result" : "fail"}'
-
-    def _installSchedule(self, data):
-        scheduleDict = json.loads(data)
-        self.opencontroller.installNewSchedule(scheduleDict)
-        return '{"result" : "success"}'
 
     @view('testbench.tmpl')
     def _showTestbench(self):
         '''
         Handles the discovery and connection to remote motes using remoteConnectorServer component
         '''
-        if self.roverMode :
-            import netifaces as ni
-
+        import netifaces as ni
         myifdict = {}
         for myif in ni.interfaces():
             myifdict[myif] = ni.ifaddresses(myif)
