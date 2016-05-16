@@ -80,6 +80,9 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.client.respTimeout = 2
             self.client.ackTimeout = 2
 
+        # used for controller mode
+        if self.ctrlMode:
+            self.openController = self.app.openController
 
         # To find page templates
         bottle.TEMPLATE_PATH.append('{0}/web_files/templates/'.format(self.app.datadir))
@@ -99,11 +102,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                 self._showMoteview(moteid)
                 self._getMoteData(moteid)
                 self._toggleDAGroot(moteid)
-
-        # used for controller mode
-        if self.ctrlMode:
-            self.openController = self.app.openController
-            self.openController.updateDefaultSchedule()
 
 
     #======================== public ==========================================
@@ -162,17 +160,17 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         cmd, data = cmddata.split('@')
         motelist = self.app.getMoteList()
 
-        if cmd =="resetschedule":
-            self.openController.updateDefaultSchedule()
-            return '{"result" : "ScheduleConf updated"}'
+        if   cmd == "loaddefschedule":
+            self.openController.installDefaultSchedule()
+            return '{"result" : "Succeed"}'
         elif cmd == "clearschedule":
             self.openController._clearDetFrame(motelist)
-            return '{"result" : "Schedule cleared"}'
+            return '{"result" : "Succeed"}'
         elif cmd == "uploadschedule":
             self.openController.installNewSchedule(json.loads(data))
-            return '{"result" : "Schedule uploaded"}'
+            return '{"result" : "Succeed"}'
         else:
-            return '{"result" : "fail"}'
+            return '{"result" : "failed"}'
 
     @view('testbench.tmpl')
     def _showTestbench(self):
@@ -266,6 +264,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         log.info('Toggle root status for moteid {0}'.format(moteid))
         ms = self.app.getMoteState(moteid)
         if ms:
+            if self.ctrlMode:
+                self.openController.updateRootList(moteid)
             log.debug('Found mote {0} in moteStates'.format(moteid))
             ms.triggerAction(ms.TRIGGER_DAGROOT)
             return '{"result" : "success"}'
@@ -299,7 +299,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             states = {}
-
         return states
 
     def _setWiresharkDebug(self, enabled):

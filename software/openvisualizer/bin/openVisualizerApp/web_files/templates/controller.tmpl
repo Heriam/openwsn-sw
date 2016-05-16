@@ -64,7 +64,7 @@
 
 	            <div class="row">
                 	<div class="col-lg-12">
-                        <button id="reschedule_btn" type="button" class="btn btn-default btn-xs">Reset Schedule</button>
+                        <button id="reschedule_btn" type="button" class="btn btn-default btn-xs">Load Schedule</button>
                         <button id="clearschedule_btn" type="button" class="btn btn-default btn-xs">Clear Schedule</button>
 
                         <script>
@@ -73,7 +73,7 @@
 			                    .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"resetschedule@",
+                                        url: "/schedule/"+"loaddefschedule@",
                                         success: schedule,
                                         error: errorOnAjax
                                     });

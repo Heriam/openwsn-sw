@@ -120,8 +120,8 @@ class moteConnector(eventBusClient.eventBusClient):
     
     def _cmdToMote_handler(self,sender,signal,data):
         if  data['serialPort']==self.serialport:
+
             if data['action']==moteState.moteState.TRIGGER_DAGROOT:
-                
                 # retrieve the prefix of the network
                 with self.stateLock:
                     if not self.networkPrefix:
@@ -190,22 +190,10 @@ class moteConnector(eventBusClient.eventBusClient):
         dataToSend.append(operationId)
 
         #set parameters
-        if operationId <= 3:
-            if len(data) <3:
-                print "============================================="
-                print "Error ! Parameters are missing!"
-                return [outcome, dataToSend]
-            try:
-                # set 3. neighbor addr
-                # neiAddr = data[2][openController.openController.PARAMS_NEIGHBOR]
-                # addrList = [int(c, 16) for c in neiAddr.split(' ')[0].split('-')]
-                # if len(addrList) == 8:
-                #     dataToSend += addrList
-                # else:
-                #     print "============================================="
-                #     print "Error ! Wrong address format: " + neiAddr
-                #     return [outcome, dataToSend]
-                # set 3. cell (slotOffset, channelOffset)
+        try:
+            if operationId == 6:
+                dataToSend.append(data[2][openController.openController.PARAMS_FRAMELENGTH])
+            elif operationId <= 3:
                 cell = data[2][openController.openController.PARAMS_CELL]
                 dataToSend += list(cell)
                 if operationId == 2:
@@ -227,17 +215,13 @@ class moteConnector(eventBusClient.eventBusClient):
                     # # set 8. trackId
                     trackId = data[2][openController.openController.PARAMS_TRACKID]
                     dataToSend += [trackId]
-            except AttributeError as err:
-                print "============================================="
-                print "Error ! Cannot find parameter! " + err
-                return [outcome, dataToSend]
-            except:
-                print "============================================="
-                print "Unrecognized error in parameters !"
-                return [outcome, dataToSend]
-        elif len(data) > 2:
+        except AttributeError as err:
             print "============================================="
-            print "Error ! Unexpected content: " + data[2:]
+            print "Error ! Cannot find parameter! " + err
+            return [outcome, dataToSend]
+        except:
+            print "============================================="
+            print "Unrecognized error in parameters !"
             return [outcome, dataToSend]
 
         # the command is legal if I got here
@@ -287,7 +271,7 @@ class moteConnector(eventBusClient.eventBusClient):
                     len(data[2][1:-1].split(','))
                 ]
                 if data[1] == '6pAdd' or data[1] == '6pDelete':
-                    if len(data[2][1:-1].split(','))>0:
+                    if data[2][1:-1].split(','):
                         dataToSend += [int(i) for i in data[2][1:-1].split(',')] # celllist
             except:
                 print "============================================="
