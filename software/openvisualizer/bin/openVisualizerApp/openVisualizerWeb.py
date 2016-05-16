@@ -264,10 +264,11 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         log.info('Toggle root status for moteid {0}'.format(moteid))
         ms = self.app.getMoteState(moteid)
         if ms:
-            if self.ctrlMode:
-                self.openController.updateRootList(moteid)
             log.debug('Found mote {0} in moteStates'.format(moteid))
-            ms.triggerAction(ms.TRIGGER_DAGROOT)
+            if self.ctrlMode:
+                self.openController.toggleRoot(moteid)
+            else:
+                ms.triggerAction(ms.TRIGGER_DAGROOT)
             return '{"result" : "success"}'
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))

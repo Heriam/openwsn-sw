@@ -193,6 +193,7 @@ class moteConnector(eventBusClient.eventBusClient):
         try:
             if operationId == 6:
                 dataToSend.append(data[2][openController.openController.PARAMS_FRAMELENGTH])
+                dataToSend.append(data[2][openController.openController.PARAMS_MAXACTSLOTS])
             elif operationId <= 3:
                 cell = data[2][openController.openController.PARAMS_CELL]
                 dataToSend += list(cell)

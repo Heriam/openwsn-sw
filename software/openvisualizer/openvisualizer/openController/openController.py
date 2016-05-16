@@ -40,8 +40,10 @@ class openController():
     PARAMS_SLOTOFF           = 'slotOffset'
     PARAMS_CHANNELOFF        = 'channelOffset'
     PARAMS_FRAMELENGTH       = 'frameLength'
+    PARAMS_MAXACTSLOTS       = 'maxActiveSlots'
 
-    SLOTFRAME_DEFAULT        = 1   #id of slotframe
+    SLOTFRAME_DEFAULT        = 1   # default id of slotframe
+    ACTIVESLOTS_DEFAULT      = 15  # default nums of active slots
 
     OPT_ADD                  = 'add'
     OPT_OVERWRITE            = 'overwrite'
@@ -72,6 +74,7 @@ class openController():
         self.runningSchedule  = {}
         self.startupSchedule  = self.getDefaultSchedule()
         self.rootList         = []
+        self.name = 'openController'
 
 
 
@@ -83,19 +86,30 @@ class openController():
 
         :param scheduleSDict: a dictionary contains scheduling params as in schedule.json
         '''
-        moteList = self.app.getMoteList()
-        rootList            = scheduleSDict[self.ROOTLIST]
 
+        if not scheduleSDict:
+            return
+
+        moteList = self.app.getMoteList()
+        newRootList            = scheduleSDict[self.ROOTLIST]
 
         for scheduleDict in scheduleSDict[self.SLOTFRAMES]:
             slotFrame       = scheduleDict[self.CMD_TARGETSLOTFRAME]
             slotList        = scheduleDict[self.PARAMS_CELL]
             frameLength     = scheduleDict[self.PARAMS_FRAMELENGTH]
+            maxActiveSlots  = scheduleDict[self.PARAMS_MAXACTSLOTS]
 
             if self.runningSchedule:
                 self._clearDetFrame(moteList, slotFrame)
-
-            self.initNewRoot(rootList, frameLength, slotFrame)
+            elif not self.rootList:
+                self._setSchedule_vars(newRootList,
+                                       moteList,
+                                       frameLength,
+                                       maxActiveSlots,
+                                       slotFrame)
+                for newMoteid in newRootList:
+                    self.toggleRoot(newMoteid)
+                self.rootList = newRootList
 
             for slotEntry in slotList:
                 if slotEntry[self.PARAMS_SHARED] == False:
@@ -119,30 +133,11 @@ class openController():
 
         self.runningSchedule = scheduleSDict
 
-    def initNewRoot(self,
-                       newRootList,
-                       frameLength,
-                       targetSlotFrame = SLOTFRAME_DEFAULT):
-
-        if self.rootList:
-            for moteid in self.rootList:
-                if moteid not in newRootList:
-                    self.toggleRoot(moteid)
-
-        elif not self.runningSchedule:
-            self._setFrameLength(newRootList, frameLength, targetSlotFrame)
-
-        for newMoteid in newRootList:
-            if newMoteid not in self.rootList:
-                self.toggleRoot(newMoteid)
-
-        self.rootList = newRootList
-
     def toggleRoot(self, moteid):
         ms = self.app.getMoteState(moteid)
         if ms:
-            self.updateRootList(moteid)
             ms.triggerAction(ms.TRIGGER_DAGROOT)
+            self.updateRootList(moteid)
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
 
@@ -168,8 +163,11 @@ class openController():
         self.installNewSchedule(self.getStartupSchedule())
 
     def getDefaultSchedule(self):
-        with open(os.getcwd() + '/openvisualizer/openController/schedule.json') as json_file:
-            return json.load(json_file)
+        try:
+            with open(os.getcwd() + '/openvisualizer/openController/schedule.json') as json_file:
+                return json.load(json_file)
+        except IOError as err:
+            return None
 
     def getStartupSchedule(self):
         return self.startupSchedule
@@ -267,20 +265,34 @@ class openController():
         for moteId in moteList:
             self._sendSchedule(moteId, [targetSlotFrame, self.OPT_CLEAR])
 
-    def _setFrameLength(self,
-                        rootList,
+    def _setSchedule_vars(self,
+                        newRootList,
+                        moteList,
                         frameLength,
-                        targetSlotFrame = SLOTFRAME_DEFAULT):
+                        maxActiveSlots  = ACTIVESLOTS_DEFAULT,
+                        targetSlotFrame = SLOTFRAME_DEFAULT,
+                        ):
 
-        if len(rootList) >0:
-            for DAGroot in rootList:
+        for moteId in moteList:
+            if moteId in newRootList:
                 self._sendSchedule(
-                            DAGroot,
+                            moteId,
                     [       targetSlotFrame,
                             self.OPT_SETFRAMELENGTH,
-                        {   self.PARAMS_FRAMELENGTH : frameLength
+                        {   self.PARAMS_FRAMELENGTH : frameLength,
+                            self.PARAMS_MAXACTSLOTS : maxActiveSlots
                         }
                     ]
+                )
+            else:
+                self._sendSchedule(
+                    moteId,
+                    [targetSlotFrame,
+                     self.OPT_SETFRAMELENGTH,
+                     {self.PARAMS_FRAMELENGTH: 0,
+                      self.PARAMS_MAXACTSLOTS: maxActiveSlots
+                      }
+                     ]
                 )
 
     def _sendSchedule(self, moteid, command):
