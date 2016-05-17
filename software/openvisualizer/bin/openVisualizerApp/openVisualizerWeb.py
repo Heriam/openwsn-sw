@@ -83,6 +83,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         # used for controller mode
         if self.ctrlMode:
             self.openController = self.app.openController
+            self.topoJson = {}
 
         # To find page templates
         bottle.TEMPLATE_PATH.append('{0}/web_files/templates/'.format(self.app.datadir))
@@ -161,14 +162,20 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         motelist = self.app.getMoteList()
 
         if   cmd == "loaddefschedule":
+            with open('openvisualizer/openController/schedule.json') as json_data:
+                self.topoJson = json.load(json_data)
             self.openController.installDefaultSchedule()
-            return '{"result" : "Succeed"}'
+            return json.dumps(self.topoJson)
+        elif cmd == "getschedule" :
+            return json.dumps(self.topoJson)
         elif cmd == "clearschedule":
+            self.topoJson = {}
             self.openController._clearDetFrame(motelist)
             return '{"result" : "Succeed"}'
         elif cmd == "uploadschedule":
-            self.openController.installNewSchedule(json.loads(data))
-            return '{"result" : "Succeed"}'
+            self.topoJson = json.loads(data);
+            self.openController.installNewSchedule(self.topoJson)
+            return data
         else:
             return '{"result" : "failed"}'
 
