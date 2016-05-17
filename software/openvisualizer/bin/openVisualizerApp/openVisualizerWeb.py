@@ -266,7 +266,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         if ms:
             log.debug('Found mote {0} in moteStates'.format(moteid))
             if self.ctrlMode:
-                self.openController.toggleRoot(moteid)
+                self.openController.toggleRootList([moteid])
             else:
                 ms.triggerAction(ms.TRIGGER_DAGROOT)
             return '{"result" : "success"}'

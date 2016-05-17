@@ -4,7 +4,6 @@
     {
       "slotFrame"            : 1,
       "frameLength"          : 15,
-      "maxActiveSlots"       : 15,
       "cells": [
         {
           "slotOffset"       : 4,
