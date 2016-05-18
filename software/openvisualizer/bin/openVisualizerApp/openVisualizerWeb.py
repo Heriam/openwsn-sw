@@ -164,16 +164,15 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "clear":
             self.openController.clearSchedule()
-            print self.openController.getRunningSchedule()
             return json.dumps(self.openController.getRunningSchedule())
-        elif cmd == "upload":
-            self.openController.loadSchedule(json.loads(data))
-            return json.dumps(self.openController.getStartupSchedule())
         elif cmd == "showrun":
             return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showstartup":
             return json.dumps(self.openController.getStartupSchedule())
-        elif cmd == "loaddefault":
+        elif cmd == "upload":
+            self.openController.loadSchedule(json.loads(data))
+            return json.dumps(self.openController.getStartupSchedule())
+        elif cmd == "default":
             self.openController.loadSchedule()
             return json.dumps(self.openController.getStartupSchedule())
         else:

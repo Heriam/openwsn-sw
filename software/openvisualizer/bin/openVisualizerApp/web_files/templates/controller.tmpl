@@ -3,14 +3,12 @@
 	<head>
 		%include head.tmpl
 	</head>
-	<body onload="showrun();">
+	<body onload="showrun()">
 	    <script>
 		    // Identifies the function that refreshes mote state on an interval.
 		    var timeoutId;
 		    var moteid;
-		    var intervalID = window.setInterval(showrun, 2000);
-
-		    set
+		    var intervalID = window.setInterval(showrun, 5000);
 
 		    $(function() {
 
@@ -37,7 +35,7 @@
                     success: startupschedule,
                     error: errorOnAjax
                 });
-            };
+            }
 		</script>
 
 		<div id="wrapper">
@@ -88,9 +86,23 @@
                         <button id="clearschedule_btn" type="button" class="btn btn-default btn-xs">Clear Schedule</button>
 
                         <hr>
-                        <h5>Running Schedule:</h5>
+                        <div class = "row">
+                            <div class="col-lg-6">
+                                <b >Running Schedule:</b>
+                            </div>
+                            <div class="col-lg-6">
+                                <b style="display: inline-block">DAGroot:</b> <p style="display: inline-block" id = "runnroottxt"></p>
+                            </div>
+                        </div>
                         <div id="tab-runn-sched" class="table-responsive"></div><br>
-                        <h5>Startup Schedule:</h5>
+                        <div class = "row">
+                            <div class="col-lg-6">
+                                <b >Startup Schedule:</b>
+                            </div>
+                            <div class="col-lg-6">
+                                <b style="display: inline-block">DAGroot:</b> <p style="display: inline-block" id = "starroottxt"></p>
+                            </div>
+                        </div>
                         <div id="tab-star-sched" class="table-responsive"></div>
 
 
@@ -124,7 +136,7 @@
                                 .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"loaddefault@",
+                                        url: "/schedule/"+"default@",
                                         success: startupschedule,
                                         error: errorOnAjax
                                     });
@@ -158,6 +170,11 @@
                             });
 
                             function schedule(json) {
+                                if(json.hasOwnProperty('rootList')){
+                                    rootList  = json.rootList;
+                                    document.getElementById('runnroottxt').innerHTML = rootList;
+                                }
+
                                 if(json.hasOwnProperty('slotFrames')){
                                     frameJson = json.slotFrames[0];
                                     if (frameJson){
@@ -196,6 +213,11 @@
                             }
 
                             function startupschedule(json) {
+                                if(json.hasOwnProperty('rootList')){
+                                    rootList  = json.rootList;
+                                    document.getElementById('starroottxt').innerHTML = rootList;
+                                }
+
                                 if(json.hasOwnProperty('slotFrames')){
                                     frameJson = json.slotFrames[0];
                                     if (frameJson){

@@ -139,7 +139,7 @@ class openController():
         :param scheduleSDict: a dictionary contains scheduling params as in schedule.json
         '''
         newScheduleSDict = copy.deepcopy(scheduleSDict)
-        rootList = newScheduleSDict[self.ROOTLIST]
+        rootList = newScheduleSDict.pop(self.ROOTLIST)
 
         self.clearSchedule()
         if not self.runningSchedule[self.ROOTLIST]:
@@ -168,7 +168,8 @@ class openController():
                         self.OPT_ADD,
                         slotFrame)
 
-        self.runningSchedule = newScheduleSDict
+        self.runningSchedule[self.SLOTFRAMES] = newScheduleSDict[self.SLOTFRAMES]
+
 
     def _updateRunningRootList(self, moteid):
         if moteid in self.runningSchedule[self.ROOTLIST]:
