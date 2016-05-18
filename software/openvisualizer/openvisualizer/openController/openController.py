@@ -10,6 +10,7 @@ Contains openController component for centralized scheduling of the motes. It us
 import os
 import logging
 import json
+import copy
 log = logging.getLogger('openController')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
@@ -67,12 +68,13 @@ class openController():
         log.info("create instance")
 
         # store params
-        self.stateLock        = threading.Lock()
-        self.app              = app
-        self.simMode          = self.app.simulatorMode
-        self.runningScheduleS  = {}
-        self.startupScheduleS  = {}
-        self.rootList         = []
+        self.stateLock         = threading.Lock()
+        self.app               = app
+        self.simMode           = self.app.simulatorMode
+        self.startupSchedule  = {self.ROOTLIST   : [],
+                                  self.SLOTFRAMES : []}
+        self.runningSchedule   = {self.ROOTLIST   : [],
+                                  self.SLOTFRAMES : []}
         self.name = 'openController'
 
         # load startup schedule
@@ -83,43 +85,52 @@ class openController():
 #   =============== public ==========================
 
     def installSchedule(self):
-        self._installNewSchedule(self.startupScheduleS)
+        self._installNewSchedule(self.startupSchedule)
 
     def loadSchedule(self, scheduleSDict = {}):
         if scheduleSDict:
-            self.startupScheduleS = scheduleSDict
+            self.startupSchedule = scheduleSDict
         else:
             try:
-                with open(os.getcwd() + '/openvisualizer/openController/schedule.json') as json_file:
-                    self.startupScheduleS = json.load(json_file)
+                with open('openvisualizer/openController/schedule.json') as json_file:
+                    self.startupSchedule = json.load(json_file)
             except IOError as err:
-                print "Warning: failed to load startupSchedule. Please upload mannually. " + err.message
+                print "# Warning: failed to load default startupSchedule. " + err.message
 
-    def toggleRootList(self, rootList = []):
+    def clearSchedule(self):
+            moteList = self.app.getMoteList()
+            for runningFrame in self.runningSchedule[self.SLOTFRAMES]:
+                self._clearDetFrame(moteList, runningFrame[self.CMD_TARGETSLOTFRAME])
+                self.runningSchedule[self.SLOTFRAMES].remove(runningFrame)
 
-        if not self.rootList and not self.runningScheduleS and self.startupScheduleS:
-            for scheduleDict in self.startupScheduleS[self.SLOTFRAMES]:
-                if rootList:
-                    self._setSchedule_vars(rootList,
-                                           scheduleDict[self.PARAMS_FRAMELENGTH],
-                                           scheduleDict[self.CMD_TARGETSLOTFRAME])
-                else:
-                    rootList = self.startupScheduleS[self.ROOTLIST]
-                    self._setSchedule_vars(rootList,
-                                           scheduleDict[self.PARAMS_FRAMELENGTH],
-                                           scheduleDict[self.CMD_TARGETSLOTFRAME])
+
+    def toggleRootList(self, rootList):
+
+        if not self.runningSchedule[self.ROOTLIST] and not self.runningSchedule[self.SLOTFRAMES] and self.startupSchedule[self.SLOTFRAMES]:
+            for scheduleDict in self.startupSchedule[self.SLOTFRAMES]:
+                self._setSchedule_vars(rootList,
+                                       scheduleDict[self.PARAMS_FRAMELENGTH],
+                                       scheduleDict[self.CMD_TARGETSLOTFRAME])
+                log.info("Set schedule length " + str(scheduleDict[self.PARAMS_FRAMELENGTH]))
 
         for moteid in rootList:
             ms = self.app.getMoteState(moteid)
             if ms:
                 ms.triggerAction(ms.TRIGGER_DAGROOT)
-                self._updateRootList(moteid)
+                self._updateRunningRootList(moteid)
             else:
                 log.debug('Mote {0} not found in moteStates'.format(moteid))
 
+    def getRunningSchedule(self):
+        return self.runningSchedule
 
-#   ================= private =======================
-    # schedule operations
+    def getStartupSchedule(self):
+        return self.startupSchedule
+
+
+
+    #   ================= private =======================
+
 
     def _installNewSchedule(self, scheduleSDict):
         '''
@@ -127,16 +138,14 @@ class openController():
 
         :param scheduleSDict: a dictionary contains scheduling params as in schedule.json
         '''
+        newScheduleSDict = copy.deepcopy(scheduleSDict)
+        rootList = newScheduleSDict[self.ROOTLIST]
 
-        moteList = self.app.getMoteList()
+        self.clearSchedule()
+        if not self.runningSchedule[self.ROOTLIST]:
+            self.toggleRootList(rootList)
 
-        if self.runningScheduleS:
-            for runningFrame in self.runningScheduleS[self.SLOTFRAMES]:
-                self._clearDetFrame(moteList, runningFrame[self.CMD_TARGETSLOTFRAME])
-        else:
-            self.toggleRootList()
-
-        for scheduleDict in scheduleSDict[self.SLOTFRAMES]:
+        for scheduleDict in newScheduleSDict[self.SLOTFRAMES]:
             slotFrame = scheduleDict[self.CMD_TARGETSLOTFRAME]
             slotList = scheduleDict[self.PARAMS_CELL]
             for slotEntry in slotList:
@@ -159,7 +168,15 @@ class openController():
                         self.OPT_ADD,
                         slotFrame)
 
-        self.runningScheduleS = scheduleSDict
+        self.runningSchedule = newScheduleSDict
+
+    def _updateRunningRootList(self, moteid):
+        if moteid in self.runningSchedule[self.ROOTLIST]:
+            self.runningSchedule[self.ROOTLIST].remove(moteid)
+        else:
+            self.runningSchedule[self.ROOTLIST].append(moteid)
+
+    #   ============================ Mote interactions ============================
 
     def _addDetSlot(self,
                     txMote,
@@ -273,9 +290,3 @@ class openController():
             ms.triggerAction([moteState.moteState.INSTALL_SCHEDULE] + command)
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
-
-    def _updateRootList(self, moteid):
-        if moteid in self.rootList:
-            self.rootList.remove(moteid)
-        else:
-            self.rootList.append(moteid)

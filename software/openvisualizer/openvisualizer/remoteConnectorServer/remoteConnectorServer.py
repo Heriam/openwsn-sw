@@ -16,6 +16,7 @@ log.addHandler(logging.NullHandler())
 
 import threading
 import zmq
+import copy
 
 from pydispatch import dispatcher
 
@@ -88,7 +89,7 @@ class remoteConnectorServer():
                 self.roverdict.pop(oldIP)
 
         # add new configuration
-        self.roverdict = newroverdict.copy()
+        self.roverdict = copy.deepcopy(newroverdict)
         log.info('Rover connection:', str(self.roverdict))
         for roverIP in self.roverdict.keys():
             self.subscriber.connect("tcp://%s:%s" % (roverIP, self.zmqport))

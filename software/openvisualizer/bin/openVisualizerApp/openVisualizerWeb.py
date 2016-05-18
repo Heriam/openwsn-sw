@@ -83,7 +83,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         # used for controller mode
         if self.ctrlMode:
             self.openController = self.app.openController
-            self.topoJson = {}
 
         # To find page templates
         bottle.TEMPLATE_PATH.append('{0}/web_files/templates/'.format(self.app.datadir))
@@ -159,23 +158,24 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
 
     def _schedule(self, cmddata):
         cmd, data = cmddata.split('@')
-        motelist = self.app.getMoteList()
 
-        if   cmd == "loaddefschedule":
-            with open('openvisualizer/openController/schedule.json') as json_data:
-                self.topoJson = json.load(json_data)
-            self.openController.installDefaultSchedule()
-            return json.dumps(self.topoJson)
-        elif cmd == "getschedule" :
-            return json.dumps(self.topoJson)
-        elif cmd == "clearschedule":
-            self.topoJson = {}
-            self.openController._clearDetFrame(motelist)
-            return '{"result" : "Succeed"}'
-        elif cmd == "uploadschedule":
-            self.topoJson = json.loads(data);
-            self.openController.installNewSchedule(self.topoJson)
-            return data
+        if   cmd == "install":
+            self.openController.installSchedule()
+            return json.dumps(self.openController.getRunningSchedule())
+        elif cmd == "clear":
+            self.openController.clearSchedule()
+            print self.openController.getRunningSchedule()
+            return json.dumps(self.openController.getRunningSchedule())
+        elif cmd == "upload":
+            self.openController.loadSchedule(json.loads(data))
+            return json.dumps(self.openController.getStartupSchedule())
+        elif cmd == "showrun":
+            return json.dumps(self.openController.getRunningSchedule())
+        elif cmd == "showstartup":
+            return json.dumps(self.openController.getStartupSchedule())
+        elif cmd == "loaddefault":
+            self.openController.loadSchedule()
+            return json.dumps(self.openController.getStartupSchedule())
         else:
             return '{"result" : "failed"}'
 
