@@ -23,6 +23,9 @@ import ParserException
 class moteConnector(eventBusClient.eventBusClient):
     
     def __init__(self,serialport):
+
+        print "==Connector===123213{0}".format(serialport)
+
         
         # log
         log.info("creating instance")

@@ -84,7 +84,8 @@ class moteProbe(threading.Thread):
     ]
     
     def __init__(self,serialport=None,emulatedMote=None,iotlabmote=None):
-        
+
+        print "==Probe===123213{0}".format(serialport)
         # verify params
         if   serialport:
             assert not emulatedMote
@@ -268,7 +269,7 @@ class moteProbe(threading.Thread):
     #======================== private =========================================
     
     def _bufferDataToSend(self,data):
-        
+
         # abort for IoT-LAB
         if self.mode==self.MODE_IOTLAB:
             return

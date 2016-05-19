@@ -116,8 +116,8 @@ class openController():
         for moteid in rootList:
             ms = self.app.getMoteState(moteid)
             if ms:
-                ms.triggerAction(ms.TRIGGER_DAGROOT)
                 self._updateRunningRootList(moteid)
+                ms.triggerAction(ms.TRIGGER_DAGROOT)
             else:
                 log.debug('Mote {0} not found in moteStates'.format(moteid))
 
@@ -170,12 +170,19 @@ class openController():
 
         self.runningSchedule[self.SLOTFRAMES] = newScheduleSDict[self.SLOTFRAMES]
 
-
-    def _updateRunningRootList(self, moteid):
-        if moteid in self.runningSchedule[self.ROOTLIST]:
-            self.runningSchedule[self.ROOTLIST].remove(moteid)
-        else:
-            self.runningSchedule[self.ROOTLIST].append(moteid)
+    def _updateRunningRootList(self, moteid = None):
+        DAGrootList = []
+        for moteId in self.app.getMoteList():
+            ms = self.app.getMoteState(moteId)
+            if ms and json.loads(ms.getStateElem(ms.ST_IDMANAGER).toJson('data'))[0]['isDAGroot']:
+                DAGrootList.append(moteId)
+        if moteid:
+            if moteid in DAGrootList:
+                DAGrootList.remove(moteid)
+            else:
+                DAGrootList.append(moteid)
+        self.runningSchedule[self.ROOTLIST] = DAGrootList
+        return self.runningSchedule[self.ROOTLIST]
 
     #   ============================ Mote interactions ============================
 
@@ -191,17 +198,19 @@ class openController():
                     shared = False):
         params = {
             self.PARAMS_CELL: (slotOff, channelOff),
-            self.PARAMS_TYPE: self.TYPE_TX,
             self.PARAMS_BITINDEX: bitIndex,
             self.PARAMS_SHARED: shared,
             self.PARAMS_TRACKID: trackID,
         }
+        self.runningSchedule[self.SLOTFRAMES] = copy.deepcopy(params)
         if txMote:
+            params[self.PARAMS_TYPE] = self.TYPE_TX
             self._sendScheduleCMD(txMote, [targetSlotFrame, opt, params])
         if rxMoteList:
             params[self.PARAMS_TYPE] = self.TYPE_RX
             for rxMote in rxMoteList:
                 self._sendScheduleCMD(rxMote, [targetSlotFrame, opt, params])
+
 
     def _addSharedSlot(self,
                        slotOff,
@@ -284,10 +293,14 @@ class openController():
 
     def _sendScheduleCMD(self, moteid, command):
         # send command [<targetSlotFrame>, <operation>, <params>] to <moteid>
+        outcome = False
         log.info('Send Schedule Command to moteid {0}'.format(moteid))
         ms = self.app.getMoteState(moteid)
         if ms:
             log.debug('Found mote {0} in moteStates'.format(moteid))
             ms.triggerAction([moteState.moteState.INSTALL_SCHEDULE] + command)
+            outcome = True
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
+
+        return outcome

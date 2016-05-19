@@ -196,7 +196,11 @@
                                             if (frameJson) {
                                             $.each(frameJson.cells, function() {
                                                 if(this['channelOffset']==i && this['slotOffset']==j) {
-                                                    tbl_row += this['txMoteID'] + "-->" + this['rxMoteList'];
+                                                    if(this['shared']){
+                                                        tbl_row += 'shared';
+                                                    } else {
+                                                        tbl_row += this['txMoteID'] + "-->" + this['rxMoteList'];
+                                                    }
                                                 }
                                             });
                                             }
