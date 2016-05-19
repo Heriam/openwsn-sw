@@ -1,5 +1,5 @@
 {
-  "rootList"                 : ["0002","0003"],
+  "rootList"                 : ["0001"],
   "slotFrames": [
     {
       "slotFrame"            : 1,
@@ -35,7 +35,7 @@
         {
           "slotOffset"       : 7,
           "bitIndex"         : 2,
-          "txMoteID"         : "0001",
+          "txMoteID"         : "0002",
           "rxMoteList"       : ["0003"],
           "channelOffset"    : 0,
           "trackID"          : 1,
@@ -44,7 +44,7 @@
         {
           "slotOffset"       : 8,
           "bitIndex"         : 2,
-          "txMoteID"         : "0001",
+          "txMoteID"         : "0003",
           "rxMoteList"       : ["0002"],
           "channelOffset"    : 0,
           "trackID"          : 1,
@@ -53,7 +53,7 @@
         {
           "slotOffset"       : 9,
           "bitIndex"         : 3,
-          "txMoteID"         : "0001",
+          "txMoteID"         : "0002",
           "rxMoteList"       : ["0004"],
           "channelOffset"    : 0,
           "trackID"          : 1,
@@ -62,35 +62,8 @@
         {
           "slotOffset"       : 10,
           "bitIndex"         : 4,
-          "txMoteID"         : "0001",
+          "txMoteID"         : "0003",
           "rxMoteList"       : ["0004"],
-          "channelOffset"    : 0,
-          "trackID"          : 1,
-          "shared"           : false
-        },
-        {
-          "slotOffset"       : 11,
-          "bitIndex"         : 5,
-          "txMoteID"         : "0001",
-          "rxMoteList"       : ["0002"],
-          "channelOffset"    : 0,
-          "trackID"          : 1,
-          "shared"           : false
-        },
-         {
-          "slotOffset"       : 12,
-          "bitIndex"         : 6,
-          "txMoteID"         : "0001",
-          "rxMoteList"       : ["0002"],
-          "channelOffset"    : 0,
-          "trackID"          : 1,
-          "shared"           : false
-        },
-        {
-          "slotOffset"       : 13,
-          "bitIndex"         : 7,
-          "txMoteID"         : "0001",
-          "rxMoteList"       : ["0002"],
           "channelOffset"    : 0,
           "trackID"          : 1,
           "shared"           : false

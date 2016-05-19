@@ -7,7 +7,7 @@
 '''
 Contains openController component for centralized scheduling of the motes. It uses self.app.motestates to communicate with motes
 '''
-import os
+
 import logging
 import json
 import copy
