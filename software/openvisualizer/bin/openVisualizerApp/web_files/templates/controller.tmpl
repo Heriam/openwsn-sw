@@ -83,7 +83,8 @@
                 	    <button id="resetschedule_btn" type="button" class="btn btn-default btn-xs" style="display: inline-block">Reset</button>
                 	    <br><br>
                         <button id="installschedule_btn" type="button" class="btn btn-default btn-xs">Install Schedule</button>
-                        <button id="clearschedule_btn" type="button" class="btn btn-default btn-xs">Clear Schedule</button>
+                        <button id="clearbierslots_btn" type="button" class="btn btn-default btn-xs">Clear BIER Slots</button>
+                        <button id="clearallslots_btn" type="button" class="btn btn-default btn-xs">Clear ALL Slots</button>
 
                         <hr>
                         <div class = "row">
@@ -119,12 +120,24 @@
                                     console.log('Installed new schedule');
                             });
 
-                            $( "#clearschedule_btn" )
+                            $( "#clearbierslots_btn" )
                                 .button()
                                 .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"clear@",
+                                        url: "/schedule/"+"clearbier@",
+                                        success: schedule,
+                                        error: errorOnAjax
+                                    });
+                                    console.log('Cleared schedule');
+                            });
+
+                            $( "#clearallslots_btn" )
+                                .button()
+                                .click(function( event ) {
+                                    $.ajax({
+                                        dataType: "json",
+                                        url: "/schedule/"+"clearall@",
                                         success: schedule,
                                         error: errorOnAjax
                                     });
@@ -176,7 +189,7 @@
                                 }
 
                                 if(json.hasOwnProperty('slotFrames')){
-                                    frameJson = json.slotFrames[0];
+                                    frameJson = json.slotFrames['1'];
                                     if (frameJson){
                                         frameLength = frameJson.frameLength;
                                     } else {
@@ -223,7 +236,7 @@
                                 }
 
                                 if(json.hasOwnProperty('slotFrames')){
-                                    frameJson = json.slotFrames[0];
+                                    frameJson = json.slotFrames['1'];
                                     if (frameJson){
                                         frameLength = frameJson.frameLength;
                                     } else {
@@ -243,7 +256,11 @@
                                             if (frameJson) {
                                             $.each(frameJson.cells, function() {
                                                 if(this['channelOffset']==i && this['slotOffset']==j) {
-                                                    tbl_row += this['txMoteID'] + "-->" + this['rxMoteList'];
+                                                    if(this['shared']){
+                                                        tbl_row += 'shared';
+                                                    } else {
+                                                        tbl_row += this['txMoteID'] + "-->" + this['rxMoteList'];
+                                                    }
                                                 }
                                             });
                                             }

@@ -160,10 +160,13 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         cmd, data = cmddata.split('@')
 
         if   cmd == "install":
-            self.openController.installSchedule()
+            self.openController.installNewSchedule()
             return json.dumps(self.openController.getRunningSchedule())
-        elif cmd == "clear":
+        elif cmd == "clearbier":
             self.openController.clearSchedule()
+            return json.dumps(self.openController.getRunningSchedule())
+        elif cmd == "clearall":
+            self.openController.clearSchedule(True)
             return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showrun":
             return json.dumps(self.openController.getRunningSchedule())

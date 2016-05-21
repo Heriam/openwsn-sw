@@ -24,9 +24,6 @@ class moteConnector(eventBusClient.eventBusClient):
     
     def __init__(self,serialport):
 
-        print "==Connector===123213{0}".format(serialport)
-
-        
         # log
         log.info("creating instance")
         
@@ -197,12 +194,14 @@ class moteConnector(eventBusClient.eventBusClient):
             if operationId == 6:
                 dataToSend.append(data[2][openController.openController.PARAMS_FRAMELENGTH])
             elif operationId <= 3:
-                cell = data[2][openController.openController.PARAMS_CELL]
-                dataToSend += list(cell)
+                slotOff = data[2][openController.openController.PARAMS_SLOTOFF]
+                chanOff = data[2][openController.openController.PARAMS_CHANNELOFF]
+                dataToSend += [slotOff, chanOff]
                 if operationId == 2:
                     # set 4. remapped cell
-                    remapcell = data[2][openController.openController.PARAMS_REMAPTOCELL]
-                    dataToSend += list(remapcell)
+                    remapslotOff = data[2][openController.openController.PARAMS_REMAPSLOTOFF]
+                    remapchanOff = data[2][openController.openController.PARAMS_REMAPCHANOFF]
+                    dataToSend += [remapslotOff, remapchanOff]
                 if operationId <= 1:
                     # set 5. cell typeId
                     typeId = openController.openController.TYPE_ALL.index(data[2][openController.openController.PARAMS_TYPE])

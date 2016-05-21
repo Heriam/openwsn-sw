@@ -166,17 +166,18 @@ class OpenVisualizerApp(object):
                 self.simengine.propagation.updateConnection(fromMote,toMote,pdr)
             
             # store DAGroot moteids in DAGrootList
-            DAGrootL = topo['DAGrootList']
-            for DAGroot in DAGrootL :
-                hexaDAGroot = hex(DAGroot)
-                hexaDAGroot = hexaDAGroot[2:]
-                prefixLen = 4 - len(hexaDAGroot)
-                
-                prefix =""
-                for i in range(prefixLen):
-                    prefix += "0"
-                moteid = prefix+hexaDAGroot
-                self.DAGrootList.append(moteid)
+            if not ctrlMode:
+                DAGrootL = topo['DAGrootList']
+                for DAGroot in DAGrootL :
+                    hexaDAGroot = hex(DAGroot)
+                    hexaDAGroot = hexaDAGroot[2:]
+                    prefixLen = 4 - len(hexaDAGroot)
+
+                    prefix =""
+                    for i in range(prefixLen):
+                        prefix += "0"
+                    moteid = prefix+hexaDAGroot
+                    self.DAGrootList.append(moteid)
         
         # start tracing threads
         if self.trace:

@@ -35,7 +35,8 @@ class openController():
     PARAMS_TYPE              = 'type'
     PARAMS_SHARED            = 'shared'
     PARAMS_CELL              = 'cells'
-    PARAMS_REMAPTOCELL       = 'remaptocell'
+    PARAMS_REMAPSLOTOFF      = 'remapSlotOff'
+    PARAMS_REMAPCHANOFF      = 'remapChanOff'
     PARAMS_TXMOTEID          = 'txMoteID'
     PARAMS_RXMOTELIST        = 'rxMoteList'
     PARAMS_SLOTOFF           = 'slotOffset'
@@ -72,9 +73,9 @@ class openController():
         self.app               = app
         self.simMode           = self.app.simulatorMode
         self.startupSchedule  = {self.ROOTLIST   : [],
-                                  self.SLOTFRAMES : []}
+                                  self.SLOTFRAMES : {}}
         self.runningSchedule   = {self.ROOTLIST   : [],
-                                  self.SLOTFRAMES : []}
+                                  self.SLOTFRAMES : {}}
         self.name = 'openController'
 
         # load startup schedule
@@ -84,10 +85,76 @@ class openController():
 
 #   =============== public ==========================
 
-    def installSchedule(self):
-        self._installNewSchedule(self.startupSchedule)
+    def installNewSchedule(self):
+        self.installSchedule(self.startupSchedule)
+
+    def installSchedule(self, scheduleSDict):
+        '''
+        it installs the schedule from scheduleSDict dictionary,
+        and then stores the schedule configurations in the runningSchedule dictionary if successfully executed.
+        '''
+
+        newScheduleSDict = copy.deepcopy(scheduleSDict)
+        rootList = newScheduleSDict.pop(self.ROOTLIST)
+
+        # clear old schedules if any
+        self.clearSchedule()
+        # configure DAGroot and FrameLength if not yet configured
+        if not self.runningSchedule[self.ROOTLIST]:
+            self.toggleRootList(rootList)
+        # install slots
+        for frameKey in newScheduleSDict[self.SLOTFRAMES].keys():
+            newFrame = True
+            if frameKey in self.runningSchedule[self.SLOTFRAMES].keys():
+                newFrame = False
+            slotList = newScheduleSDict[self.SLOTFRAMES][frameKey][self.PARAMS_CELL]
+            if newFrame:
+                for slotEntry in slotList[:]:
+                    installed = self._slotOperation(self.OPT_ADD, slotEntry, frameKey)[0]
+                    if not installed:
+                        slotList.remove(slotEntry)
+                        log.debug("failed to install slot {0} on slotFrame {1}".format(slotEntry[self.PARAMS_SLOTOFF], frameKey))
+                self.runningSchedule[self.SLOTFRAMES][frameKey] = newScheduleSDict[self.SLOTFRAMES][frameKey]
+            else:
+                for slotEntry in slotList[:]:
+                    newSlot = True
+                    for eachSlot in self.runningSchedule[self.SLOTFRAMES][frameKey][self.PARAMS_CELL]:
+                        if slotEntry[self.PARAMS_SLOTOFF] == eachSlot[self.PARAMS_SLOTOFF]:
+                            newSlot = False
+                    if newSlot:
+                        installed = self._slotOperation(self.OPT_ADD, slotEntry, frameKey)[0]
+                        if not installed:
+                            slotList.remove(slotEntry)
+                            log.debug("failed to install slot {0} on slotFrame {1}".format(slotEntry[self.PARAMS_SLOTOFF], frameKey))
+                    else:
+                        slotList.remove(slotEntry)
+                        log.debug("failed to install slot {0}, which is not available on slotFrame {1}".format(slotEntry[self.PARAMS_SLOTOFF], frameKey))
+                self.runningSchedule[self.SLOTFRAMES][frameKey][self.PARAMS_CELL] += slotList
+
+
+    def clearSchedule(self, includeshared=False):
+        '''
+        it clears all the schedules on all motes according to the configurations stored in the runningSchedule dictionary.
+        '''
+        moteList = self.app.getMoteList()
+        for frameKey in self.runningSchedule[self.SLOTFRAMES].keys():
+            self._clearDetFrame(moteList, frameKey)
+            slotList = self.runningSchedule[self.SLOTFRAMES][frameKey][self.PARAMS_CELL]
+            for slotEntry in slotList[:]:
+                if slotEntry[self.PARAMS_SHARED]:
+                    if includeshared:  # clear Shared slots
+                        anyFailed = self._slotOperation(self.OPT_DELETE, slotEntry, frameKey)[1]
+                        if not anyFailed:
+                            slotList.remove(slotEntry)
+                else:
+                    slotList.remove(slotEntry)
 
     def loadSchedule(self, scheduleSDict = {}):
+        '''
+        it loads the schedule from scheduleSDict if explicitly specified into the startupSchedule dictionary,
+        otherwise it loads the default schedule stored in schedule.json.
+        '''
+
         if scheduleSDict:
             self.startupSchedule = scheduleSDict
         else:
@@ -95,23 +162,23 @@ class openController():
                 with open('openvisualizer/openController/schedule.json') as json_file:
                     self.startupSchedule = json.load(json_file)
             except IOError as err:
-                print "# Warning: failed to load default startupSchedule. " + err.message
+                log.debug("failed to load default startupSchedule. " + err.message)
 
-    def clearSchedule(self):
-            moteList = self.app.getMoteList()
-            for runningFrame in self.runningSchedule[self.SLOTFRAMES]:
-                self._clearDetFrame(moteList, runningFrame[self.CMD_TARGETSLOTFRAME])
-                self.runningSchedule[self.SLOTFRAMES].remove(runningFrame)
 
 
     def toggleRootList(self, rootList):
+        '''
+        specify schedule length if it is the first time toggling the DAGroot
+        and then stores the schedule configurations in the runningSchedule dictionary if successfully executed.
+        '''
 
         if not self.runningSchedule[self.ROOTLIST] and not self.runningSchedule[self.SLOTFRAMES] and self.startupSchedule[self.SLOTFRAMES]:
-            for scheduleDict in self.startupSchedule[self.SLOTFRAMES]:
+            for frameKey in self.startupSchedule[self.SLOTFRAMES].keys():
+                frameLength = self.startupSchedule[self.SLOTFRAMES][frameKey][self.PARAMS_FRAMELENGTH]
                 self._setSchedule_vars(rootList,
-                                       scheduleDict[self.PARAMS_FRAMELENGTH],
-                                       scheduleDict[self.CMD_TARGETSLOTFRAME])
-                log.info("Set schedule length " + str(scheduleDict[self.PARAMS_FRAMELENGTH]))
+                                       frameLength,
+                                       frameKey)
+                log.info("Set schedule length " + str(frameLength))
 
         for moteid in rootList:
             ms = self.app.getMoteState(moteid)
@@ -132,45 +199,11 @@ class openController():
     #   ================= private =======================
 
 
-    def _installNewSchedule(self, scheduleSDict):
-        '''
-        Install new chedule either from default configuration or somewhere else.
-
-        :param scheduleSDict: a dictionary contains scheduling params as in schedule.json
-        '''
-        newScheduleSDict = copy.deepcopy(scheduleSDict)
-        rootList = newScheduleSDict.pop(self.ROOTLIST)
-
-        self.clearSchedule()
-        if not self.runningSchedule[self.ROOTLIST]:
-            self.toggleRootList(rootList)
-
-        for scheduleDict in newScheduleSDict[self.SLOTFRAMES]:
-            slotFrame = scheduleDict[self.CMD_TARGETSLOTFRAME]
-            slotList = scheduleDict[self.PARAMS_CELL]
-            for slotEntry in slotList:
-                if slotEntry[self.PARAMS_SHARED] == False:
-                    self._addDetSlot(
-                        slotEntry[self.PARAMS_TXMOTEID],  # txMote
-                        slotEntry[self.PARAMS_RXMOTELIST],  # rxMoteList
-                        slotEntry[self.PARAMS_SLOTOFF],  # slotOffset
-                        slotEntry[self.PARAMS_BITINDEX],  # bitIndex
-                        self.OPT_ADD,  # operation
-                        slotEntry[self.PARAMS_TRACKID],  # trackID
-                        slotFrame,  # slotFrame
-                        slotEntry[self.PARAMS_CHANNELOFF],  # channelOffset
-                        slotEntry[self.PARAMS_SHARED]  # shared
-                    )
-                else:
-                    self._addSharedSlot(
-                        slotEntry[self.PARAMS_SLOTOFF],
-                        slotEntry[self.PARAMS_CHANNELOFF],
-                        self.OPT_ADD,
-                        slotFrame)
-
-        self.runningSchedule[self.SLOTFRAMES] = newScheduleSDict[self.SLOTFRAMES]
 
     def _updateRunningRootList(self, moteid = None):
+        '''
+            updates rootList in runningSchedule dictionary
+        '''
         DAGrootList = []
         for moteId in self.app.getMoteList():
             ms = self.app.getMoteState(moteId)
@@ -184,112 +217,72 @@ class openController():
         self.runningSchedule[self.ROOTLIST] = DAGrootList
         return self.runningSchedule[self.ROOTLIST]
 
+
     #   ============================ Mote interactions ============================
 
-    def _addDetSlot(self,
-                    txMote,
-                    rxMoteList,
-                    slotOff,
-                    bitIndex,
-                    opt = OPT_ADD,
-                    trackID = 1,
-                    targetSlotFrame = SLOTFRAME_DEFAULT,
-                    channelOff = 0,
-                    shared = False):
-        params = {
-            self.PARAMS_CELL: (slotOff, channelOff),
-            self.PARAMS_BITINDEX: bitIndex,
-            self.PARAMS_SHARED: shared,
-            self.PARAMS_TRACKID: trackID,
-        }
-        self.runningSchedule[self.SLOTFRAMES] = copy.deepcopy(params)
-        if txMote:
-            params[self.PARAMS_TYPE] = self.TYPE_TX
-            self._sendScheduleCMD(txMote, [targetSlotFrame, opt, params])
-        if rxMoteList:
-            params[self.PARAMS_TYPE] = self.TYPE_RX
-            for rxMote in rxMoteList:
-                self._sendScheduleCMD(rxMote, [targetSlotFrame, opt, params])
 
+    def _slotOperation(self, operation, slotInfoDict, frameKey = SLOTFRAME_DEFAULT):
+        shared     = slotInfoDict[self.PARAMS_SHARED]
+        ifanyFailed= False
+        ifanyOK = False
+        if shared:
+            motelist = self.app.getMoteList()
+            slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TXRX
+            for moteid in motelist:
+                if self._sendScheduleCMD(moteid, [frameKey, operation, slotInfoDict]):
+                    ifanyOK     = True
+                else:
+                    ifanyFailed = True
 
-    def _addSharedSlot(self,
-                       slotOff,
-                       channelOff,
-                       opt = OPT_ADD,
-                       targetSlotFrame = SLOTFRAME_DEFAULT):
-        motelist = self.app.getMoteList()
+        else:
+            txMote     = slotInfoDict[self.PARAMS_TXMOTEID]
+            rxMoteList = slotInfoDict[self.PARAMS_RXMOTELIST]
+            if txMote:
+                slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TX
+                if self._sendScheduleCMD(txMote, [frameKey, operation, slotInfoDict]):
+                    ifanyOK = True
+                    if operation == self.OPT_DELETE:
+                        txMote  = None
+                else:
+                    ifanyFailed = True
+                    if operation == self.OPT_ADD:
+                        txMote  = None
 
-        params = {
-            self.PARAMS_BITINDEX   : 0,
-            self.PARAMS_CELL       : (slotOff, channelOff),
-            self.PARAMS_SHARED     : True,
-            self.PARAMS_TRACKID    : 0,
-            self.PARAMS_TYPE       : self.TYPE_TXRX
-        }
+            if rxMoteList:
+                slotInfoDict[self.PARAMS_TYPE] = self.TYPE_RX
+                for rxMote in rxMoteList[:]:
+                    if self._sendScheduleCMD(rxMote, [frameKey, operation, slotInfoDict]):
+                        ifanyOK = True
+                        if operation == self.OPT_DELETE:
+                            rxMoteList.remove(rxMote)
+                    else:
+                        ifanyFailed = True
+                        if operation == self.OPT_ADD:
+                            rxMoteList.remove(rxMote)
 
-        for moteid in motelist:
-            self._sendScheduleCMD(moteid, [targetSlotFrame, opt, params])
+            slotInfoDict.pop(self.PARAMS_TYPE)
 
-
-    def _remapDetSlot(self,
-                      txMote,
-                      rxMoteList,
-                      slotOff,
-                      remapSlotOff,
-                      channelOff = 0,
-                      remapChannel = 0,
-                      targetSlotFrame = SLOTFRAME_DEFAULT):
-        params = {
-            self.PARAMS_CELL: (slotOff, channelOff),
-            self.PARAMS_REMAPTOCELL: (remapSlotOff, remapChannel)
-        }
-        if txMote:
-            self._sendScheduleCMD(txMote, [targetSlotFrame, self.OPT_REMAP, params])
-        if rxMoteList:
-            for rxMote in rxMoteList:
-                self._sendScheduleCMD(rxMote, [targetSlotFrame, self.OPT_REMAP, params])
-
-    def _deleteDetSlot(self,
-                       txMote,
-                       rxMoteList,
-                       slotOff,
-                       channelOff = 0,
-                       targetSlotFrame = SLOTFRAME_DEFAULT):
-        params = {
-            self.PARAMS_CELL: (slotOff, channelOff),
-        }
-        if txMote:
-            self._sendScheduleCMD(txMote, [targetSlotFrame, self.OPT_DELETE, params])
-        if rxMoteList:
-            for rxMote in rxMoteList:
-                self._sendScheduleCMD(rxMote, [targetSlotFrame, self.OPT_DELETE, params])
-
-    def _listDetSlot(self, moteList, targetSlotFrame = SLOTFRAME_DEFAULT):
-        for moteId in moteList:
-            self._sendScheduleCMD(moteId, [targetSlotFrame, self.OPT_LIST])
+        return [ifanyOK, ifanyFailed]
 
     def _clearDetFrame(self,
                        moteList,
                        targetSlotFrame = SLOTFRAME_DEFAULT):
-
+        sentList = []
         for moteId in moteList:
-            self._sendScheduleCMD(moteId, [targetSlotFrame, self.OPT_CLEAR])
+            if self._sendScheduleCMD(moteId, [targetSlotFrame, self.OPT_CLEAR]):
+                sentList.append(moteId)
+        return sentList
 
     def _setSchedule_vars(self,
                         moteList,
                         frameLength,
                         targetSlotFrame = SLOTFRAME_DEFAULT,
                         ):
-
+        sentList = []
         for moteId in moteList:
-                self._sendScheduleCMD(
-                            moteId,
-                    [       targetSlotFrame,
-                            self.OPT_SETFRAMELENGTH,
-                        {   self.PARAMS_FRAMELENGTH : frameLength
-                        }
-                    ]
-                )
+            if self._sendScheduleCMD(moteId,[targetSlotFrame,self.OPT_SETFRAMELENGTH,{self.PARAMS_FRAMELENGTH :frameLength}]):
+                sentList.append(moteId)
+        return sentList
 
     def _sendScheduleCMD(self, moteid, command):
         # send command [<targetSlotFrame>, <operation>, <params>] to <moteid>
