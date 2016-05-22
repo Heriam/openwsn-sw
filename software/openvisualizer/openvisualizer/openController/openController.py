@@ -97,8 +97,6 @@ class openController():
         newScheduleSDict = copy.deepcopy(scheduleSDict)
         rootList = newScheduleSDict.pop(self.ROOTLIST)
 
-        # clear old schedules if any
-        self.clearSchedule()
         # configure DAGroot and FrameLength if not yet configured
         if not self.runningSchedule[self.ROOTLIST]:
             self.toggleRootList(rootList)
