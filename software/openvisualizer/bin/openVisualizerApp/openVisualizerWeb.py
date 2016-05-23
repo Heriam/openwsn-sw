@@ -103,6 +103,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv.route(path='/moteview/:moteid',                       callback=self._showMoteview)
         self.websrv.route(path='/motedata/:moteid',                       callback=self._getMoteData)
         self.websrv.route(path='/toggleDAGroot/:moteid',                  callback=self._toggleDAGroot)
+        self.websrv.route(path='/reset/:moteid',                          callback=self._reset)
         self.websrv.route(path='/eventBus',                               callback=self._showEventBus)
         self.websrv.route(path='/routing',                                callback=self._showRouting)
         self.websrv.route(path='/routing/dag',                            callback=self._showDAG)
@@ -162,6 +163,24 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             return '{"result" : "fail"}'
+
+    def _reset(self, moteid):
+        '''
+        Resets a mote. No real response. Page is updated when next retrieve mote
+        data.
+        :param moteid: 16-bit ID of mote
+        '''
+
+        log.info('Reset moteid {0}'.format(moteid))
+        ms = self.app.getMoteState(moteid)
+        if ms:
+            log.debug('Found mote {0} in moteStates'.format(moteid))
+            ms.triggerAction(ms.RESET)
+            return '{"result" : "success"}'
+        else:
+            log.debug('Mote {0} not found in moteStates'.format(moteid))
+            return '{"result" : "fail"}'
+
 
     def _getMoteData(self, moteid):
         '''

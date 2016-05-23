@@ -410,6 +410,7 @@ class moteState(eventBusClient.eventBusClient):
     ]
     
     TRIGGER_DAGROOT     = 'DAGroot'
+    RESET               = 'reset'
     SET_COMMAND         = 'imageCommand'
 
     # command for golen image:        command,       id length

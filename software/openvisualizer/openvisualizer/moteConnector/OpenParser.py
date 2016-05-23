@@ -28,6 +28,7 @@ class OpenParser(Parser.Parser):
     SERFRAME_MOTE2PC_SNIFFED_PACKET    = ord('P')
     
     SERFRAME_PC2MOTE_SETDAGROOT        = ord('R')
+    SERFRAME_PC2MOTE_RESET             = ord('Q')
     SERFRAME_PC2MOTE_DATA              = ord('D')
     SERFRAME_PC2MOTE_TRIGGERSERIALECHO = ord('S')
     SERFRAME_PC2MOTE_COMMAND_GD        = ord('G')
