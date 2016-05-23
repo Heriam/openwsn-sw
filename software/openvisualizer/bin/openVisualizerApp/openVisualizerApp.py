@@ -234,15 +234,15 @@ class OpenVisualizerApp(object):
                     self.moteStates += [moteState.moteState(moc)]
         self.remoteConnectorServer.initRoverConn(roverMotes)
 
-    def getMoteList(self):
-        motelist = []
+    def getMoteDict(self):
+        moteDict = {}
         for ms in self.moteStates:
             addr = ms.getStateElem(moteState.moteState.ST_IDMANAGER).get16bAddr()
             if addr:
-                motelist.append(''.join(['%02x' % b for b in addr]))
+                moteDict[''.join(['%02x' % b for b in addr])] = ms.moteConnector.serialport
             else:
-                motelist.append(ms.moteConnector.serialport)
-        return motelist
+                moteDict[ms.moteConnector.serialport] = None
+        return moteDict
 
 
 #============================ main ============================================
