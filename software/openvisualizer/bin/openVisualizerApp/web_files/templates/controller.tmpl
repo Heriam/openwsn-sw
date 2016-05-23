@@ -276,6 +276,12 @@
                                 $("#tab-star-sched").html(tbl_body).text();
                             }
 
+                            function logresult(json) {
+                                $.each(json, function(i, option) {
+                                    console.log(i+': ' + option);
+                                });
+						    }
+
                             function errorOnAjax(jqxhr, status, errorstr) {
                                 var errText = (errorstr == null)
                                         ? '' : ', error: ' + errorstr;
