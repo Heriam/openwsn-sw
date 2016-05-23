@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		%include head.tmpl
+	</head>
+	<body onload="showlist()">
+	    <script>
+		    var moteID;
+		    var myip;
+		    var intervalID = window.setInterval(showlist, 10000);
+
+		    function showlist(){
+                $.ajax({
+                    dataType: "json",
+                    url: "/updateroverlist/"+",",
+                    success: updateRoverList,
+                    error: errorOnAjax
+                });
+            }
+        </script>
+
+		<div id="wrapper">
+			%include navbar.tmpl ovVersion=ovVersion, roverMode=roverMode, ctrlMode=ctrlMode
+
+			<div id="page-wrapper">
+	            <div class="row">
+	                <div class="col-lg-12">
+	                    <h1 class="page-header">Rovers</h1>
+	                </div>
+	            </div>
+
+
+	            <div class="row">
+                	<div class="col-lg-12">
+		                <select class="rel_value_fld" id="myip_select" size="1">
+		                    <option value="none">Select Interface...</option>
+		                    % for intf in myifdict:
+		                        % if myifdict[intf].has_key(2) and intf!="lo":
+ 		                            <option value={{myifdict[intf][2][0]['addr']}}>{{intf+": "+myifdict[intf][2][0]['addr']}}</option>
+  		                        % end
+		                        % if myifdict[intf].has_key(10) and intf!="lo":
+		                            <option value={{myifdict[intf][10][0]['addr'].split('%')[0]}}>{{intf+": "+myifdict[intf][10][0]['addr'].split('%')[0]}}</option>
+		                        % end
+		                    % end
+		                </select>
+		            </div>
+
+		            <script>
+		                $( "#myip_select" ).change(function(){
+		                    myip =  $(this).val();
+
+		                    console.log('Update for myip selection: ' + myip);
+		                    // Store to allow automatically selecting this rover.
+		                    setCookie("selected_myip", myip);
+
+		                    // Don't allow to reselect null option.
+		                    //$("#myip_select option[value='none']").remove();
+		                });
+		            </script>
+
+		        </div>
+
+                <br>
+
+	            <div class="row">
+                	<div class="col-lg-12">
+                	    <input id="rover_manual" type="text" placeholder="rover IP address">
+                        <button id="addrover_btn" type="button" class="btn btn-default btn-xs">Add</button>
+		                <button id="delrover_btn" type="button" class="btn btn-default btn-xs">Delete</button>
+		                <button id="motes_btn" type="button" class="btn btn-default btn-xs">Connect</button><hr>
+		                <div id="rover_tb" class="table-responsive"></div>
+
+		                <script>
+		                    $( "#addrover_btn" )
+		                        .button()
+			                    .click(function( event ) {
+                                    newRover = $("#rover_manual").val();
+                                    $.ajax({
+                                        dataType: "json",
+                                        url: "/updateroverlist/"+"add,"+newRover,
+                                        success: updateRoverList,
+                                        error: errorOnAjax
+                                    });
+                                    console.log('Update for rover manual addition: ' + newRover);
+                                    setCookie("added_rover", newRover);
+		                    });
+
+		                    $( "#delrover_btn" )
+		                        .button()
+			                    .click(function( event ) {
+			                        var rovers_sel = [];
+			                        $.each($("input[name='rover_list']:checked"), function(){
+                                        rovers_sel.push($(this).val());
+                                    });
+                                    $.ajax({
+                                        dataType: "json",
+                                        url: "/updateroverlist/"+"del,"+rovers_sel,
+                                        success: updateRoverList,
+                                        error: errorOnAjax
+                                    });
+
+                                    console.log('Update for rover deletion: ' + oldRover);
+                                    setCookie("deleted_rover", oldRover);
+		                    });
+
+						    function updateRoverList(json) {
+                                var tbl_body = "<table class=\"table table-striped table-bordered table-hover\" id=\"dataTables-example\"><thead><tr><th></th><th>Rover</th><th>Motes</th></tr></thead><tbody>";
+                                var tbl_row = "<form action=\"\" method=\"post\" id=\"rover_form\">";
+                                $.each(json, function(x , option) {
+                                    tbl_row += ("<tr class=\"odd gradeX\"><td><input type=\"checkbox\" name=\"rover_list\" value=\"" + x + "\"></td><td>" + x + "</td><td>" + option + "</td></tr>");
+                                });
+                                tbl_body += (tbl_row + "</form></tbody></table>");
+                                //console.log(tbl_body);
+                                $("#rover_tb").html(tbl_body).text();
+
+						        console.log('success');
+						    }
+
+						    function errorOnAjax(jqxhr, status, errorstr) {
+						        var errText = (errorstr == null)
+						                ? '' : ', error: ' + errorstr;
+						        console.log('Ajax error: ' + status + errText);
+						    }
+						</script>
+
+						<script>
+			                $( "#motes_btn" )
+			                    .button()
+			                    .click(function( event ) {
+                                    $.ajax({
+                                        dataType: "json",
+                                        url: "/motesdiscovery/" + myip,
+                                        success: updateRoverList,
+                                        error: errorOnAjax
+                                    });
+                                    console.log('Discovering motes on rovers with self IP: '+ myip);
+			                    });
+		                </script>
+
+                	</div>
+                </div>
+	        </div>
+	    </div>
+	</body>
+</html>

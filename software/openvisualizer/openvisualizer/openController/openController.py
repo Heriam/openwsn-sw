@@ -134,7 +134,7 @@ class openController():
         '''
         it clears all the schedules on all motes according to the configurations stored in the runningSchedule dictionary.
         '''
-        moteList = self.app.getMoteList()
+        moteList = self.app.getMoteDict().keys()
         for frameKey in self.runningSchedule[self.SLOTFRAMES].keys():
             self._clearDetFrame(moteList, frameKey)
             slotList = self.runningSchedule[self.SLOTFRAMES][frameKey][self.PARAMS_CELL]
@@ -203,7 +203,7 @@ class openController():
             updates rootList in runningSchedule dictionary
         '''
         DAGrootList = []
-        for moteId in self.app.getMoteList():
+        for moteId in self.app.getMoteDict().keys():
             ms = self.app.getMoteState(moteId)
             if ms and json.loads(ms.getStateElem(ms.ST_IDMANAGER).toJson('data'))[0]['isDAGroot']:
                 DAGrootList.append(moteId)
@@ -224,7 +224,7 @@ class openController():
         ifanyFailed= False
         ifanyOK = False
         if shared:
-            motelist = self.app.getMoteList()
+            motelist = self.app.getMoteDict().keys()
             slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TXRX
             for moteid in motelist:
                 if self._sendScheduleCMD(moteid, [frameKey, operation, slotInfoDict]):

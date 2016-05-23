@@ -75,7 +75,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         # used for remote motes :
         if roverMode :
             self.roverMotes = {}
-            self.roverlist = []
             self.client = coap.coap()
             self.client.respTimeout = 2
             self.client.ackTimeout = 2
@@ -134,9 +133,9 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv.route(path='/topology/route',         method='GET',   callback=self._topologyRouteRetrieve)
         self.websrv.route(path='/static/<filepath:path>',                 callback=self._serverStatic)
         if self.roverMode:
-            self.websrv.route(path='/testbench',                          callback=self._showTestbench)
+            self.websrv.route(path='/rovers',                             callback=self._showrovers)
             self.websrv.route(path='/updateroverlist/:updatemsg',         callback=self._updateRoverList)
-            self.websrv.route(path='/motesdiscovery/:srcdstip',           callback=self._motesDiscovery)
+            self.websrv.route(path='/motesdiscovery/:srcip',              callback=self._motesDiscovery)
         if self.ctrlMode:
             self.websrv.route(path='/controller',                         callback=self._showController)
             self.websrv.route(path='/schedule/:cmddata',                  callback=self._schedule)
@@ -147,7 +146,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             Handles the path calculation and resource management of the mesh network
         '''
 
-        motelist = self.app.getMoteList()
+        motelist = self.app.getMoteDict().keys()
         tmplData = {
             'motelist': motelist,
             'requested_mote': moteid if moteid else 'none',
@@ -181,8 +180,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         else:
             return '{"result" : "failed"}'
 
-    @view('testbench.tmpl')
-    def _showTestbench(self):
+    @view('rovers.tmpl')
+    def _showrovers(self):
         '''
         Handles the discovery and connection to remote motes using remoteConnectorServer component
         '''
@@ -192,51 +191,57 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             myifdict[myif] = ni.ifaddresses(myif)
         tmplData = {
             'myifdict'  : myifdict,
-            'roverlist' : self.roverlist,
+            'roverMotes' : self.roverMotes,
             'roverMode' : self.roverMode,
             'ctrlMode' : self.ctrlMode,
         }
         return tmplData
 
-    def _updateRoverList(self, updatemsg=None):
+    def _updateRoverList(self, updatemsg):
         '''
         Handles the devices discovery
         '''
-        if updatemsg:
-            cmd, roverip = updatemsg.split(',')
-            if cmd == "add" and not roverip in self.roverlist:
-                self.roverlist.append(roverip)
-            elif cmd == "del":
-                self.roverlist.remove(roverip)
-                if self.roverMotes.has_key(roverip):
-                    self.roverMotes.pop(roverip)
+        cmd, roverIP = updatemsg.split(',')
+        if cmd == "add":
+            if roverIP not in self.roverMotes.keys():
+                self.roverMotes[roverIP] = []
+        elif cmd == "del":
+            if roverIP in self.roverMotes.keys():
+                    self.roverMotes.pop(roverIP)
 
-        return json.dumps(self.roverlist)
+        moteDict = self.app.getMoteDict()
+        for rover in self.roverMotes:
+            for i, serial in enumerate(self.roverMotes[rover]):
+                for moteID, connserial in moteDict.items():
+                    if serial == connserial:
+                        self.roverMotes[rover][i] = moteID
 
-    def _motesDiscovery(self, srcdstip):
+        return json.dumps(self.roverMotes)
+
+    def _motesDiscovery(self, srcip):
         '''
         Collects the list of motes available on the rover and connects them to oV
         Use connetest to first check service availability
         :param roverIP: IP of the rover
         '''
-        myip, roverip = srcdstip.split(',')
+        print srcip
         conntest = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        try:
-            self.roverMotes[roverip] = ''
-            conntest.connect((roverip, 5683))
-            if ':' in roverip :
-                response = self.client.PUT('coap://[{0}]/pcinfo'.format(roverip), payload=[ord(c) for c in (myip + ';50000;' + roverip)])
-            else :
-                response = self.client.PUT('coap://{0}/pcinfo'.format(roverip), payload=[ord(c) for c in (myip + ';50000;' + roverip)])
-            payload = ''.join([chr(b) for b in response])
-            self.roverMotes[roverip]=json.loads(payload)
-            self.roverMotes[roverip] = [rm+'@'+roverip for rm in self.roverMotes[roverip]]
-        except :
-            print "Error on connect"
-            payload = json.dumps(['null'])
+        for roverip in self.roverMotes.keys():
+            try:
+                conntest.connect((roverip, 5683))
+                if ':' in roverip :
+                    response = self.client.PUT('coap://[{0}]/pcinfo'.format(roverip), payload=[ord(c) for c in (srcip + ';50000;' + roverip)])
+                else :
+                    response = self.client.PUT('coap://{0}/pcinfo'.format(roverip), payload=[ord(c) for c in (srcip + ';50000;' + roverip)])
+                payload = ''.join([chr(b) for b in response])
+                self.roverMotes[roverip]=json.loads(payload)
+                self.roverMotes[roverip] = [rm+'@'+roverip for rm in self.roverMotes[roverip]]
+            except :
+                print "Error on connection"
+                self.roverMotes.pop(roverip)
         conntest.close()
         app.refreshRoverMotes(self.roverMotes)
-        return payload
+        return json.dumps(self.roverMotes)
 
 
     @view('moteview.tmpl')
@@ -248,7 +253,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         '''
         log.debug("moteview moteid parameter is {0}".format(moteid));
 
-        motelist = self.app.getMoteList()
+        motelist = self.app.getMoteDict().keys()
 
         tmplData = {
             'motelist'       : motelist,

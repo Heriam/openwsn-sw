@@ -99,3 +99,8 @@ class remoteConnectorServer():
                     self._sendToRemote_handler,
                     signal = signal.encode('utf8')
                     )
+
+    def closeRoverConn(self, ipAddr):
+        if ipAddr in self.roverdict.keys():
+            self.subscriber.disconnect("tcp://%s:%s" % (ipAddr, self.zmqport))
+            self.roverdict.pop(ipAddr)
