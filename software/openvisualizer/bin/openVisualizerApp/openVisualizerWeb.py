@@ -201,14 +201,21 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         '''
         Handles the devices discovery
         '''
-        cmd, roverIP = updatemsg.split(',')
-        if cmd == "add":
-            if roverIP not in self.roverMotes.keys():
-                self.roverMotes[roverIP] = []
-        elif cmd == "del":
-            if roverIP in self.roverMotes.keys():
-                    self.roverMotes.pop(roverIP)
 
+        cmd, roverData = updatemsg.split('@')
+        if cmd == "add":
+            if roverData not in self.roverMotes.keys():
+                self.roverMotes[roverData] = []
+        elif cmd == "del":
+            for roverIP in roverData.split(','):
+                if roverIP in self.roverMotes.keys() and not self.roverMotes[roverIP]:
+                    self.roverMotes.pop(roverIP)
+        elif cmd == "upload":
+            self.roverMotes = json.loads(roverData)
+        elif cmd == "disconn":
+            for roverIP in roverData.split(','):
+                if roverIP in self.roverMotes.keys():
+                    self.app.removeRoverMotes(roverIP, self.roverMotes.pop(roverIP))
         moteDict = self.app.getMoteDict()
         for rover in self.roverMotes:
             for i, serial in enumerate(self.roverMotes[rover]):
@@ -224,7 +231,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         Use connetest to first check service availability
         :param roverIP: IP of the rover
         '''
-        print srcip
+
         conntest = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         for roverip in self.roverMotes.keys():
             try:
@@ -237,12 +244,11 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                 self.roverMotes[roverip]=json.loads(payload)
                 self.roverMotes[roverip] = [rm+'@'+roverip for rm in self.roverMotes[roverip]]
             except :
-                print "Error on connection"
+                print "Failed to connect to rover " + roverip
                 self.roverMotes.pop(roverip)
         conntest.close()
-        app.refreshRoverMotes(self.roverMotes)
+        self.app.refreshRoverMotes(self.roverMotes)
         return json.dumps(self.roverMotes)
-
 
     @view('moteview.tmpl')
     def _showMoteview(self, moteid=None):

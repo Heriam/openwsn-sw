@@ -234,7 +234,31 @@ class OpenVisualizerApp(object):
                     self.moteStates += [moteState.moteState(moc)]
         self.remoteConnectorServer.initRoverConn(roverMotes)
 
+
+    def removeRoverMotes(self, roverIP, moteList):
+        ''' Remove moteconnect and motestates from list (NOT implemented: quit())
+            Stop ZMQ connection
+        :param roverIP
+        '''
+
+        for moteid in moteList:
+            ms = self.getMoteState(moteid)
+            if ms:
+                self.moteConnectors.remove(ms.moteConnector)
+                self.moteStates.remove(ms)
+            else:
+                for mss in self.moteStates:
+                    if moteid == mss.moteConnector.serialport:
+                        self.moteConnectors.remove(mss.moteConnector)
+                        self.moteStates.remove(mss)
+        self.remoteConnectorServer.closeRoverConn(roverIP)
+
+
+
     def getMoteDict(self):
+        '''
+        Returns a dictionary with key-value entry: (moteid: serialport)
+        '''
         moteDict = {}
         for ms in self.moteStates:
             addr = ms.getStateElem(moteState.moteState.ST_IDMANAGER).get16bAddr()
