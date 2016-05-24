@@ -7,11 +7,13 @@
 	    <script>
 		    var moteID;
 		    var myip = "none";
-		    var intervalID;
+		    var intervalID=setInterval(showlist, 10000);
 
 		    function clearInter(){
-		        clearInterval(intervalID);
-		        console.log("checkbox status changed: clearing interval");
+		        if (intervalID != null){
+		            clearInterval(intervalID);
+		            console.log("checkbox status changed: clearing interval");
+		        }
 		    }
 
 		    function showlist(){
@@ -33,7 +35,6 @@
 	                    <h1 class="page-header">Rovers</h1>
 	                </div>
 	            </div>
-
 
 	            <div class="row">
                 	<div class="col-lg-12">
@@ -84,6 +85,9 @@
                             $( "#btn_upload" )
                                 .button()
                                 .click(function( evt ) {
+                                    if (intervalID != null){
+                                        clearInterval(intervalID);
+                                    }
                                     intervalID = setInterval(showlist, 10000);
                                     console.log("setting interval");
                                     var files = document.getElementById('upload_rovers').files;
@@ -112,6 +116,9 @@
 		                    $( "#addrover_btn" )
 		                        .button()
 			                    .click(function( event ) {
+			                        if (intervalID != null){
+                                        clearInterval(intervalID);
+                                    }
 			                        intervalID = setInterval(showlist, 10000);
 			                        console.log("setting interval");
                                     newRover = $("#rover_manual").val();
@@ -130,6 +137,9 @@
 		                    $( "#delrover_btn" )
 		                        .button()
 			                    .click(function( event ) {
+			                        if (intervalID != null){
+                                        clearInterval(intervalID);
+                                    }
 			                        intervalID = setInterval(showlist, 10000);
 			                        console.log("setting interval");
 			                        var rovers_del = [];
@@ -167,13 +177,16 @@
 			                $( "#motes_btn" )
 			                    .button()
 			                    .click(function( event ) {
-			                        console.log('Discovering motes on rovers with local IP: '+ myip);
+			                        if (intervalID != null){
+                                        clearInterval(intervalID);
+                                    }
                                     intervalID = setInterval(showlist, 10000);
                                     console.log("setting interval");
                                     if (myip == 'none') {
                                           alert('Please select an interface!');
                                           return;
                                     }
+                                    console.log('Discovering motes on rovers with local IP: '+ myip);
                                     $.ajax({
                                         dataType: "json",
                                         url: "/motesdiscovery/" + myip,
@@ -186,6 +199,9 @@
 			                $( "#dismotes_btn" )
 			                    .button()
 			                    .click(function( event ) {
+			                        if (intervalID != null){
+                                        clearInterval(intervalID);
+                                    }
 			                        intervalID = setInterval(showlist, 10000);
 			                        console.log("setting interval");
 			                        var rovers_dis = [];

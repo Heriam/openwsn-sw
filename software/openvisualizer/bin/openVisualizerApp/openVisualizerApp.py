@@ -223,17 +223,17 @@ class OpenVisualizerApp(object):
         # create a moteConnector for each roverMote
         for roverIP in roverMotes.keys() :
             for rm in roverMotes[roverIP] :
-                exist = False
-                for mc in self.moteConnectors :
-                    if mc.serialport == rm :
-                        exist = True
-                        break
-                if not exist :
-                    moc = moteConnector.moteConnector(rm)
-                    self.moteConnectors       += [moc]
-                    self.moteStates += [moteState.moteState(moc)]
+                if "@" in rm:
+                    exist = False
+                    for mc in self.moteConnectors :
+                        if mc.serialport == rm :
+                            exist = True
+                            break
+                    if not exist :
+                        moc = moteConnector.moteConnector(rm)
+                        self.moteConnectors       += [moc]
+                        self.moteStates += [moteState.moteState(moc)]
         self.remoteConnectorServer.initRoverConn(roverMotes)
-
 
     def removeRoverMotes(self, roverIP, moteList):
         ''' Remove moteconnect and motestates from list (NOT implemented: quit())

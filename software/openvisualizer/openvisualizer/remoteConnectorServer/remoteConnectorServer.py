@@ -94,10 +94,11 @@ class remoteConnectorServer():
         for roverIP in self.roverdict.keys():
             self.subscriber.connect("tcp://%s:%s" % (roverIP, self.zmqport))
             for serial in self.roverdict[roverIP]:
-                signal = 'fromMoteConnector@'+serial
-                dispatcher.connect(
-                    self._sendToRemote_handler,
-                    signal = signal.encode('utf8')
+                if "@" in serial:
+                    signal = 'fromMoteConnector@'+serial
+                    dispatcher.connect(
+                        self._sendToRemote_handler,
+                        signal = signal.encode('utf8')
                     )
 
     def closeRoverConn(self, ipAddr):

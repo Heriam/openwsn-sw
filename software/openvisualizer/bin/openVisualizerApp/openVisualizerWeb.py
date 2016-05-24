@@ -35,16 +35,13 @@ import functools
 import datetime
 from bottle        import view, response
 
-
 import openVisualizerApp
 from openvisualizer.eventBus      import eventBusClient
 from openvisualizer.SimEngine     import SimEngine
 from openvisualizer.BspEmulator   import VcdLogger
 from openvisualizer import ovVersion
-from openvisualizer.openController import openController
 from coap import coap
 import time
-import socket
 
 # add default parameters to all bottle templates
 view = functools.partial(view, ovVersion='.'.join(list([str(v) for v in ovVersion.VERSION])))
@@ -211,7 +208,10 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                 if roverIP in self.roverMotes.keys() and not self.roverMotes[roverIP]:
                     self.roverMotes.pop(roverIP)
         elif cmd == "upload":
-            self.roverMotes = json.loads(roverData)
+            newRovers = json.loads(roverData)
+            for newRover in newRovers.keys():
+                if newRover not in self.roverMotes.keys():
+                    self.roverMotes[newRover] = []
         elif cmd == "disconn":
             for roverIP in roverData.split(','):
                 if roverIP in self.roverMotes.keys():
@@ -232,10 +232,10 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         :param roverIP: IP of the rover
         '''
 
-        conntest = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        # conntest = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         for roverip in self.roverMotes.keys():
             try:
-                conntest.connect((roverip, 5683))
+                # conntest.connect((roverip, 5683))
                 if ':' in roverip :
                     response = self.client.PUT('coap://[{0}]/pcinfo'.format(roverip), payload=[ord(c) for c in (srcip + ';50000;' + roverip)])
                 else :
@@ -243,10 +243,9 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                 payload = ''.join([chr(b) for b in response])
                 self.roverMotes[roverip]=json.loads(payload)
                 self.roverMotes[roverip] = [rm+'@'+roverip for rm in self.roverMotes[roverip]]
-            except :
-                print "Failed to connect to rover " + roverip
-                self.roverMotes.pop(roverip)
-        conntest.close()
+            except Exception as err:
+                self.roverMotes[roverip] = [str(err)]
+        # conntest.close()
         self.app.refreshRoverMotes(self.roverMotes)
         return json.dumps(self.roverMotes)
 
@@ -265,7 +264,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'motelist'       : motelist,
             'requested_mote' : moteid if moteid else 'none',
             'roverMode'      : self.roverMode,
-            'ctrlMode': self.ctrlMode,
+            'ctrlMode'       : self.ctrlMode,
         }
         return tmplData
 
@@ -551,8 +550,6 @@ if __name__=="__main__":
     websrv   = bottle.Bottle()
     webapp   = OpenVisualizerWeb(app, websrv, argspace.roverMode)
 
-    
-
     # start web interface in a separate thread
     webthread = threading.Thread(
         target = websrv.run,
@@ -564,7 +561,6 @@ if __name__=="__main__":
         }
     )
     webthread.start()
-
     
     #===== add a cli (minimal) interface
 
