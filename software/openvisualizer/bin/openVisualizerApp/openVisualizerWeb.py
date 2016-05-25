@@ -208,8 +208,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                 if roverIP in self.roverMotes.keys() and not self.roverMotes[roverIP]:
                     self.roverMotes.pop(roverIP)
         elif cmd == "upload":
-            newRovers = json.loads(roverData)
-            for newRover in newRovers.keys():
+            newRovers = roverData.split(",")
+            for newRover in newRovers:
                 if newRover not in self.roverMotes.keys():
                     self.roverMotes[newRover] = []
         elif cmd == "disconn":
