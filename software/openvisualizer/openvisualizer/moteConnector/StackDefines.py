@@ -117,6 +117,7 @@ errorDescriptions = {
   66: "| requested cell SlotOffset {0} is not available",
   67: "| requested cell SlotOffset {0} is unscheduled",
   68: "| requested operationID {0} is not supported",
+  69: "| slotframe Length is set to {0}, maxActiveSlots {1}",
 
   80: "# active cells for Tx: {0}, Rx: {1}",
 }
