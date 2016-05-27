@@ -52,7 +52,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
     server.
     '''
 
-    def __init__(self,app,websrv,roverMode):
+    def __init__(self,app,websrv,roverMode,simMode):
         '''
         :param app:    OpenVisualizerApp
         :param websrv: Web server
@@ -65,6 +65,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv          = websrv
         self.roverMode       = roverMode
         self.ctrlMode        = app.ctrlMode
+        self.simMode         = simMode
 
         # define routes
         self._defineRoutes()
@@ -114,6 +115,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv.route(path='/moteview/:moteid',                       callback=self._showMoteview)
         self.websrv.route(path='/motedata/:moteid',                       callback=self._getMoteData)
         self.websrv.route(path='/toggleDAGroot/:moteid',                  callback=self._toggleDAGroot)
+        if not self.simMode :
+            self.websrv.route(path='/reset/:moteid',                          callback=self._reset)
         self.websrv.route(path='/eventBus',                               callback=self._showEventBus)
         self.websrv.route(path='/routing',                                callback=self._showRouting)
         self.websrv.route(path='/routing/dag',                            callback=self._showDAG)
@@ -273,6 +276,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'requested_mote' : moteid if moteid else 'none',
             'roverMode'      : self.roverMode,
             'ctrlMode'       : self.ctrlMode,
+            'sim_mode'       : self.simMode
         }
         return tmplData
 
@@ -300,6 +304,24 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
             return '{"result" : "fail"}'
+
+    def _reset(self, moteid):
+        '''
+        Resets a mote. No real response. Page is updated when next retrieve mote
+        data.
+        :param moteid: 16-bit ID of mote
+        '''
+
+        log.info('Reset moteid {0}'.format(moteid))
+        ms = self.app.getMoteState(moteid)
+        if ms:
+            log.debug('Found mote {0} in moteStates'.format(moteid))
+            ms.triggerAction(ms.RESET)
+            return '{"result" : "success"}'
+        else:
+            log.debug('Mote {0} not found in moteStates'.format(moteid))
+            return '{"result" : "fail"}'
+
 
     def _getMoteData(self, moteid):
         '''
@@ -533,6 +555,14 @@ def _addParserArgs(parser):
         help       = 'rover mode, to access motes connected on rovers'
     )
 
+    parser.add_argument('-s', '--sim',
+        dest       = 'simulatorMode',
+        default    = False,
+        action     = 'store_true',
+        help       = 'simulation mode'
+    )
+
+
 webapp = None
 if __name__=="__main__":
     parser   =  ArgumentParser()
@@ -556,7 +586,8 @@ if __name__=="__main__":
     
     #===== add a web interface
     websrv   = bottle.Bottle()
-    webapp   = OpenVisualizerWeb(app, websrv, argspace.roverMode)
+    webapp   = OpenVisualizerWeb(app, websrv, argspace.roverMode, argspace.simulatorMode)
+
 
     # start web interface in a separate thread
     webthread = threading.Thread(

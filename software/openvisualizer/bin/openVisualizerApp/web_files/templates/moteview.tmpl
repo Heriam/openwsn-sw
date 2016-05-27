@@ -43,6 +43,9 @@
 		                    % end
 		                </select>
 		                <button id="toggle_btn" type="button" class="btn btn-default btn-xs">Toggle DAGroot state</button>
+		                % if not sim_mode:
+		                <button id="reset_btn" type="button" class="btn btn-default btn-xs">Reset mote</button>
+		                % end
 		                <script>
 		                    $("#mote_select").change(function() {
 		                        moteid =  $(this).val()
@@ -80,6 +83,19 @@
 			                            dataType: "json",
 			                            url: "/toggleDAGroot/" + moteid,
 			                            success: updateForToggle,
+			                            error: errorOnAjax
+			                        });
+			                    });
+		                </script>
+		                <script>
+			                $( "#reset_btn" )
+			                    .button()
+			                    .click(function( event ) {
+			                        console.log('reseting mote ' + moteid);
+			                        $.ajax({
+			                            dataType: "json",
+			                            url: "/reset/" + moteid,
+			                            success: updateForReset,
 			                            error: errorOnAjax
 			                        });
 			                    });
@@ -406,6 +422,27 @@
 									            });
 									        }, 1000);
 									    }
+
+                                        % if not sim_mode:
+									    function updateForReset(json) {
+									        // Reset timeout to 1 second for the next data retrieval, to
+									        // provide quicker feedback to user that reset succeeded.
+									        // Must wait 1 second for mote to publish updated status.
+									        console.log('Reset succeeded');
+									        if (timeoutId != null) {
+									            clearTimeout(timeoutId);
+									            console.log('Timeout cleared');
+									        }
+									        timeoutId = setTimeout(function() {
+									            $.ajax({
+									                dataType: "json",
+									                url: "/motedata/" + moteid,
+									                success: updateForData,
+									                error: errorOnAjax
+									            });
+									        }, 1000);
+									    }
+									    % end
 									    
 									    function errorOnAjax(jqxhr, status, errorstr) {
 									        var errText = (errorstr == null)

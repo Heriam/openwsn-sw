@@ -415,6 +415,7 @@ class moteState(eventBusClient.eventBusClient):
     ]
     
     TRIGGER_DAGROOT     = 'DAGroot'
+    RESET               = 'reset'
     SET_COMMAND         = 'imageCommand'
     INSTALL_SCHEDULE    = 'schedule'
 
