@@ -271,12 +271,6 @@ def _addParserArgs(parser):
         action     = 'store',
         help       = 'working directory'
     )
-    parser.add_argument('-s', '--sim', 
-        dest       = 'simulatorMode',
-        default    = False,
-        action     = 'store_true',
-        help       = 'simulation mode, with default of {0} motes'.format(DEFAULT_MOTE_COUNT)
-    )
     parser.add_argument('-n', '--simCount', 
         dest       = 'numMotes',
         type       = int,

@@ -55,7 +55,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
     server.
     '''
 
-    def __init__(self,app,websrv):
+    def __init__(self,app,websrv,simMode):
         '''
         :param app:    OpenVisualizerApp
         :param websrv: Web server
@@ -66,6 +66,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.app             = app
         self.engine          = SimEngine.SimEngine()
         self.websrv          = websrv
+        self.simMode         = simMode
 
         self._defineRoutes()
 
@@ -103,7 +104,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv.route(path='/moteview/:moteid',                       callback=self._showMoteview)
         self.websrv.route(path='/motedata/:moteid',                       callback=self._getMoteData)
         self.websrv.route(path='/toggleDAGroot/:moteid',                  callback=self._toggleDAGroot)
-        self.websrv.route(path='/reset/:moteid',                          callback=self._reset)
+        if not self.simMode :
+            self.websrv.route(path='/reset/:moteid',                          callback=self._reset)
         self.websrv.route(path='/eventBus',                               callback=self._showEventBus)
         self.websrv.route(path='/routing',                                callback=self._showRouting)
         self.websrv.route(path='/routing/dag',                            callback=self._showDAG)
@@ -140,6 +142,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         tmplData = {
             'motelist'       : motelist,
             'requested_mote' : moteid if moteid else 'none',
+            'sim_mode'       : self.simMode
         }
         return tmplData
 
@@ -405,6 +408,14 @@ def _addParserArgs(parser):
         help       = 'port number'
     )
 
+    parser.add_argument('-s', '--sim',
+        dest       = 'simulatorMode',
+        default    = False,
+        action     = 'store_true',
+        help       = 'simulation mode'
+    )
+
+
 webapp = None
 if __name__=="__main__":
     parser   =  ArgumentParser()
@@ -428,7 +439,7 @@ if __name__=="__main__":
     
     #===== add a web interface
     websrv   = bottle.Bottle()
-    webapp   = OpenVisualizerWeb(app, websrv)
+    webapp   = OpenVisualizerWeb(app, websrv, argspace.simulatorMode)
 
     
 
