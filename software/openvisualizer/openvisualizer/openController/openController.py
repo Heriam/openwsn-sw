@@ -123,7 +123,7 @@ class openController():
         for frameKey, slotFrame in self.slotFrames.items():
             self._clearDetFrame(moteList, frameKey)
             for slotEntry in slotFrame[self.PARAMS_CELL]:
-                if slotEntry[self.PARAMS_SHARED] and includeshared:
+                if slotEntry[self.PARAMS_SLOTOFF] and slotEntry[self.PARAMS_SHARED] and includeshared:
                     self._slotOperation(self.OPT_DELETE, slotEntry, frameKey)
 
 
