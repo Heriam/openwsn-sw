@@ -52,7 +52,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
     server.
     '''
 
-    def __init__(self,app,websrv,roverMode,simMode):
+    def __init__(self,app,websrv):
         '''
         :param app:    OpenVisualizerApp
         :param websrv: Web server
@@ -63,15 +63,15 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.app             = app
         self.engine          = SimEngine.SimEngine()
         self.websrv          = websrv
-        self.roverMode       = roverMode
+        self.roverMode       = app.roverMode
         self.ctrlMode        = app.ctrlMode
-        self.simMode         = simMode
+        self.simMode         = app.simulatorMode
 
         # define routes
         self._defineRoutes()
 
         # used for remote motes :
-        if roverMode :
+        if self.roverMode:
             self.roverMotes = {}
             self.client = coap.coap()
             self.client.respTimeout = 2
@@ -116,7 +116,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv.route(path='/motedata/:moteid',                       callback=self._getMoteData)
         self.websrv.route(path='/toggleDAGroot/:moteid',                  callback=self._toggleDAGroot)
         if not self.simMode :
-            self.websrv.route(path='/reset/:moteid',                          callback=self._reset)
+            self.websrv.route(path='/reset/:moteid',                      callback=self._reset)
         self.websrv.route(path='/eventBus',                               callback=self._showEventBus)
         self.websrv.route(path='/routing',                                callback=self._showRouting)
         self.websrv.route(path='/routing/dag',                            callback=self._showDAG)
@@ -152,10 +152,15 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'requested_mote': moteid if moteid else 'none',
             'roverMode': self.roverMode,
             'ctrlMode' : self.ctrlMode,
+            'sim_mode' : self.simMode
         }
         return tmplData
 
     def _schedule(self, cmddata):
+        '''
+            Manipulates schedule through commands.
+        '''
+
         cmd, data = cmddata.split('@')
 
         if   cmd == "install":
@@ -193,7 +198,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'myifdict'  : myifdict,
             'roverMotes' : self.roverMotes,
             'roverMode' : self.roverMode,
-            'ctrlMode' : self.ctrlMode,
+            'ctrlMode' : self.ctrlMode
         }
         return tmplData
 
@@ -296,10 +301,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         ms = self.app.getMoteState(moteid)
         if ms:
             log.debug('Found mote {0} in moteStates'.format(moteid))
-            if self.ctrlMode:
-                self.openController.toggleRootList([moteid])
-            else:
-                ms.triggerAction(ms.TRIGGER_DAGROOT)
+            ms.triggerAction(ms.TRIGGER_DAGROOT)
             return '{"result" : "success"}'
         else:
             log.debug('Mote {0} not found in moteStates'.format(moteid))
@@ -311,16 +313,20 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         data.
         :param moteid: 16-bit ID of mote
         '''
-
-        log.info('Reset moteid {0}'.format(moteid))
-        ms = self.app.getMoteState(moteid)
-        if ms:
-            log.debug('Found mote {0} in moteStates'.format(moteid))
-            ms.triggerAction(ms.RESET)
-            return '{"result" : "success"}'
+        if moteid == "all":
+            motelist = self.app.getMoteDict().keys()
         else:
-            log.debug('Mote {0} not found in moteStates'.format(moteid))
-            return '{"result" : "fail"}'
+            motelist = [moteid]
+        for mote in motelist:
+            log.info('Reset moteid {0}'.format(mote))
+            ms = self.app.getMoteState(mote)
+            if ms:
+                log.debug('Found mote {0} in moteStates'.format(mote))
+                ms.triggerAction(ms.RESET)
+                return '{"result" : "success"}'
+            else:
+                log.debug('Mote {0} not found in moteStates'.format(mote))
+                return '{"result" : "fail"}'
 
 
     def _getMoteData(self, moteid):
@@ -548,19 +554,6 @@ def _addParserArgs(parser):
         action     = 'store',
         help       = 'port number'
     )
-    parser.add_argument('-r', '--rover',
-        dest       = 'roverMode',
-        default    = False,
-        action     = 'store_true',
-        help       = 'rover mode, to access motes connected on rovers'
-    )
-
-    parser.add_argument('-s', '--sim',
-        dest       = 'simulatorMode',
-        default    = False,
-        action     = 'store_true',
-        help       = 'simulation mode'
-    )
 
 
 webapp = None
@@ -582,11 +575,11 @@ if __name__=="__main__":
     )
 
     #===== start the app
-    app      = openVisualizerApp.main(parser, argspace.roverMode)
+    app      = openVisualizerApp.main(parser)
     
     #===== add a web interface
     websrv   = bottle.Bottle()
-    webapp   = OpenVisualizerWeb(app, websrv, argspace.roverMode, argspace.simulatorMode)
+    webapp   = OpenVisualizerWeb(app, websrv)
 
 
     # start web interface in a separate thread

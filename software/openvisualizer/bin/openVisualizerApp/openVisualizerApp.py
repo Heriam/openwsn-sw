@@ -125,7 +125,7 @@ class OpenVisualizerApp(object):
         # start the controller if in controller mode
         if self.ctrlMode:
             self.openController = openController.openController(self)
-            print 'CtrlMode enabled'
+            print 'ctrlMode enabled'
 
         # boot all emulated motes, if applicable
         if self.simulatorMode:
@@ -329,7 +329,7 @@ def main(parser=None, roverMode=False):
         confdir         = confdir,
         datadir         = datadir,
         logdir          = logdir,
-        roverMode       = roverMode,
+        roverMode       = argspace.roverMode,
         simulatorMode   = argspace.simulatorMode,
         numMotes        = argspace.numMotes,
         trace           = argspace.trace,
@@ -347,7 +347,13 @@ def _addParserArgs(parser):
         action     = 'store',
         help       = 'working directory'
     )
-    parser.add_argument('-n', '--simCount', 
+    parser.add_argument('-s', '--sim',
+        dest       = 'simulatorMode',
+        default    = False,
+        action     = 'store_true',
+        help       = 'simulation mode'
+    )
+    parser.add_argument('-n', '--simCount',
         dest       = 'numMotes',
         type       = int,
         default    = 0,
@@ -383,12 +389,18 @@ def _addParserArgs(parser):
         action     = 'store',
         help       = 'a topology can be loaded from a json file'
     )
+    parser.add_argument('-r', '--rover',
+        dest       = 'roverMode',
+        default    = False,
+        action     = 'store_true',
+        help       = 'rover mode, to access motes connected on rovers'
+    )
     parser.add_argument('-c', '--controller',
                         dest='ctrlMode',
                         default=False,
                         action='store_true',
                         help='controller mode, to enable centralized PCE'
-                        )
+    )
 
 
 def _forceSlashSep(ospath, debug):
