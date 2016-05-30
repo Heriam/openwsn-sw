@@ -5,23 +5,8 @@
 	</head>
 	<body onload="showrun()">
 	    <script>
-		    // Identifies the function that refreshes mote state on an interval.
-		    var timeoutId;
-		    var moteid;
 		    var intervalID = window.setInterval(showrun, 5000);
 
-		    $(function() {
-
-		        // Set selected mote if so specified in request. Must do this after
-		        // grid variables have been defined so mote selection works.
-		        % if requested_mote:
-		            var selMote = '{{requested_mote}}';
-		        % else:
-		            var selMote = 'none';
-		        % end
-		        console.log('Display requested mote selection: ' + selMote);
-		        $("#mote_select").val(selMote).change();
-		    });
             function showrun() {
                 $.ajax({
                     dataType: "json",
@@ -51,15 +36,6 @@
 
 
 	            <div class="row">
-                	<div class="col-lg-6">
-		                <select class="rel_value_fld" id="mote_select" size="1">
-		                    <option value="none">Select mote...</option>
-		                    % for mote in motelist:
-		                       <option>{{mote}}</option>
-		                    % end
-		                </select>
-		            </div>
-
 		            <div class="col-lg-6" align="right">
 		                % if not sim_mode:
 		                    <button id="resetall_btn" type="button" class="btn btn-default btn-xs">Reset ALL Motes</button>

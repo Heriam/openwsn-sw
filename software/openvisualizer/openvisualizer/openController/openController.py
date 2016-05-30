@@ -10,7 +10,6 @@ Contains openController component for centralized scheduling of the motes. It us
 
 import logging
 import json
-import copy
 log = logging.getLogger('openController')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
