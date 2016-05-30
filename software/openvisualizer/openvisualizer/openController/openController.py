@@ -224,8 +224,7 @@ class openController():
         same = False
         if slota[self.PARAMS_SLOTOFF] == slotb[self.PARAMS_SLOTOFF]:
             if slota[self.PARAMS_CHANNELOFF] == slotb[self.PARAMS_CHANNELOFF]:
-                if slota[self.PARAMS_TRACKID] == slotb[self.PARAMS_TRACKID]:
-                    same = True
+                same = True
         return same
 
     def _existSlot(self, slot, slotList):
@@ -242,6 +241,12 @@ class openController():
                 atInit = False
         return atInit
 
+    def _isAvailable(self, slot, framekey = SLOTFRAME_DEFAULT):
+        available = True
+        schedCells = self.slotFrames[framekey][self.PARAMS_CELL]
+        if self._existSlot(slot, schedCells):
+            available = False
+        return available
 
     #   ============================ Mote interactions ============================
 
@@ -251,6 +256,8 @@ class openController():
         ifanyFailed= False
         ifanyOK = False
         if shared:
+            if not self._isAvailable(slotInfoDict):
+                return
             motelist = self.app.getMoteDict().keys()
             slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TXRX
             for moteid in motelist:
@@ -268,24 +275,16 @@ class openController():
                 slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TX
                 if self._sendScheduleCMD(txMote, [frameKey, operation, slotInfoDict]):
                     ifanyOK = True
-                    if operation == self.OPT_DELETE:
-                        txMote  = None
                 else:
                     ifanyFailed = True
-                    if operation == self.OPT_ADD:
-                        txMote  = None
 
             if rxMoteList:
                 slotInfoDict[self.PARAMS_TYPE] = self.TYPE_RX
-                for rxMote in rxMoteList[:]:
+                for rxMote in rxMoteList:
                     if self._sendScheduleCMD(rxMote, [frameKey, operation, slotInfoDict]):
                         ifanyOK = True
-                        if operation == self.OPT_DELETE:
-                            rxMoteList.remove(rxMote)
                     else:
                         ifanyFailed = True
-                        if operation == self.OPT_ADD:
-                            rxMoteList.remove(rxMote)
 
             slotInfoDict.pop(self.PARAMS_TYPE)
 
