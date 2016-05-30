@@ -256,7 +256,7 @@ class openController():
         ifanyFailed= False
         ifanyOK = False
         if shared:
-            if not self._isAvailable(slotInfoDict):
+            if operation == self.OPT_ADD and not self._isAvailable(slotInfoDict):
                 return
             motelist = self.app.getMoteDict().keys()
             slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TXRX
