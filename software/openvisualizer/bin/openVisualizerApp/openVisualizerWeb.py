@@ -75,7 +75,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.roverMotes = {}
             self.client = coap.coap()
             self.client.respTimeout = 2
-            self.client.ackTimeout = 2
+            self.client.ackTimeout  = 2
 
         # used for controller mode
         if self.ctrlMode:
