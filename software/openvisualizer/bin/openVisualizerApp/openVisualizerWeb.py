@@ -117,6 +117,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.websrv.route(path='/toggleDAGroot/:moteid',                  callback=self._toggleDAGroot)
         if not self.simMode :
             self.websrv.route(path='/reset/:moteid',                      callback=self._reset)
+            self.websrv.route(path='/reflash/:moteid',                    callback=self._reflash)
         self.websrv.route(path='/eventBus',                               callback=self._showEventBus)
         self.websrv.route(path='/routing',                                callback=self._showRouting)
         self.websrv.route(path='/routing/dag',                            callback=self._showDAG)
@@ -323,6 +324,27 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             if ms:
                 log.debug('Found mote {0} in moteStates'.format(mote))
                 ms.triggerAction(ms.RESET)
+                return '{"result" : "success"}'
+            else:
+                log.debug('Mote {0} not found in moteStates'.format(mote))
+                return '{"result" : "fail"}'
+
+    def _reflash(self, moteid):
+        '''
+        Resets a mote. No real response. Page is updated when next retrieve mote
+        data.
+        :param moteid: 16-bit ID of mote
+        '''
+        if moteid == "all":
+            motelist = self.app.getMoteDict().keys()
+        else:
+            motelist = [moteid]
+        for mote in motelist:
+            log.info('Reset moteid {0}'.format(mote))
+            ms = self.app.getMoteState(mote)
+            if ms:
+                log.debug('Found mote {0} in moteStates'.format(mote))
+                ms.triggerAction(ms.REFLASH)
                 return '{"result" : "success"}'
             else:
                 log.debug('Mote {0} not found in moteStates'.format(mote))

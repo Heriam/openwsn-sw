@@ -45,6 +45,7 @@
 		                <button id="toggle_btn" type="button" class="btn btn-default btn-xs">Toggle DAGroot state</button>
 		                % if not sim_mode:
 		                <button id="reset_btn" type="button" class="btn btn-default btn-xs">Reset mote</button>
+		                <button id="reflash_btn" type="button" class="btn btn-default btn-xs">Reflash mote</button>
 		                % end
 		                <script>
 		                    $("#mote_select").change(function() {
@@ -95,6 +96,19 @@
 			                        $.ajax({
 			                            dataType: "json",
 			                            url: "/reset/" + moteid,
+			                            success: updateForReset,
+			                            error: errorOnAjax
+			                        });
+			                    });
+		                </script>
+		                <script>
+			                $( "#reflash_btn" )
+			                    .button()
+			                    .click(function( event ) {
+			                        console.log('reflashing mote ' + moteid);
+			                        $.ajax({
+			                            dataType: "json",
+			                            url: "/reflash/" + moteid,
 			                            success: updateForReset,
 			                            error: errorOnAjax
 			                        });

@@ -150,6 +150,14 @@ class moteConnector(eventBusClient.eventBusClient):
                     self._sendToMoteProbe(
                         dataToSend=dataToSend,
                     )
+            elif data['action']==moteState.moteState.REFLASH:
+                # create data to send
+                with self.stateLock:
+                    dataToSend = [OpenParser.OpenParser.SERFRAME_PC2MOTE_ERASE]
+                    # reset the mote
+                    self._sendToMoteProbe(
+                        dataToSend=dataToSend,
+                    )
             elif data['action'][0]==moteState.moteState.SET_COMMAND:
                 # this is command for golden image
                 with self.stateLock:

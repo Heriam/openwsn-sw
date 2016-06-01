@@ -5,7 +5,7 @@
 # https://openwsn.atlassian.net/wiki/display/OW/License
 import logging
 log = logging.getLogger('moteProbe')
-log.setLevel(logging.ERROR)
+log.setLevel(logging.INFO)
 log.addHandler(logging.NullHandler())
 
 import os
@@ -15,6 +15,7 @@ elif os.name=='posix':  # Linux
    import glob
    import platform      # To recognize MAC OS X
 import threading
+import subprocess
 
 import serial
 import socket
@@ -240,6 +241,15 @@ class moteProbe(threading.Thread):
                                             if self.outputBuf:
                                                 outputToWrite = self.outputBuf.pop(0)
                                                 self.serial.write(outputToWrite)
+                                                # If the command is ERASE then we should reflash the mote firmware.
+                                                if outputToWrite == self.hdlc.hdlcify(chr(OpenParser.OpenParser.SERFRAME_PC2MOTE_ERASE)) :
+                                                    proc = subprocess.Popen(['scons', 'board=OpenMote-CC2538', 'toolchain=armgcc', 'bootload=/dev/ttyUSB0', 'oos_openwsn'], cwd='../../../openwsn-fw', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                                    for line in iter(proc.stderr.readline, b''):
+                                                        if 'Write done' in line :
+                                                            log.info('Flashing succeded')
+                                                        if 'ERROR' in line :
+                                                            log.error('Flashing did not succeed')
+                                                    proc.communicate()
                                     else:
                                         # dispatch
                                         dispatcher.send(
@@ -274,7 +284,6 @@ class moteProbe(threading.Thread):
     #======================== private =========================================
     
     def _bufferDataToSend(self,data):
-
         # abort for IoT-LAB
         if self.mode==self.MODE_IOTLAB:
             return
