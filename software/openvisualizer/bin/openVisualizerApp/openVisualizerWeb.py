@@ -325,10 +325,9 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             if ms:
                 log.debug('Found mote {0} in moteStates'.format(mote))
                 ms.triggerAction(ms.RESET)
-                return '{"result" : "success"}'
             else:
                 log.debug('Mote {0} not found in moteStates'.format(mote))
-                return '{"result" : "fail"}'
+        return '{"result" : "success"}'
 
     def _reflash(self, moteid):
         '''
@@ -346,11 +345,9 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             if ms:
                 log.debug('Found mote {0} in moteStates'.format(mote))
                 ms.triggerAction(ms.REFLASH)
-                return '{"result" : "success"}'
             else:
                 log.debug('Mote {0} not found in moteStates'.format(mote))
-                return '{"result" : "fail"}'
-
+        return '{"result" : "success"}'
 
     def _getMoteData(self, moteid):
         '''

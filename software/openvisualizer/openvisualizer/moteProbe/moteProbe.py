@@ -251,7 +251,7 @@ class moteProbe(threading.Thread):
                                                     cwd = ''.join(os.getcwd().split('openwsn-sw')[:-1]+['openwsn-fw'])
                                                     proc = subprocess.Popen(['scons', 'board=OpenMote-CC2538', 'toolchain=armgcc', 'bootload={0}'.format(self.portname), 'oos_openwsn'], cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                                                     for line in iter(proc.stderr.readline, b''):    
-							if 'Write done' in line :
+                                                        if 'Write done' in line :
                                                             log.info('Flashing succeeded')
                                                         if 'ERROR' in line :
                                                             log.error('Flashing did not succeed')
