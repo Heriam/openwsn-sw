@@ -55,6 +55,12 @@ class remoteConnectorRover():
                 signal = 'fromMoteProbe@'+mote.getPortName(),
             )
 
+        # Get restart request from moteProbe
+        dispatcher.connect(
+            self._restartMote,
+            signal = 'restartMoteProbe'
+        )
+
         self.t = threading.Thread(target=self._recvdFromRemote)
         self.t.setDaemon(True)
         self.t.start()
@@ -66,6 +72,9 @@ class remoteConnectorRover():
         #send the data after appending @roverID
         self.publisher.send_json({'sender' : '{0}@{1}'.format(sender,self.roverID), 'signal' : '{0}@{1}'.format(signal,self.roverID), 'data':data})
         log.debug('message sent to remote host :\n sender : {0}, signal : {1}, data : {2}'.format('{0}@{1}'.format(sender,self.roverID), '{0}@{1}'.format(signal,self.roverID), data))
+
+    def _restartMote(self):
+        self.app.restartMoteProbes()
 
     def _recvdFromRemote(self):
         while self.goOn :
