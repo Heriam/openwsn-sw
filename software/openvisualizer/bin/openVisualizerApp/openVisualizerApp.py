@@ -215,6 +215,14 @@ class OpenVisualizerApp(object):
         else:
             return None
 
+    def getOpenLbr(self):
+        '''
+        Returns the openLbr Object.
+
+        :rtype: OpenLbr
+        '''
+        return self.openLbr
+
     def refreshRoverMotes(self, roverMotes):
         '''Connect the list of roverMotes to openvisualiser.
 
