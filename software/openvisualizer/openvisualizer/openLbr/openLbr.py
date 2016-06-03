@@ -507,27 +507,28 @@ class OpenLbr(eventBusClient.eventBusClient):
             if len(self.bierBitmap) <= 256:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_15
                 s = (len(self.bierBitmap) - 1) / 8
-                bitmaplen = s + 1
+                bitmaplen = (s + 1) * 8
             elif len(bitmap) <= 512:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_16
                 s = (len(self.bierBitmap) - 1) / 16
-                bitmaplen = (s + 1) * 2
+                bitmaplen = (s + 1) * 16
             elif len(bitmap) <= 1024:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_17
                 s = (len(self.bierBitmap) - 1) / 32
-                bitmaplen = (s + 1) * 4
+                bitmaplen = (s + 1) * 32
             elif len(bitmap) <= 2048:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_18
                 s = (len(self.bierBitmap) - 1) / 64
-                bitmaplen = (s + 1) * 8
+                bitmaplen = (s + 1) * 64
             else:
                 log.error('Bier bitmap is too long')
-            for i in range(len(self.bierBitmap) / 8):
-                bitmap += [int(self.bierBitmap[8 * i:8 * (i + 1)], 2)]
 
-            # fill the end with 0 until we have the right bitmap size
-            while len(bitmap) != bitmaplen:
-                bitmap += [0]
+            # Fill the bitmap with 0 until we have the right bitmap size
+            while len(self.bierBitmap) != bitmaplen:
+                self.bierBitmap += '0'
+
+            for i in range(((len(self.bierBitmap) - 1) / 8) + 1):
+                bitmap += [int(self.bierBitmap[8 * i:8 * (i + 1)], 2)]
 
             returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
             returnVal += bitmap
@@ -538,7 +539,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             if len(compressReference)==16:
                 prefix=compressReference[:8]
 
-            # =======================3. RH3 6LoRH(s) ============================== 
+            # =======================3. RH3 6LoRH(s) ==============================
             sizeUnitType = 0xff
             size     = 0
             hopList  = []
@@ -616,7 +617,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         # ===================== 2. IPinIP 6LoRH ===============================
 
         if lowpan['src_addr'][:8] != [187, 187, 0, 0, 0, 0, 0, 0]:
-            # add RPI 
+            # add RPI
             # TBD
             flag = self.O_FLAG | self.I_FLAG | self.K_FLAG
             senderRank = 0 # rank of dagroot
@@ -629,7 +630,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             compressReference = [187, 187, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
         else:
             compressReference = lowpan['src_addr']
- 
+
         # ========================= 4. IPHC inner header ======================
         # Byte1: 011(3b) TF(2b) NH(1b) HLIM(2b)
         if len(lowpan['tf'])==0:
@@ -650,7 +651,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         else:
             hlim             = self.IPHC_HLIM_INLINE
         returnVal           += [(self.IPHC_DISPATCH<<5) + (tf<<3) + (nh<<2) + (hlim<<0)]
-        
+
         # Byte2: CID(1b) SAC(1b) SAM(2b) M(1b) DAC(2b) DAM(2b)
         if len(lowpan['cid'])==0:
             cid              = self.IPHC_CID_NO
@@ -686,16 +687,16 @@ class OpenLbr(eventBusClient.eventBusClient):
 
         # nh
         returnVal           += lowpan['nh']
-        
+
         # hlim
         returnVal           += lowpan['hlim']
-        
+
         # cid
         returnVal           += lowpan['cid']
 
         # src_addr
         returnVal           += lowpan['src_addr']
-        
+
         # dst_addr
         returnVal           += lowpan['dst_addr']
 
