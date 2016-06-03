@@ -502,24 +502,34 @@ class OpenLbr(eventBusClient.eventBusClient):
         else:
             compressReference = lowpan['src_addr']
 
-        if self.sendWithBier :
-            if len(self.bierBitmap) <= 256 :
+        if self.sendWithBier:
+            bitmaplen = 0
+            if len(self.bierBitmap) <= 256:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_15
-                s = (len(self.bierBitmap) -1) / 8
-            elif len(bitmap) <= 512 :
+                s = (len(self.bierBitmap) - 1) / 8
+                bitmaplen = s + 1
+            elif len(bitmap) <= 512:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_16
-                s = (len(self.bierBitmap) -1) / 16
-            elif len(bitmap) <= 1024 :
+                s = (len(self.bierBitmap) - 1) / 16
+                bitmaplen = (s + 1) * 2
+            elif len(bitmap) <= 1024:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_17
-                s = (len(self.bierBitmap) -1) / 32
-            elif len(bitmap) <= 2048 :
+                s = (len(self.bierBitmap) - 1) / 32
+                bitmaplen = (s + 1) * 4
+            elif len(bitmap) <= 2048:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_18
-                s = (len(self.bierBitmap) -1) / 64
-            else :
+                s = (len(self.bierBitmap) - 1) / 64
+                bitmaplen = (s + 1) * 8
+            else:
                 log.error('Bier bitmap is too long')
-            for i in range( len(self.bierBitmap) / 8 ) :
-                bitmap += [int(self.bierBitmap[8*i:8*(i+1)],2)]
-            returnVal += [self.CRITICAL_6LoRH| s, bier_6lorh_type]
+            for i in range(len(self.bierBitmap) / 8):
+                bitmap += [int(self.bierBitmap[8 * i:8 * (i + 1)], 2)]
+
+            # fill the end with 0 until we have the right bitmap size
+            while len(bitmap) != bitmaplen:
+                bitmap += [0]
+
+            returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
             returnVal += bitmap
 
         # destination address
