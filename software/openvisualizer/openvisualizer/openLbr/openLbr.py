@@ -134,6 +134,8 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.stateLock            = threading.Lock()
         self.networkPrefix        = None
         self.dagRootEui64         = None
+        self.sendWithBier         = False
+        self.bierBitmap           = '11111111'
          
         # initialize parent class
         eventBusClient.eventBusClient.__init__(
@@ -166,6 +168,38 @@ class OpenLbr(eventBusClient.eventBusClient):
         # local variables
             
     #======================== public ==========================================
+
+    def getSendWithBier(self):
+        '''
+        Returns the boolean self.sendWithBier.
+
+        :rtype:        boolean
+        '''
+        return self.sendWithBier
+
+    def getBierBitmap(self):
+        '''
+        Returns the bierBitMap currently used.
+
+        :rtype:        string
+        '''
+        return self.bierBitmap
+
+    def setSendWithBier(self, b):
+        '''
+        Specify if we should send with a BIER header or a 6LoRH
+
+        :param b:      boolean
+        '''
+        self.sendWithBier = b
+
+    def setBierBitmap(self, b):
+        '''
+        Changes the bierBitMap that should be used
+
+        :param b:      string representing the bierbitmap to use
+        '''
+        self.bierBitmap = b
     
     #======================== private =========================================
     
@@ -468,8 +502,28 @@ class OpenLbr(eventBusClient.eventBusClient):
         else:
             compressReference = lowpan['src_addr']
 
+        if self.sendWithBier :
+            if len(self.bierBitmap) <= 256 :
+                bier_6lorh_type = self.TYPE_6LoRH_BIER_15
+                s = (len(self.bierBitmap) -1) / 8
+            elif len(bitmap) <= 512 :
+                bier_6lorh_type = self.TYPE_6LoRH_BIER_16
+                s = (len(self.bierBitmap) -1) / 16
+            elif len(bitmap) <= 1024 :
+                bier_6lorh_type = self.TYPE_6LoRH_BIER_17
+                s = (len(self.bierBitmap) -1) / 32
+            elif len(bitmap) <= 2048 :
+                bier_6lorh_type = self.TYPE_6LoRH_BIER_18
+                s = (len(self.bierBitmap) -1) / 64
+            else :
+                log.error('Bier bitmap is too long')
+            for i in range( len(self.bierBitmap) / 8 ) :
+                bitmap += [int(self.bierBitmap[8*i:8*(i+1)],2)]
+            returnVal += [self.CRITICAL_6LoRH| s, bier_6lorh_type]
+            returnVal += bitmap
+
         # destination address
-        if len(lowpan['route'])>1:
+        elif len(lowpan['route'])>1:
             # source route needed, get prefix from compression Reference
             if len(compressReference)==16:
                 prefix=compressReference[:8]
@@ -638,10 +692,8 @@ class OpenLbr(eventBusClient.eventBusClient):
         # payload
         returnVal           += lowpan['payload']
 
-        if len(bitmap) == 1:
-            print 'Sent message with bitmap : {0:08b}'.format(bitmap[0])
-        elif len(bitmap) >= 2:
-            print 'Sent message with bitmap : {0:08b}{1:08b}'.format(bitmap[0], bitmap[1])
+        if self.sendWithBier :
+            print 'Message sent with bitmap : {0}'.format(self.bierBitmap)
 
         return returnVal
     

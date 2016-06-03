@@ -141,6 +141,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         if self.ctrlMode:
             self.websrv.route(path='/controller',                         callback=self._showController)
             self.websrv.route(path='/schedule/:cmddata',                  callback=self._schedule)
+            self.websrv.route(path='/setbitmap/:bitmap',                  callback=self._setbitmap)
+            self.websrv.route(path='/bier/:onoff',                        callback=self._bieronoff)
 
     @view('controller.tmpl')
     def _showController(self, moteid = None):
@@ -186,6 +188,36 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             return json.dumps(self.openController.getStartupSchedule())
         else:
             return '{"result" : "failed"}'
+
+    def _setbitmap(self, bitmap):
+        '''
+        Sets the openLbr bierbitmap to the one entered on the webUI
+
+        :param bitmap: bitmap to set (as a string)
+        '''
+        try :
+            int(bitmap, 2)
+        except ValueError :
+            log.error('A wrong bitmap was entered through webUI. It should only contain 0 and 1')
+            return {"result" : "fail"}
+        self.app.getOpenLbr().setBierBitmap(bitmap)
+        return {"result" : "success"}
+
+    def _bieronoff(self, onoff):
+        '''
+        Enables or disabled the use of BIER to send messages
+
+        :param onoff: string 'on' or 'off'
+        '''
+        if onoff == 'on' :
+            self.app.getOpenLbr().setSendWithBier(True)
+            return {"result" : "success"}
+        if onoff == 'off' :
+            self.app.getOpenLbr().setSendWithBier(False)
+            return {"result" : "success"}
+        else :
+            return {"result": "fail"}
+
 
     @view('rovers.tmpl')
     def _showrovers(self):
@@ -315,6 +347,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         data.
         :param moteid: 16-bit ID of mote
         '''
+        returnval = '{"result" : "success"}'
         if moteid == "all":
             motelist = self.app.getMoteDict().keys()
         else:
@@ -327,7 +360,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                 ms.triggerAction(ms.RESET)
             else:
                 log.debug('Mote {0} not found in moteStates'.format(mote))
-        return '{"result" : "success"}'
+                returnval = '{"result" : "fail"}'
+        return returnval
 
     def _reflash(self, moteid):
         '''
@@ -335,6 +369,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         data.
         :param moteid: 16-bit ID of mote
         '''
+        returnval = '{"result" : "success"}'
         if moteid == "all":
             motelist = self.app.getMoteDict().keys()
         else:
@@ -347,7 +382,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                 ms.triggerAction(ms.REFLASH)
             else:
                 log.debug('Mote {0} not found in moteStates'.format(mote))
-        return '{"result" : "success"}'
+                returnval = '{"result" : "fail"}'
+        return returnval
 
     def _getMoteData(self, moteid):
         '''
