@@ -72,6 +72,14 @@
                 <br>
 
 	            <div class="row">
+	                <div class="col-lg-12">
+		                <input id="bitmap_manual" type="text" placeholder="insert bierbitmap here">
+		                <button id="bitmap_btn" type="button" class="btn btn-default btn-xs">Change bitmap</button>
+		            </div>
+		            <div class="col-lg-12">
+		                <button id="bieron_btn" type="button" class="btn btn-default btn-xs">Enable BIER</button>
+		                <button id="bieroff_btn" type="button" class="btn btn-default btn-xs">Disable BIER</button>
+		            </div>
                 	<div class="col-lg-12">
                 	    <input type="file" id="upload_schedule" style="display: inline-block">
                 	    <button type="button" id="btn_upload" class="btn btn-default btn-xs" style="display: inline-block">Upload</button>
@@ -103,6 +111,46 @@
 
 
                         <script>
+
+                            $( "#bitmap_btn" )
+		                        .button()
+			                    .click(function( event ) {
+			                        if (intervalID != null){
+                                        clearInterval(intervalID);
+                                    }
+                                    newbitmap = $("#bitmap_manual").val();
+                                    if (newbitmap != ''){
+                                        $.ajax({
+                                            dataType: "json",
+                                            url: "/setbitmap/"+newbitmap,
+                                            error: errorOnAjax
+                                        });
+                                        console.log('Changed bitmap to : ' + newbitmap);
+                                    }
+		                    });
+
+		                    $( "#bieron_btn" )
+			                    .button()
+			                    .click(function( event ) {
+			                        console.log('Enabling BIER');
+			                        $.ajax({
+			                            dataType: "json",
+			                            url: "/bier/on",
+			                            error: errorOnAjax
+			                        });
+			                    });
+
+			                $( "#bieroff_btn" )
+			                    .button()
+			                    .click(function( event ) {
+			                        console.log('Disabling BIER');
+			                        $.ajax({
+			                            dataType: "json",
+			                            url: "/bier/off",
+			                            error: errorOnAjax
+			                        });
+			                    });
+
                             $( "#installschedule_btn" )
                                 .button()
                                 .click(function( event ) {
