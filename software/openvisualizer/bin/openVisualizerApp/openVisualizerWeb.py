@@ -149,9 +149,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             Handles the path calculation and resource management of the mesh network
         '''
 
-        motelist = self.app.getMoteDict().keys()
         tmplData = {
-            'motelist': motelist,
             'requested_mote': moteid if moteid else 'none',
             'roverMode': self.roverMode,
             'ctrlMode' : self.ctrlMode,
