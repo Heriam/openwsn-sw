@@ -124,7 +124,7 @@ class OpenVisualizerApp(object):
 
         # start the controller if in controller mode
         if self.ctrlMode:
-            self.openController = openController.openController(self)
+            self.openController = openController.openController(self.moteStates)
             print 'ctrlMode enabled'
 
         # boot all emulated motes, if applicable
@@ -224,27 +224,27 @@ class OpenVisualizerApp(object):
         return self.openLbr
 
     def refreshRoverMotes(self, roverMotes):
-        '''Connect the list of roverMotes to openvisualiser.
+        '''Connects the list of roverMotes to openvisualiser.
 
         :param roverMotes : list of the roverMotes to add
         '''
-        # create a moteConnector for each roverMote
+        # creates a moteConnector for each roverMote
         for roverIP, value in roverMotes.items() :
             if not isinstance(value, str):
                 for rm in value :
-                        exist = False
-                        for mc in self.moteConnectors :
-                            if mc.serialport == rm :
-                                exist = True
-                                break
-                        if not exist :
-                            moc = moteConnector.moteConnector(rm)
-                            self.moteConnectors       += [moc]
-                            self.moteStates += [moteState.moteState(moc)]
+                    exist = False
+                    for mc in self.moteConnectors :
+                        if mc.serialport == rm :
+                            exist = True
+                            break
+                    if not exist :
+                        moc = moteConnector.moteConnector(rm)
+                        self.moteConnectors       += [moc]
+                        self.moteStates += [moteState.moteState(moc)]
         self.remoteConnectorServer.initRoverConn(roverMotes)
 
     def removeRoverMotes(self, roverIP, moteList):
-        ''' Remove moteconnect and motestates from list (NOT implemented: quit())
+        ''' Removes moteconnect and motestates from list (NOT implemented: quit())
             Stop ZMQ connection
         :param roverIP
         '''
@@ -260,8 +260,6 @@ class OpenVisualizerApp(object):
                         self.moteConnectors.remove(mss.moteConnector)
                         self.moteStates.remove(mss)
         self.remoteConnectorServer.closeRoverConn(roverIP)
-
-
 
     def getMoteDict(self):
         '''

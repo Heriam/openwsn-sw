@@ -15,7 +15,7 @@ from pydispatch import dispatcher
 
 from openvisualizer.eventBus       import eventBusClient
 from openvisualizer.moteState      import moteState
-from openvisualizer.openController import openController
+from openvisualizer.openController.scheduleMgr import scheduleMgr as sm
 
 import OpenParser
 import ParserException
@@ -194,40 +194,40 @@ class moteConnector(eventBusClient.eventBusClient):
             return [outcome, dataToSend]
 
         #set 2. operationId
-        operationId = openController.openController.OPT_ALL.index(data[1])
+        operationId = sm.OPT_ALL.index(data[1])
         dataToSend.append(operationId)
 
         #set parameters
         try:
             if operationId == 6:
-                dataToSend.append(data[2][openController.openController.PARAMS_FRAMELENGTH])
+                dataToSend.append(data[2][sm.PARAMS_FRAMELENGTH])
             elif operationId <= 3:
-                slotOff = data[2][openController.openController.PARAMS_SLOTOFF]
-                chanOff = data[2][openController.openController.PARAMS_CHANNELOFF]
+                slotOff = data[2][sm.PARAMS_SLOTOFF]
+                chanOff = data[2][sm.PARAMS_CHANNELOFF]
                 dataToSend += [slotOff, chanOff]
                 if operationId == 2:
                     # set 4. remapped cell
-                    remapslotOff = data[2][openController.openController.PARAMS_REMAPSLOTOFF]
-                    remapchanOff = data[2][openController.openController.PARAMS_REMAPCHANOFF]
+                    remapslotOff = data[2][sm.PARAMS_REMAPSLOTOFF]
+                    remapchanOff = data[2][sm.PARAMS_REMAPCHANOFF]
                     dataToSend += [remapslotOff, remapchanOff]
                 if operationId <= 1:
                     # set 5. cell typeId
-                    typeId = openController.openController.TYPE_ALL.index(data[2][openController.openController.PARAMS_TYPE])
+                    typeId = sm.TYPE_ALL.index(data[2][sm.PARAMS_TYPE])
                     dataToSend.append(typeId)
                     # set 6. shared boolean
-                    if data[2][openController.openController.PARAMS_SHARED]:
+                    if data[2][sm.PARAMS_SHARED]:
                         dataToSend.append(1)
                     else:
                         dataToSend.append(0)
                     # set 7. bitIndex
-                    bitIndex = data[2][openController.openController.PARAMS_BITINDEX]
+                    bitIndex = data[2][sm.PARAMS_BITINDEX]
                     dataToSend += [bitIndex >> i & 0xff for i in (8, 0)]
                     # # set 8. trackId
-                    trackId = data[2][openController.openController.PARAMS_TRACKID]
+                    trackId = data[2][sm.PARAMS_TRACKID]
                     dataToSend += [trackId]
         except AttributeError as err:
             print "============================================="
-            print "Error ! Cannot find parameter! " + err
+            print "Error ! Cannot find parameter! {0}".format(err)
             return [outcome, dataToSend]
         except:
             print "============================================="

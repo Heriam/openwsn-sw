@@ -15,13 +15,15 @@ log = logging.getLogger('openController')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
-class topologyMgr():
+import moteDriver
 
-    def __init__(self):
+class openController():
+
+    def __init__(self, moteStates):
 
         # log
         log.info("create instance")
 
         # store params
         self.stateLock         = threading.Lock()
-        self.scheduleMgr       = scheduleMgr.scheduleMgr()
+        self.scheduleMgr       = scheduleMgr.scheduleMgr(moteStates)
