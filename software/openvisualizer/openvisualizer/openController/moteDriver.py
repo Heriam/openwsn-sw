@@ -10,6 +10,7 @@
 '''
 import threading
 import logging
+import json
 log = logging.getLogger('moteDriver')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
@@ -85,3 +86,16 @@ class moteDriver():
             return ''.join(['%02x' % b for b in addr])
         else:
             return None
+
+    def getRootList(self):
+        '''
+        Returns the moteID for the provided moteState.
+
+        :rtype:        a list of DAGroot
+        '''
+        rootList = []
+        for ms in self.moteStates:
+            if json.loads(ms.getStateElem(ms.ST_IDMANAGER).toJson('data'))[0]['isDAGroot']:
+                rootList.append(self.getMoteID(ms))
+
+        return rootList

@@ -150,7 +150,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         '''
 
         tmplData = {
-            'requested_mote': moteid if moteid else 'none',
             'roverMode': self.roverMode,
             'ctrlMode' : self.ctrlMode,
             'sim_mode' : self.simMode
