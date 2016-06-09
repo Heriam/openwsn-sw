@@ -87,6 +87,7 @@
                 	    <br><br>
                         <button id="installschedule_btn" type="button" class="btn btn-default btn-xs">Install Schedule</button>
                         <button id="clearbierslots_btn" type="button" class="btn btn-default btn-xs">Clear BIER Slots</button>
+                        <button id="clearsharedslots_btn" type="button" class="btn btn-default btn-xs">Clear SHARED Slots</button>
                         <button id="clearallslots_btn" type="button" class="btn btn-default btn-xs">Clear ALL Slots</button>
 
                         <hr>
@@ -169,6 +170,18 @@
                                     $.ajax({
                                         dataType: "json",
                                         url: "/schedule/"+"clearbier@",
+                                        success: schedule,
+                                        error: errorOnAjax
+                                    });
+                                    console.log('Cleared schedule');
+                            });
+
+                            $( "#clearsharedslots_btn" )
+                                .button()
+                                .click(function( event ) {
+                                    $.ajax({
+                                        dataType: "json",
+                                        url: "/schedule/"+"clearshared@",
                                         success: schedule,
                                         error: errorOnAjax
                                     });

@@ -162,26 +162,30 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         '''
 
         cmd, data = cmddata.split('@')
-
+        defaultMgr = self.openController.getScheduleMgr('1')
         if   cmd == "install":
-            self.openController.scheduleMgr.installNewSchedule()
-            return json.dumps(self.openController.scheduleMgr.getRunningSchedule())
+            self.openController.initNetwork()
+            return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "clearbier":
-            self.openController.scheduleMgr.clearSchedule(includeshared=False)
-            return json.dumps(self.openController.scheduleMgr.getRunningSchedule())
+            defaultMgr.clearBIERslots()
+            return json.dumps(self.openController.getRunningSchedule())
+        elif cmd == "clearshared":
+            defaultMgr.clearSharedSlots()
+            return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "clearall":
-            self.openController.scheduleMgr.clearSchedule(includeshared=True)
-            return json.dumps(self.openController.scheduleMgr.getRunningSchedule())
+            defaultMgr.clearBIERslots()
+            defaultMgr.clearSharedSlots()
+            return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showrun":
-            return json.dumps(self.openController.scheduleMgr.getRunningSchedule())
+            return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showstartup":
-            return json.dumps(self.openController.scheduleMgr.getStartupSchedule())
+            return json.dumps(self.openController.getStartupSchedule())
         elif cmd == "upload":
-            self.openController.scheduleMgr.loadSchedule(json.loads(data))
-            return json.dumps(self.openController.scheduleMgr.getStartupSchedule())
+            self.openController.loadConfig(json.loads(data))
+            return json.dumps(self.openController.getStartupSchedule())
         elif cmd == "default":
-            self.openController.scheduleMgr.loadSchedule()
-            return json.dumps(self.openController.scheduleMgr.getStartupSchedule())
+            self.openController.loadConfig()
+            return json.dumps(self.openController.getStartupSchedule())
         else:
             return '{"result" : "failed"}'
 

@@ -16,9 +16,10 @@ log.addHandler(logging.NullHandler())
 
 import threading
 from openvisualizer.moteState.moteState import moteState as msParam
+from openvisualizer.eventBus.eventBusClient import eventBusClient
 
 
-class scheduleMgr():
+class scheduleMgr(eventBusClient):
 
     # schedule.json keys
     KEY_SLOTFRAMES               = 'slotFrames'
@@ -64,7 +65,7 @@ class scheduleMgr():
     TYPE_ALL = [TYPE_OFF, TYPE_TX, TYPE_RX, TYPE_TXRX, TYPE_SERIALRX, TYPE_MORESERIALRX]
 
 
-    def __init__(self, moteDriver):
+    def __init__(self, frameID):
 
         # log
         log.info("create instance")
@@ -72,28 +73,37 @@ class scheduleMgr():
         # local variables
         self.stateLock         = threading.Lock()
         self.frameLen          = self.FRAMELENGTH_DEFAULT
-        self.frameID           = self.SLOTFRAME_DEFAULT
+        self.frameID           = frameID
         self.runningFrame      = []
-        self.md                = moteDriver
 
         # give this thread a name
         self.name = 'scheduleMgr@{0}'.format(self.frameID)
 
+        # initiate parent class
+        eventBusClient.__init__(
+            self,
+            self.name,
+            registrations=[]
+        )
 
 
     #   =============== public ==========================
 
 
-    def installFrame(self, newSlotFrame):
+    def installFrame(self, newFrameInfo, rootList):
         '''
         installs the slotFrame
 
         :param: newSlotFrame: a slotFrameInfo
 
         '''
+        # set parameters
+        if rootList and self._isAtInit():
+            self._frameOperation(self.OPT_SETFRAMELENGTH, newFrameInfo, rootList)
+            self.frameLen = newFrameInfo[self.PARAMS_FRAMELENGTH]
 
         # install slots
-        for slotEntry in newSlotFrame:
+        for slotEntry in newFrameInfo[self.PARAMS_CELL]:
             self._slotOperation(self.OPT_ADD, slotEntry)
 
     def clearBIERslots(self):
@@ -101,7 +111,6 @@ class scheduleMgr():
         clears BIER slots on all motes.
 
         '''
-
         self._frameOperation(self.OPT_CLEAR)
 
 
@@ -110,9 +119,8 @@ class scheduleMgr():
         clears Shared slots on all motes.
 
         '''
-
         for slot in self.runningFrame[:]:
-            if slot[self.PARAMS_SHARED]:
+            if slot[self.PARAMS_SHARED] and slot[self.PARAMS_SLOTOFF]:
                 self._slotOperation(self.OPT_DELETE, slot)
 
 
@@ -122,11 +130,29 @@ class scheduleMgr():
         :returns: self.runningFrame
 
         '''
-        self._updateRunningFrame()
-        return self.runningFrame
+        with self.stateLock:
+            self._updateRunningFrame()
 
-    def setFrameID(self, frameID):
+        schedule = {self.frameID: {
+             self.PARAMS_FRAMELENGTH: self.frameLen,
+             self.PARAMS_CELL: self.runningFrame}}
 
+        return schedule
+
+
+    def getFrameID(self):
+        '''
+        gets slotFrame ID
+
+        '''
+        return self.frameID
+
+    def getFrameLen(self):
+        '''
+        gets slotFrame length
+
+        '''
+        return self.frameLen
 
 
 
@@ -203,7 +229,10 @@ class scheduleMgr():
             if operation == self.OPT_ADD and not self._isAvailable(slotInfoDict):
                 return
             slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TXRX
-            self.md.cmdAllMotes([msParam.INSTALL_SCHEDULE, self.frameID, operation, slotInfoDict])
+            self._cmdAllMotes([msParam.INSTALL_SCHEDULE,
+                               self.frameID,
+                               operation,
+                               slotInfoDict])
 
         else:
             txMote     = slotInfoDict[self.PARAMS_TXMOTEID]
@@ -212,12 +241,19 @@ class scheduleMgr():
                 rxMoteList.remove(txMote)
             if txMote:
                 slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TX
-                self.md.cmdMote(txMote, [msParam.INSTALL_SCHEDULE, self.frameID, operation, slotInfoDict])
+                self._cmdMote([txMote],
+                               [msParam.INSTALL_SCHEDULE,
+                               self.frameID,
+                               operation,
+                               slotInfoDict])
 
             if rxMoteList:
                 slotInfoDict[self.PARAMS_TYPE] = self.TYPE_RX
-                for rxMote in rxMoteList:
-                    self.md.cmdMote(rxMote, [msParam.INSTALL_SCHEDULE, self.frameID, operation, slotInfoDict])
+                self._cmdMote(rxMoteList,
+                               [msParam.INSTALL_SCHEDULE,
+                               self.frameID,
+                               operation,
+                               slotInfoDict])
 
             slotInfoDict.pop(self.PARAMS_TYPE)
 
@@ -226,32 +262,59 @@ class scheduleMgr():
         configures a slotFrame
 
         :param: slotFrameInfo: an element of stored slotFrames
+
         '''
 
         if moteList== 'all':
-            self.md.cmdAllMotes([msParam.INSTALL_SCHEDULE, self.frameID, operation, slotFrameInfo])
+            self._cmdAllMotes([msParam.INSTALL_SCHEDULE,
+                               self.frameID, operation,
+                               slotFrameInfo])
         else:
-            for moteID in moteList:
-                self.md.cmdMote(moteID, [msParam.INSTALL_SCHEDULE, self.frameID, operation, slotFrameInfo])
+            self._cmdMote(moteList,
+                           [msParam.INSTALL_SCHEDULE,
+                           self.frameID, operation,
+                           slotFrameInfo])
+
+    def _cmdAllMotes(self, cmd):
+
+        #dispatch command
+        self.dispatch(
+            signal = 'cmdAllMotes',
+            data   = cmd
+        )
+
+    def _cmdMote(self, motelist, cmd):
+        '''
+        :param: cmd: [motelist, command]
+
+        '''
+
+        #dispatch command
+        self.dispatch(
+            signal = 'cmdMote',
+            data   = [motelist] + cmd
+        )
 
     def _updateRunningFrame(self):
         '''
-        gets runningSlotFrame info
+        updates runningSlotFrame info
         '''
 
         self.runningFrame[:] = []
 
+        returnVal  = self._dispatchAndGetResult(
+            signal = 'getStateElem',
+            data   = msParam.ST_SCHEDULE
+        )
+
         # gets the schedule of every mote
-        for ms in self.md.moteStates:
-            moteID = self.md.getMoteID(ms)
-            moteSchedule = json.loads(ms.getStateElem(ms.ST_SCHEDULE).toJson('data'))
+        for moteID, moteSchedule in returnVal.items():
 
             # removes unscheduled cells
-            for slot in moteSchedule[:]:
-                if slot[self.PARAMS_TYPE] == '0 (OFF)':
-                    moteSchedule.remove(slot)
-
-            for slotEntry in moteSchedule:
+            for slotEntry in moteSchedule[:]:
+                if slotEntry[self.PARAMS_TYPE] == '0 (OFF)':
+                    moteSchedule.remove(slotEntry)
+                    continue
                 t = slotEntry[self.PARAMS_TYPE]
                 exist = self._existSlot(slotEntry, self.runningFrame)
                 if exist:

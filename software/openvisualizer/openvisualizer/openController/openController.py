@@ -16,7 +16,7 @@ log = logging.getLogger('openController')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
-import moteDriver
+from moteDriver  import moteDriver  as md
 from scheduleMgr import scheduleMgr as sm
 
 class openController():
@@ -28,17 +28,17 @@ class openController():
         log.info("create instance")
 
         # store params
-        self.stateLock = threading.Lock()
-        self.name = 'openController'
+        self.stateLock      = threading.Lock()
+        self.name           = 'openController'
 
         # initiate startupConfig
-        self.startupConfig = {sm.KEY_ROOTLIST: [],
-                              sm.KEY_SLOTFRAMES: {}}
+        self.startupConfig  = {sm.KEY_ROOTLIST: [],
+                               sm.KEY_SLOTFRAMES: {}}
         self.loadConfig()
 
         # initiate scheduleMgr
-        self.moteDriver    = moteDriver.moteDriver(moteStates)
-        self.scheduleMgr   = scheduleMgr.scheduleMgr(moteDriver)
+        self.moteDriver     = md(moteStates)
+        self.scheduleMgrs   = [sm(frameID) for frameID in self.startupConfig[sm.KEY_SLOTFRAMES].keys()]
 
 
     # ==================== public =======================
@@ -70,45 +70,61 @@ class openController():
         newRoots = self.startupConfig[sm.KEY_ROOTLIST]
 
         # installs schedule
-        for frameID, slotFrame in scheduleSDict[self.KEY_SLOTFRAMES].items():
-
-            # configures schedule length if the slotFrame is not initiated yet
-            if self._isAtInit(frameID):
-                self._frameOperation(self.OPT_SETFRAMELENGTH, slotFrame, frameID, newRoots)
-                self.frameLen = slotFrame[self.PARAMS_FRAMELENGTH]
-
-            # install slots
-            for slotEntry in slotFrame[self.PARAMS_CELL]:
-                self._slotOperation(self.OPT_ADD, slotEntry, frameID)
+        for frameID, slotFrame in self.startupConfig[sm.KEY_SLOTFRAMES].items():
+            smgr = self.getScheduleMgr(frameID)
+            if smgr:
+                smgr.installFrame(slotFrame, newRoots)
+            else:
+                log.debug('Not scheduleMgr found for slotFrame {0}'.format(frameID))
 
         # Toggle DAGroot if not yet configured
-        if not self.rootList:
-            self.toggleRootList(newRoots)
+        if not self.getRootList():
+            for moteid in newRoots:
+                ms = self.moteDriver.getMoteState(moteid)
+                if ms:
+                    log.debug('Found mote {0} in moteStates'.format(moteid))
+                    ms.triggerAction(ms.TRIGGER_DAGROOT)
+                else:
+                    log.debug('Mote {0} not found in moteStates'.format(moteid))
 
-
-
-
-
-    def toggleRootList(self, moteList):
+    def getRootList(self):
         '''
-        toggles DAGroot
+        :returns rootList
 
         '''
+        return self.moteDriver.getRootList()
 
-        for moteid in moteList:
-            ms = self.getMoteState(moteid)
-            if ms:
-                log.debug('Found mote {0} in moteStates'.format(moteid))
-                ms.triggerAction(ms.TRIGGER_DAGROOT)
-            else:
-                log.debug('Mote {0} not found in moteStates'.format(moteid))
+    def getScheduleMgr(self, frameID):
+        '''
+        :returns: scheduleMgr Object
 
-    def updateRunningRootList(self):
         '''
-        updates rootList info
+        for schemgr in self.scheduleMgrs:
+            if schemgr.getFrameID() == frameID:
+                return schemgr
+
+        return None
+
+    def getRunningSchedule(self):
         '''
-        self.rootList[:] = []
-        for ms in self.moteStates:
-            if ms and json.loads(ms.getStateElem(ms.ST_IDMANAGER).toJson('data'))[0]['isDAGroot']:
-                self.rootList.append(self.getMoteID(ms))
+        :returns: running Schedule on WebUI
+
+        '''
+        schedule = {
+            sm.KEY_ROOTLIST: self.getRootList(),
+            sm.KEY_SLOTFRAMES: {}
+        }
+        for smgr in self.scheduleMgrs:
+            schedule[sm.KEY_SLOTFRAMES].update(smgr.getRunningFrame())
+        return schedule
+
+    def getStartupSchedule(self):
+        '''
+        :returns: startup Schedule on WebUI
+
+        '''
+        return self.startupConfig
+
+
+    # ============================ private ===================================
 
