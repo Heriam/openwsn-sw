@@ -177,6 +177,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             defaultMgr.clearSharedSlots()
             return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showrun":
+            self.openController.topologyMgr.updateTopology()
             return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showstartup":
             return json.dumps(self.openController.getStartupSchedule())

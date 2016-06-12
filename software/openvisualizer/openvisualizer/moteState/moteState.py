@@ -283,7 +283,13 @@ class StateIdManager(StateElem):
             return self.data[0]['my16bID'].addr[:]
         except IndexError:
             return None
-    
+
+    def get64bAddr(self):
+        try:
+            return self.data[0]['my64bID'].addr[:]
+        except IndexError:
+            return None
+
     def update(self,notif):
     
         # update state
@@ -557,7 +563,7 @@ class moteState(eventBusClient.eventBusClient):
                     'sender'      : 'moteConnector@{0}'.format(self.moteConnector.serialport),
                     'signal'      : 'fromMote.status',
                     'callback'    : self._receivedStatus_notif,
-                },
+                }
             ]
         )
     

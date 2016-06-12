@@ -90,9 +90,9 @@ class remoteConnectorServer():
 
         # add new configuration
         self.roverdict = copy.deepcopy(newroverdict)
-        log.info('Rover connection:', str(self.roverdict))
         for roverIP, value in self.roverdict.items():
             if not isinstance(value, str):
+                log.info("Initiating ZMQ connection with rover {0}".format(roverIP))
                 self.subscriber.connect("tcp://%s:%s" % (roverIP, self.zmqport))
                 for serial in self.roverdict[roverIP]:
                         signal = 'fromMoteConnector@'+serial

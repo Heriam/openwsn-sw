@@ -507,7 +507,9 @@ class OpenLbr(eventBusClient.eventBusClient):
 
         with self.bierLock:
             if self.sendWithBier:
+                s = 0
                 bitmaplen = 0
+                bier_6lorh_type = None
                 if len(self.bierBitmap) <= 256:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_15
                     s = (len(self.bierBitmap) - 1) / 8

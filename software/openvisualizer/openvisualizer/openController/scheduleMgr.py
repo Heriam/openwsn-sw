@@ -9,13 +9,11 @@ Contains openController component for centralized scheduling of the motes. It us
 '''
 
 import logging
-import json
 log = logging.getLogger('scheduleMgr')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
 import threading
-from openvisualizer.moteState.moteState import moteState as msParam
 from openvisualizer.eventBus.eventBusClient import eventBusClient
 
 
@@ -119,9 +117,10 @@ class scheduleMgr(eventBusClient):
         clears Shared slots on all motes.
 
         '''
-        for slot in self.runningFrame[:]:
-            if slot[self.PARAMS_SHARED] and slot[self.PARAMS_SLOTOFF]:
-                self._slotOperation(self.OPT_DELETE, slot)
+        with self.stateLock:
+            for slot in self.runningFrame[:]:
+                if slot[self.PARAMS_SHARED] and slot[self.PARAMS_SLOTOFF]:
+                    self._slotOperation(self.OPT_DELETE, slot)
 
 
     def getRunningFrame(self):
@@ -229,7 +228,7 @@ class scheduleMgr(eventBusClient):
             if operation == self.OPT_ADD and not self._isAvailable(slotInfoDict):
                 return
             slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TXRX
-            self._cmdAllMotes([msParam.INSTALL_SCHEDULE,
+            self._cmdAllMotes(['schedule',
                                self.frameID,
                                operation,
                                slotInfoDict])
@@ -242,7 +241,7 @@ class scheduleMgr(eventBusClient):
             if txMote:
                 slotInfoDict[self.PARAMS_TYPE] = self.TYPE_TX
                 self._cmdMote([txMote],
-                               [msParam.INSTALL_SCHEDULE,
+                               ['schedule',
                                self.frameID,
                                operation,
                                slotInfoDict])
@@ -250,7 +249,7 @@ class scheduleMgr(eventBusClient):
             if rxMoteList:
                 slotInfoDict[self.PARAMS_TYPE] = self.TYPE_RX
                 self._cmdMote(rxMoteList,
-                               [msParam.INSTALL_SCHEDULE,
+                               ['schedule',
                                self.frameID,
                                operation,
                                slotInfoDict])
@@ -266,12 +265,12 @@ class scheduleMgr(eventBusClient):
         '''
 
         if moteList== 'all':
-            self._cmdAllMotes([msParam.INSTALL_SCHEDULE,
+            self._cmdAllMotes(['schedule',
                                self.frameID, operation,
                                slotFrameInfo])
         else:
             self._cmdMote(moteList,
-                           [msParam.INSTALL_SCHEDULE,
+                           ['schedule',
                            self.frameID, operation,
                            slotFrameInfo])
 
@@ -304,12 +303,12 @@ class scheduleMgr(eventBusClient):
 
         returnVal  = self._dispatchAndGetResult(
             signal = 'getStateElem',
-            data   = msParam.ST_SCHEDULE
+            data   = 'Schedule'
         )
 
         # gets the schedule of every mote
-        for moteID, moteSchedule in returnVal.items():
-
+        for mote64bID, moteSchedule in returnVal.items():
+            moteID = ''.join(['%02x' % b for b in mote64bID[6:]])
             # removes unscheduled cells
             for slotEntry in moteSchedule[:]:
                 if slotEntry[self.PARAMS_TYPE] == '0 (OFF)':

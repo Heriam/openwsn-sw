@@ -9,17 +9,18 @@
 
 '''
 import threading
-import scheduleMgr
 import json
 import logging
 log = logging.getLogger('openController')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
+from openvisualizer.eventBus import eventBusClient
 from moteDriver  import moteDriver  as md
 from scheduleMgr import scheduleMgr as sm
+from topologyMgr import topologyMgr as tm
 
-class openController():
+class openController(eventBusClient.eventBusClient):
 
 
     def __init__(self, moteStates):
@@ -28,17 +29,21 @@ class openController():
         log.info("create instance")
 
         # store params
-        self.stateLock      = threading.Lock()
+        self.startupLock      = threading.Lock()
+        self.runningLock      = threading.Lock()
         self.name           = 'openController'
 
         # initiate startupConfig
-        self.startupConfig  = {sm.KEY_ROOTLIST: [],
-                               sm.KEY_SLOTFRAMES: {}}
+        self.startupConfig  = {}
+        self.runningConfig  = {}
         self.loadConfig()
 
         # initiate scheduleMgr
         self.moteDriver     = md(moteStates)
+        self.topologyMgr    = tm()
         self.scheduleMgrs   = [sm(frameID) for frameID in self.startupConfig[sm.KEY_SLOTFRAMES].keys()]
+
+        eventBusClient.eventBusClient.__init__(self,"openController", registrations=[])
 
 
     # ==================== public =======================
@@ -48,15 +53,15 @@ class openController():
         loads the configDict if explicitly specified
         otherwise it loads the default configFile stored in schedule.json.
         '''
-
-        if config:
-            self.startupConfig = config
-        else:
-            try:
-                with open('openvisualizer/openController/schedule.json') as json_file:
-                    self.startupConfig = json.load(json_file)
-            except IOError as err:
-                log.debug("failed to load default startupSchedule. {0}".format(err))
+        with self.startupLock:
+            if config:
+                self.startupConfig = config
+            else:
+                try:
+                    with open('openvisualizer/openController/schedule.json') as json_file:
+                        self.startupConfig = json.load(json_file)
+                except IOError as err:
+                    log.debug("failed to load default startupSchedule. {0}".format(err))
 
 
     def initNetwork(self):
@@ -66,26 +71,20 @@ class openController():
         :param: scheduleSDict: a slotFrameInfo dictionary containing frameLength, frameID, slotInfoList
 
         '''
+        with self.startupLock:
+            newRoots = self.startupConfig[sm.KEY_ROOTLIST] if self.startupConfig else []
 
-        newRoots = self.startupConfig[sm.KEY_ROOTLIST]
-
-        # installs schedule
-        for frameID, slotFrame in self.startupConfig[sm.KEY_SLOTFRAMES].items():
-            smgr = self.getScheduleMgr(frameID)
-            if smgr:
-                smgr.installFrame(slotFrame, newRoots)
-            else:
-                log.debug('Not scheduleMgr found for slotFrame {0}'.format(frameID))
-
-        # Toggle DAGroot if not yet configured
-        if not self.getRootList():
-            for moteid in newRoots:
-                ms = self.moteDriver.getMoteState(moteid)
-                if ms:
-                    log.debug('Found mote {0} in moteStates'.format(moteid))
-                    ms.triggerAction(ms.TRIGGER_DAGROOT)
+            # installs schedule
+            for frameID, slotFrame in self.startupConfig[sm.KEY_SLOTFRAMES].items():
+                smgr = self.getScheduleMgr(frameID)
+                if smgr:
+                    smgr.installFrame(slotFrame, newRoots)
                 else:
-                    log.debug('Mote {0} not found in moteStates'.format(moteid))
+                    log.debug('Not scheduleMgr found for slotFrame {0}'.format(frameID))
+
+            # Toggle DAGroot if not yet configured
+            if not self.getRootList():
+                self.dispatch(signal='cmdMote', data=[newRoots, 'DAGroot'])
 
     def getRootList(self):
         '''
@@ -110,20 +109,21 @@ class openController():
         :returns: running Schedule on WebUI
 
         '''
-        schedule = {
-            sm.KEY_ROOTLIST: self.getRootList(),
-            sm.KEY_SLOTFRAMES: {}
-        }
-        for smgr in self.scheduleMgrs:
-            schedule[sm.KEY_SLOTFRAMES].update(smgr.getRunningFrame())
-        return schedule
+        with self.runningLock:
+            self.runningConfig[sm.KEY_ROOTLIST] = self.getRootList()
+            self.runningConfig[sm.KEY_SLOTFRAMES] = {}
+            for smgr in self.scheduleMgrs:
+                self.runningConfig[sm.KEY_SLOTFRAMES].update(smgr.getRunningFrame())
+
+        return self.runningConfig
 
     def getStartupSchedule(self):
         '''
         :returns: startup Schedule on WebUI
 
         '''
-        return self.startupConfig
+        with self.startupLock:
+            return self.startupConfig
 
 
     # ============================ private ===================================

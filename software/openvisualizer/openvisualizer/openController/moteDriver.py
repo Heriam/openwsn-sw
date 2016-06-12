@@ -26,6 +26,7 @@ class moteDriver(eventBusClient.eventBusClient):
         # store params
         self.stateLock         = threading.Lock()
         self.moteStates        = moteStates
+        self.rootList          = []
 
         eventBusClient.eventBusClient.__init__(
             self,
@@ -45,19 +46,23 @@ class moteDriver(eventBusClient.eventBusClient):
                     'sender': self.WILDCARD,
                     'signal': 'cmdAllMotes',
                     'callback': self._cmdAllMotes,
+                },
+                {
+                    'sender': self.WILDCARD,
+                    'signal': 'infoDagRoot',
+                    'callback': self._updateRootList,
                 }
             ])
 
 
     # ========================== public ================================
 
-
     def getMoteState(self, moteid):
         '''
         Returns the moteState object for the provided connected mote.
 
         :param moteid: 16-bit ID of mote
-        :rtype: moteState or None if not found
+        :rtype:        moteState or None if not found
         '''
         for ms in self.moteStates:
             idManager = ms.getStateElem(ms.ST_IDMANAGER)
@@ -68,35 +73,12 @@ class moteDriver(eventBusClient.eventBusClient):
         else:
             return None
 
-    def getMoteID(self, ms):
-        '''
-        Returns the moteID for the provided moteState.
-
-        :param ms: moteState object of a mote
-        :rtype: moteID or None if not found
-        '''
-        addr = ms.getStateElem(ms.ST_IDMANAGER).get16bAddr()
-        if addr:
-            return ''.join(['%02x' % b for b in addr])
-        else:
-            return None
-
     def getRootList(self):
-        '''
-        Returns the moteID for the provided moteState.
-
-        :rtype: a list of DAGroot
-        '''
-        rootList = []
-        for ms in self.moteStates:
-            if json.loads(ms.getStateElem(ms.ST_IDMANAGER).toJson('data'))[0]['isDAGroot']:
-                rootList.append(self.getMoteID(ms))
-
-        return rootList
+        return self.rootList
 
     # ========================= private =======================
 
-    def _cmdMote(self,sender,signal,data):
+    def _cmdMote(self, sender, signal, data):
         '''
         :param data: [motelist, cmd]
 
@@ -111,7 +93,7 @@ class moteDriver(eventBusClient.eventBusClient):
             else:
                 log.debug('Mote {0} not found in moteStates'.format(moteid))
 
-    def _cmdAllMotes(self,sender,signal,data):
+    def _cmdAllMotes(self, sender, signal, data):
 
         log.info('Sending command to all the motes')
         for ms in self.moteStates:
@@ -120,9 +102,20 @@ class moteDriver(eventBusClient.eventBusClient):
     def _getStateElem_dict(self,sender,signal,data):
 
         returnVal = {}
-        for ms in self.moteStates:
-            moteID = self.getMoteID(ms)
-            stateElem = json.loads(ms.getStateElem(data).toJson('data'))
-            returnVal[moteID] = stateElem
-
+        with self.stateLock:
+            for ms in self.moteStates:
+                idManager = ms.getStateElem(ms.ST_IDMANAGER)
+                if idManager and idManager.get64bAddr():
+                    mote64bID = tuple(idManager.get64bAddr())
+                    stateElem = json.loads(ms.getStateElem(data).toJson('data'))
+                    returnVal[mote64bID] = stateElem
         return returnVal
+
+    def _updateRootList(self,sender,signal,data):
+
+        addr = data['eui64'][:]
+        if data['isDAGroot']:
+            if not addr in self.rootList:
+                self.rootList.append(addr)
+        elif addr in self.rootList:
+            self.rootList.remove(addr)
