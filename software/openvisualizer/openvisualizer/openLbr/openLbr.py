@@ -135,6 +135,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.networkPrefix        = None
         self.dagRootEui64         = None
         self.sendWithBier         = False
+        self.bierAuto             = False
         self.bierLock             = threading.Lock()
         self.bierBitmap           = '11111111'
          
@@ -178,6 +179,14 @@ class OpenLbr(eventBusClient.eventBusClient):
         '''
         return self.sendWithBier
 
+    def getBierAuto(self):
+        '''
+        Returns the boolean self.BierAuto.
+
+        :rtype:        boolean
+        '''
+        return self.bierAuto
+
     def getBierBitmap(self):
         '''
         Returns the bierBitMap currently used.
@@ -203,6 +212,15 @@ class OpenLbr(eventBusClient.eventBusClient):
         '''
         with self.bierLock :
             self.bierBitmap = b
+
+    def setBierAuto(self, b):
+        '''
+        Specify if we use automatic track setup and scheduling
+
+        :param b:      boolean
+        '''
+        with self.bierLock :
+            self.bierAuto =b
     
     #======================== private =========================================
     
@@ -507,6 +525,8 @@ class OpenLbr(eventBusClient.eventBusClient):
 
         with self.bierLock:
             if self.sendWithBier:
+                if self.bierAuto:
+                    self.bierBitmap = self._getBitmap(lowpan['dst_addr'][8:])
                 s = 0
                 bitmaplen = 0
                 bier_6lorh_type = None
@@ -514,15 +534,15 @@ class OpenLbr(eventBusClient.eventBusClient):
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_15
                     s = (len(self.bierBitmap) - 1) / 8
                     bitmaplen = (s + 1) * 8
-                elif len(bitmap) <= 512:
+                elif len(self.bierBitmap) <= 512:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_16
                     s = (len(self.bierBitmap) - 1) / 16
                     bitmaplen = (s + 1) * 16
-                elif len(bitmap) <= 1024:
+                elif len(self.bierBitmap) <= 1024:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_17
                     s = (len(self.bierBitmap) - 1) / 32
                     bitmaplen = (s + 1) * 32
-                elif len(bitmap) <= 2048:
+                elif len(self.bierBitmap) <= 2048:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_18
                     s = (len(self.bierBitmap) - 1) / 64
                     bitmaplen = (s + 1) * 64
@@ -710,7 +730,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         returnVal           += lowpan['payload']
 
         if self.sendWithBier :
-            print 'Message sent with bitmap : {0}'.format(self.bierBitmap)
+            print 'Message sent to dst {0} with bitmap : {1}'.format(''.join(['%02x' % b for b in lowpan['dst_addr'][14:]]), self.bierBitmap)
 
         return returnVal
     
@@ -921,7 +941,14 @@ class OpenLbr(eventBusClient.eventBusClient):
             data         = destination,
         )
         return returnVal
-    
+
+    def _getBitmap(self, destination):
+        returnVal = self._dispatchAndGetResult(
+            signal       = 'getBitmap',
+            data         = destination,
+        )
+        return returnVal
+
     def _setPrefix_notif(self,sender,signal, data):
         '''
         Record the network prefix.

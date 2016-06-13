@@ -141,7 +141,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.websrv.route(path='/controller',                         callback=self._showController)
             self.websrv.route(path='/schedule/:cmddata',                  callback=self._schedule)
             self.websrv.route(path='/setbitmap/:bitmap',                  callback=self._setbitmap)
-            self.websrv.route(path='/bier/:onoff',                        callback=self._bieronoff)
+            self.websrv.route(path='/bier/:params',                       callback=self._bierparams)
 
     @view('controller.tmpl')
     def _showController(self, moteid = None):
@@ -152,7 +152,9 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         tmplData = {
             'roverMode': self.roverMode,
             'ctrlMode' : self.ctrlMode,
-            'sim_mode' : self.simMode
+            'sim_mode' : self.simMode,
+            'enable_bier' : self.app.getOpenLbr().getSendWithBier(),
+            'auto_bier'   : self.app.getOpenLbr().getBierAuto()
         }
         return tmplData
 
@@ -177,7 +179,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             defaultMgr.clearSharedSlots()
             return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showrun":
-            self.openController.topologyMgr.updateTopology()
             return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showstartup":
             return json.dumps(self.openController.getStartupSchedule())
@@ -204,21 +205,26 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.app.getOpenLbr().setBierBitmap(bitmap)
         return {"result" : "success"}
 
-    def _bieronoff(self, onoff):
+    def _bierparams(self, params):
         '''
         Enables or disabled the use of BIER to send messages
 
-        :param onoff: string 'on' or 'off'
+        :param params: string of params
         '''
-        if onoff == 'on' :
+        if params == 'on' :
             self.app.getOpenLbr().setSendWithBier(True)
             return {"result" : "success"}
-        if onoff == 'off' :
+        if params == 'off' :
             self.app.getOpenLbr().setSendWithBier(False)
             return {"result" : "success"}
+        if params == 'autoon':
+            self.app.getOpenLbr().setBierAuto(True)
+            return {"result": "success"}
+        if params == 'autooff':
+            self.app.getOpenLbr().setBierAuto(False)
+            return {"result": "success"}
         else :
             return {"result": "fail"}
-
 
     @view('rovers.tmpl')
     def _showrovers(self):

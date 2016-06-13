@@ -12,7 +12,6 @@ import logging
 log = logging.getLogger('scheduleMgr')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
-
 import threading
 from openvisualizer.eventBus.eventBusClient import eventBusClient
 
@@ -41,6 +40,7 @@ class scheduleMgr(eventBusClient):
 
     # default values
     SLOTFRAME_DEFAULT        = '1'
+    CHANNELOFF_DEFAULT       = 0
     FRAMELENGTH_DEFAULT      = 20
 
     # operation types
@@ -73,6 +73,7 @@ class scheduleMgr(eventBusClient):
         self.frameLen          = self.FRAMELENGTH_DEFAULT
         self.frameID           = frameID
         self.runningFrame      = []
+        self.firstAvailableSlot= 4
 
         # give this thread a name
         self.name = 'scheduleMgr@{0}'.format(self.frameID)
@@ -81,7 +82,13 @@ class scheduleMgr(eventBusClient):
         eventBusClient.__init__(
             self,
             self.name,
-            registrations=[]
+            registrations=[
+                {
+                    'sender'  : self.WILDCARD,
+                    'signal'  : 'installTrack',
+                    'callback': self._installNewTrack
+                }
+            ]
         )
 
 
@@ -117,10 +124,10 @@ class scheduleMgr(eventBusClient):
         clears Shared slots on all motes.
 
         '''
-        with self.stateLock:
-            for slot in self.runningFrame[:]:
-                if slot[self.PARAMS_SHARED] and slot[self.PARAMS_SLOTOFF]:
-                    self._slotOperation(self.OPT_DELETE, slot)
+
+        for slot in self.runningFrame[:]:
+            if slot[self.PARAMS_SHARED] and slot[self.PARAMS_SLOTOFF]:
+                self._slotOperation(self.OPT_DELETE, slot)
 
 
     def getRunningFrame(self):
@@ -195,7 +202,7 @@ class scheduleMgr(eventBusClient):
         '''
         
         atInit = True
-        for slotElem in self.runningFrame:
+        for slotElem in self.runningFrame[:]:
             if slotElem[self.PARAMS_SLOTOFF] == 0:
                 atInit = False
         return atInit
@@ -208,7 +215,7 @@ class scheduleMgr(eventBusClient):
         '''
         
         available = True
-        if self._existSlot(slot, self.runningFrame):
+        if self._existSlot(slot, self.runningFrame[:]):
             available = False
         return available
 
@@ -284,14 +291,17 @@ class scheduleMgr(eventBusClient):
 
     def _cmdMote(self, motelist, cmd):
         '''
-        :param: cmd: [motelist, command]
+        :param: cmd: ['motelist':[], 'cmd':]
 
         '''
 
         #dispatch command
         self.dispatch(
             signal = 'cmdMote',
-            data   = [motelist] + cmd
+            data   = {
+                'motelist': motelist,
+                'cmd'     : cmd
+            }
         )
 
     def _updateRunningFrame(self):
@@ -333,3 +343,34 @@ class scheduleMgr(eventBusClient):
                         slotEntry[self.PARAMS_TXMOTEID] = None
                         slotEntry[self.PARAMS_RXMOTELIST] = [moteID]
                     self.runningFrame.append(slotEntry)
+
+    def _installOnFirstAvailableSlot(self, slotInfo):
+
+        slotInfo[self.PARAMS_SLOTOFF] = self.firstAvailableSlot
+        while not self._isAvailable(slotInfo):
+            self.firstAvailableSlot += 1
+            slotInfo[self.PARAMS_SLOTOFF] = self.firstAvailableSlot
+
+        self._slotOperation(self.OPT_ADD, slotInfo)
+        self.firstAvailableSlot +=1
+
+    # ========================= eventbus ===================================
+
+    def _installNewTrack(self,sender,signal,data):
+
+        newTrack = data
+        trackID  = newTrack.graph['trackID']
+        edges = newTrack.graph['orderList']
+        for (txMote, rxMote) in edges:
+            txMoteID = ''.join(['%02x' % b for b in txMote[6:]])
+            rxMoteID = ''.join(['%02x' % b for b in rxMote[6:]])
+            bitIndex = newTrack[txMote][rxMote]['bitIndex']
+            newSlotInfo = {
+                self.PARAMS_TXMOTEID   : txMoteID,
+                self.PARAMS_RXMOTELIST : [rxMoteID],
+                self.PARAMS_BITINDEX   : bitIndex,
+                self.PARAMS_TRACKID    : trackID,
+                self.PARAMS_SHARED     : False,
+                self.PARAMS_CHANNELOFF : self.CHANNELOFF_DEFAULT
+            }
+            self._installOnFirstAvailableSlot(newSlotInfo)

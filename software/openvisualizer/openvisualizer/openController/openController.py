@@ -29,8 +29,7 @@ class openController(eventBusClient.eventBusClient):
         log.info("create instance")
 
         # store params
-        self.startupLock      = threading.Lock()
-        self.runningLock      = threading.Lock()
+        self.stateLock      = threading.Lock()
         self.name           = 'openController'
 
         # initiate startupConfig
@@ -53,15 +52,15 @@ class openController(eventBusClient.eventBusClient):
         loads the configDict if explicitly specified
         otherwise it loads the default configFile stored in schedule.json.
         '''
-        with self.startupLock:
-            if config:
-                self.startupConfig = config
-            else:
-                try:
-                    with open('openvisualizer/openController/schedule.json') as json_file:
-                        self.startupConfig = json.load(json_file)
-                except IOError as err:
-                    log.debug("failed to load default startupSchedule. {0}".format(err))
+
+        if config:
+            self.startupConfig = config
+        else:
+            try:
+                with open('openvisualizer/openController/schedule.json') as json_file:
+                    self.startupConfig = json.load(json_file)
+            except IOError as err:
+                log.debug("failed to load default startupSchedule. {0}".format(err))
 
 
     def initNetwork(self):
@@ -71,27 +70,27 @@ class openController(eventBusClient.eventBusClient):
         :param: scheduleSDict: a slotFrameInfo dictionary containing frameLength, frameID, slotInfoList
 
         '''
-        with self.startupLock:
-            newRoots = self.startupConfig[sm.KEY_ROOTLIST] if self.startupConfig else []
 
-            # installs schedule
-            for frameID, slotFrame in self.startupConfig[sm.KEY_SLOTFRAMES].items():
-                smgr = self.getScheduleMgr(frameID)
-                if smgr:
-                    smgr.installFrame(slotFrame, newRoots)
-                else:
-                    log.debug('Not scheduleMgr found for slotFrame {0}'.format(frameID))
+        newRoots = self.startupConfig[sm.KEY_ROOTLIST] if self.startupConfig else []
 
-            # Toggle DAGroot if not yet configured
-            if not self.getRootList():
-                self.dispatch(signal='cmdMote', data=[newRoots, 'DAGroot'])
+        # installs schedule
+        for frameID, slotFrame in self.startupConfig[sm.KEY_SLOTFRAMES].items():
+            smgr = self.getScheduleMgr(frameID)
+            if smgr:
+                smgr.installFrame(slotFrame, newRoots)
+            else:
+                log.debug('Not scheduleMgr found for slotFrame {0}'.format(frameID))
 
-    def getRootList(self):
+        # Toggle DAGroot if not yet configured
+        if not self.getDagRootList():
+            self.dispatch(signal='cmdMote', data={'motelist':newRoots, 'cmd':'DAGroot'})
+
+    def getDagRootList(self):
         '''
         :returns rootList
 
         '''
-        return self.moteDriver.getRootList()
+        return self.topologyMgr.getDagRootList()
 
     def getScheduleMgr(self, frameID):
         '''
@@ -109,11 +108,11 @@ class openController(eventBusClient.eventBusClient):
         :returns: running Schedule on WebUI
 
         '''
-        with self.runningLock:
-            self.runningConfig[sm.KEY_ROOTLIST] = self.getRootList()
-            self.runningConfig[sm.KEY_SLOTFRAMES] = {}
-            for smgr in self.scheduleMgrs:
-                self.runningConfig[sm.KEY_SLOTFRAMES].update(smgr.getRunningFrame())
+        rootlist = [''.join(['%02x' % b for b in addr[6:]]) for addr in self.getDagRootList()]
+        self.runningConfig[sm.KEY_ROOTLIST] = rootlist
+        self.runningConfig[sm.KEY_SLOTFRAMES] = {}
+        for smgr in self.scheduleMgrs:
+            self.runningConfig[sm.KEY_SLOTFRAMES].update(smgr.getRunningFrame())
 
         return self.runningConfig
 
@@ -122,8 +121,7 @@ class openController(eventBusClient.eventBusClient):
         :returns: startup Schedule on WebUI
 
         '''
-        with self.startupLock:
-            return self.startupConfig
+        return self.startupConfig
 
 
     # ============================ private ===================================

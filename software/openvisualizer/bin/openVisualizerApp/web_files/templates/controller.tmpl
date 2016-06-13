@@ -75,7 +75,16 @@
 	                <div class="col-lg-12">
 		                <input id="bitmap_manual" type="text" placeholder="insert bierbitmap here">
 		                <button id="bitmap_btn" type="button" class="btn btn-default btn-xs">Change bitmap</button>&nbsp;&nbsp;
-		                <input type="checkbox" id="bierbool" /> Enable BIER
+		                <input type="checkbox" id="bierbool" \
+		                    % if enable_bier:
+		                        checked="checked" \
+		                    % end
+		                /> Enable BIER
+		                <input type="checkbox" id="autobierbool" \
+		                    % if auto_bier:
+		                        checked="checked" \
+		                    % end
+		                /> Automation
 		            </div><hr>
                 	<div class="col-lg-12">
                 	    <input type="file" id="upload_schedule" style="display: inline-block">
@@ -113,9 +122,6 @@
                             $( "#bitmap_btn" )
 		                        .button()
 			                    .click(function( event ) {
-			                        if (intervalID != null){
-                                        clearInterval(intervalID);
-                                    }
                                     newbitmap = $("#bitmap_manual").val();
                                     if (newbitmap != ''){
                                         $.ajax({
@@ -140,6 +146,24 @@
 			                        $.ajax({
 			                            dataType: "json",
 			                            url: "/bier/off",
+			                            error: errorOnAjax
+			                        });
+                                 }
+                            });
+
+                            $("#autobierbool").on('change',function(){
+                                 if($(this).is(':checked')){
+                                    console.log('Enabling Automation');
+			                        $.ajax({
+			                            dataType: "json",
+			                            url: "/bier/autoon",
+			                            error: errorOnAjax
+			                        });
+                                 } else{
+                                    console.log('Disabling Automation');
+			                        $.ajax({
+			                            dataType: "json",
+			                            url: "/bier/autooff",
 			                            error: errorOnAjax
 			                        });
                                  }
@@ -259,7 +283,7 @@
                                                     } else if (this['type'] == '4 (SERIALRX)'){
                                                         tbl_row += 'SERIALRX';
                                                     } else {
-                                                        tbl_row += this['txMoteID'] + "->" + this['rxMoteList'];
+                                                        tbl_row += this['txMoteID'] + "-"+ this['bitIndex'] +">" + this['rxMoteList'];
                                                     }
                                                 }
                                             });

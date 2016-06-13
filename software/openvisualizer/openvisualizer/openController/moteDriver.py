@@ -26,7 +26,6 @@ class moteDriver(eventBusClient.eventBusClient):
         # store params
         self.stateLock         = threading.Lock()
         self.moteStates        = moteStates
-        self.rootList          = []
 
         eventBusClient.eventBusClient.__init__(
             self,
@@ -46,11 +45,6 @@ class moteDriver(eventBusClient.eventBusClient):
                     'sender': self.WILDCARD,
                     'signal': 'cmdAllMotes',
                     'callback': self._cmdAllMotes,
-                },
-                {
-                    'sender': self.WILDCARD,
-                    'signal': 'infoDagRoot',
-                    'callback': self._updateRootList,
                 }
             ])
 
@@ -73,23 +67,21 @@ class moteDriver(eventBusClient.eventBusClient):
         else:
             return None
 
-    def getRootList(self):
-        return self.rootList
 
     # ========================= private =======================
 
     def _cmdMote(self, sender, signal, data):
         '''
-        :param data: [motelist, cmd]
+        :param data: {'motelist':[], 'cmd':}
 
         '''
-        motelist = data[0]
+        motelist = data['motelist']
         for moteid in motelist:
             log.info('Sending command to mote {0}'.format(moteid))
             ms = self.getMoteState(moteid)
             if ms:
                 log.debug('Found mote {0} in moteStates'.format(moteid))
-                ms.triggerAction(data[1:])
+                ms.triggerAction(data['cmd'])
             else:
                 log.debug('Mote {0} not found in moteStates'.format(moteid))
 
@@ -110,12 +102,3 @@ class moteDriver(eventBusClient.eventBusClient):
                     stateElem = json.loads(ms.getStateElem(data).toJson('data'))
                     returnVal[mote64bID] = stateElem
         return returnVal
-
-    def _updateRootList(self,sender,signal,data):
-
-        addr = data['eui64'][:]
-        if data['isDAGroot']:
-            if not addr in self.rootList:
-                self.rootList.append(addr)
-        elif addr in self.rootList:
-            self.rootList.remove(addr)
