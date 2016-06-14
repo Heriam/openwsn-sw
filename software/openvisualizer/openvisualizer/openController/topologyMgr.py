@@ -29,7 +29,7 @@ class topologyMgr(eventBusClient.eventBusClient):
         log.info("create instance")
 
         # store params
-        self.stateLock         = threading.Lock()
+        self.topoLock         = threading.Lock()
         self.topo              = nx.Graph()
         self.rootEui64List     = []
         self.tracks            = []
@@ -84,6 +84,14 @@ class topologyMgr(eventBusClient.eventBusClient):
 
         return None
 
+    def getRepType(self):
+
+        return self.repType
+
+    def setRepTYpe(self, t):
+
+        self.repType = t
+
     # ============================== eventbus ===================================
 
 
@@ -97,7 +105,7 @@ class topologyMgr(eventBusClient.eventBusClient):
             data='Neighbors'
         )
 
-        with self.stateLock:
+        with self.topoLock:
             self.topo.clear()
             # gets the schedule of every mote
             for mote64bID, neiList in returnVal.items():
@@ -129,13 +137,14 @@ class topologyMgr(eventBusClient.eventBusClient):
 
         bitMap = self.getBitmap(dst)
         if bitMap:
-            print '======inTrack Destination====='
+            print '======  inTrack Destination  ======'
             return bitMap
         else:
             inTrack = self.getTrack(dst)
             if not inTrack:
                 self._installNewTrack(dst)
-
+            else:
+                print '======  inTrack Destination  ======'
             return self._computeBitmap(dst)
 
     # ================================ private ==============================
@@ -172,7 +181,7 @@ class topologyMgr(eventBusClient.eventBusClient):
 
     def _computeNewTrack(self, dst):
 
-        with self.stateLock:
+        with self.topoLock:
             furthestNode = list(nx.bfs_tree(self.topo, self.rootEui64List[0]))[0]
             backboneTrack = self._computeTrack(furthestNode)
             if dst in backboneTrack:

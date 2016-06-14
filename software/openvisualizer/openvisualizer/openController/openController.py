@@ -9,7 +9,6 @@
 
 '''
 import threading
-import json
 import logging
 log = logging.getLogger('openController')
 log.setLevel(logging.ERROR)
@@ -32,58 +31,22 @@ class openController(eventBusClient.eventBusClient):
         self.stateLock      = threading.Lock()
         self.name           = 'openController'
 
-        # initiate startupConfig
-        self.startupConfig  = {}
-        self.runningConfig  = {}
-        self.loadConfig()
-
         # initiate scheduleMgr
         self.moteDriver     = md(moteStates)
         self.topologyMgr    = tm()
-        self.scheduleMgrs   = [sm(frameID) for frameID in self.startupConfig[sm.KEY_SLOTFRAMES].keys()]
+        self.scheduleMgr    = sm()
 
         eventBusClient.eventBusClient.__init__(self,"openController", registrations=[])
 
 
     # ==================== public =======================
 
-    def loadConfig(self, config=None):
+    def getMoteDriver(self):
         '''
-        loads the configDict if explicitly specified
-        otherwise it loads the default configFile stored in schedule.json.
-        '''
-
-        if config:
-            self.startupConfig = config
-        else:
-            try:
-                with open('openvisualizer/openController/schedule.json') as json_file:
-                    self.startupConfig = json.load(json_file)
-            except IOError as err:
-                log.debug("failed to load default startupSchedule. {0}".format(err))
-
-
-    def initNetwork(self):
-        '''
-        installs the schedule
-
-        :param: scheduleSDict: a slotFrameInfo dictionary containing frameLength, frameID, slotInfoList
+        :returns moteDriver
 
         '''
-
-        newRoots = self.startupConfig[sm.KEY_ROOTLIST] if self.startupConfig else []
-
-        # installs schedule
-        for frameID, slotFrame in self.startupConfig[sm.KEY_SLOTFRAMES].items():
-            smgr = self.getScheduleMgr(frameID)
-            if smgr:
-                smgr.installFrame(slotFrame, newRoots)
-            else:
-                log.debug('Not scheduleMgr found for slotFrame {0}'.format(frameID))
-
-        # Toggle DAGroot if not yet configured
-        if not self.getDagRootList():
-            self.dispatch(signal='cmdMote', data={'motelist':newRoots, 'cmd':'DAGroot'})
+        return self.moteDriver
 
     def getDagRootList(self):
         '''
@@ -92,36 +55,21 @@ class openController(eventBusClient.eventBusClient):
         '''
         return self.topologyMgr.getDagRootList()
 
-    def getScheduleMgr(self, frameID):
-        '''
-        :returns: scheduleMgr Object
 
+    def getTopoMgr(self):
         '''
-        for schemgr in self.scheduleMgrs:
-            if schemgr.getFrameID() == frameID:
-                return schemgr
-
-        return None
-
-    def getRunningSchedule(self):
-        '''
-        :returns: running Schedule on WebUI
+        :returns: topoMgr
 
         '''
-        rootlist = [''.join(['%02x' % b for b in addr[6:]]) for addr in self.getDagRootList()]
-        self.runningConfig[sm.KEY_ROOTLIST] = rootlist
-        self.runningConfig[sm.KEY_SLOTFRAMES] = {}
-        for smgr in self.scheduleMgrs:
-            self.runningConfig[sm.KEY_SLOTFRAMES].update(smgr.getRunningFrame())
+        return self.topologyMgr
 
-        return self.runningConfig
 
-    def getStartupSchedule(self):
+    def getScheduleMgr(self):
         '''
-        :returns: startup Schedule on WebUI
+        :returns: scheduleMgr scheduleMgr
 
         '''
-        return self.startupConfig
+        return self.scheduleMgr
 
 
     # ============================ private ===================================

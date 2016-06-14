@@ -80,7 +80,11 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
 
         # used for controller mode
         if self.ctrlMode:
-            self.openController = self.app.openController
+            self.openController = self.app.getOpenController()
+            self.sm             = self.openController.getScheduleMgr()
+            self.startupConfig  = {}
+            self._loadConfig()
+            self.schedule = self.sm.getSchedule()
 
         # To find page templates
         bottle.TEMPLATE_PATH.append('{0}/web_files/templates/'.format(self.app.datadir))
@@ -164,30 +168,29 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         '''
 
         cmd, data = cmddata.split('@')
-        defaultMgr = self.openController.getScheduleMgr('1')
         if   cmd == "install":
-            self.openController.initNetwork()
-            return json.dumps(self.openController.getRunningSchedule())
+            self.sm.installSchedule(self.startupConfig)
+            return json.dumps(self.sm.getRunningSchedules())
         elif cmd == "clearbier":
-            defaultMgr.clearBIERslots()
-            return json.dumps(self.openController.getRunningSchedule())
+            self.schedule.configFrame('clear')
+            return json.dumps(self.sm.getRunningSchedules())
         elif cmd == "clearshared":
-            defaultMgr.clearSharedSlots()
-            return json.dumps(self.openController.getRunningSchedule())
+            self.schedule.clearSharedSlots()
+            return json.dumps(self.sm.getRunningSchedules())
         elif cmd == "clearall":
-            defaultMgr.clearBIERslots()
-            defaultMgr.clearSharedSlots()
-            return json.dumps(self.openController.getRunningSchedule())
+            self.schedule.configFrame('clear')
+            self.schedule.clearSharedSlots()
+            return json.dumps(self.sm.getRunningSchedules())
         elif cmd == "showrun":
-            return json.dumps(self.openController.getRunningSchedule())
+            return json.dumps(self.sm.getRunningSchedules())
         elif cmd == "showstartup":
-            return json.dumps(self.openController.getStartupSchedule())
+            return json.dumps(self.startupConfig)
         elif cmd == "upload":
-            self.openController.loadConfig(json.loads(data))
-            return json.dumps(self.openController.getStartupSchedule())
+            self._loadConfig(json.loads(data))
+            return json.dumps(self.startupConfig)
         elif cmd == "default":
-            self.openController.loadConfig()
-            return json.dumps(self.openController.getStartupSchedule())
+            self._loadConfig()
+            return json.dumps(self.startupConfig)
         else:
             return '{"result" : "failed"}'
 
@@ -225,6 +228,23 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             return {"result": "success"}
         else :
             return {"result": "fail"}
+
+    def _loadConfig(self, config=None):
+        '''
+        loads the schedule if explicitly specified
+
+        otherwise it loads the default configFile stored in schedule.json.
+        '''
+
+        if config:
+            self.startupConfig = config
+        else:
+            try:
+                with open('openvisualizer/openController/schedule.json') as json_file:
+                    self.startupConfig = json.load(json_file)
+            except IOError as err:
+                log.debug("failed to load default startupSchedule. {0}".format(err))
+
 
     @view('rovers.tmpl')
     def _showrovers(self):

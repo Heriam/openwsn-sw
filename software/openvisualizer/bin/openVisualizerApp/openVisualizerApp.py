@@ -223,6 +223,14 @@ class OpenVisualizerApp(object):
         '''
         return self.openLbr
 
+    def getOpenController(self):
+        '''
+        Returns the openController Object.
+
+        :rtype: OpenController
+        '''
+        return self.openController
+
     def refreshRoverMotes(self, roverMotes):
         '''Connects the list of roverMotes to openvisualiser.
 

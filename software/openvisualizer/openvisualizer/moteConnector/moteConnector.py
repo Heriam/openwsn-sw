@@ -15,7 +15,7 @@ from pydispatch import dispatcher
 
 from openvisualizer.eventBus       import eventBusClient
 from openvisualizer.moteState      import moteState
-from openvisualizer.openController.scheduleMgr import scheduleMgr as sm
+from openvisualizer.openController.scheduleMgr import Schedule as sm
 
 import OpenParser
 import ParserException

@@ -98,11 +98,16 @@
 
                         <hr>
                         <div class = "row">
-                            <div class="col-lg-6">
+                            <div class="col-lg-6" style="display: inline-block">
                                 <b >Running Schedule:</b>
                             </div>
                             <div class="col-lg-6">
-                                <b style="display: inline-block">DAGroot:</b> <p style="display: inline-block" id = "runnroottxt"></p>
+                                <div style="display: inline-block; float: left">
+                                    <b style="display: inline-block">DAGroot:</b> <p style="display: inline-block" id = "runnroottxt"></p>
+                                </div>
+                                <div style="display: inline-block; float: right">
+                                    <b style="display: inline-block">FirstFreeSlot:</b> <p style="display: inline-block" id = "firstfreeslot"></p>
+                                </div>
                             </div>
                         </div>
                         <div id="tab-runn-sched" class="table-responsive"></div><br>
@@ -264,6 +269,9 @@
                                 if(json.hasOwnProperty('slotFrames')){
                                     frameJson = json.slotFrames['1'];
                                     frameLength = frameJson.frameLength;
+                                    firstfreeslot = frameJson.firstfreeslot;
+                                    document.getElementById('firstfreeslot').innerHTML = firstfreeslot;
+
 
                                     var tbl_body = "<table class=\"table table-striped table-bordered table-hover\" id=\"dataTables-example\"><thead><tr><th></th>";
                                     for (i = 0; i < frameLength; i++) {
@@ -330,7 +338,7 @@
                                                     if(this['shared']){
                                                         tbl_row += 'SHARED';
                                                     } else {
-                                                        tbl_row += this['txMoteID'] + "->" + this['rxMoteList'];
+                                                        tbl_row += this['txMoteID'] + "-"+ this['bitIndex'] +">" + this['rxMoteList'];
                                                     }
                                                 }
                                             });
