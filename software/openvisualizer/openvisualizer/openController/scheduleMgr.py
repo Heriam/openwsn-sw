@@ -94,6 +94,11 @@ class Schedule():
         edges = newTrack.graph['orderList']
         slotList = []
         for (txMote, rxMote) in edges:
+            if None in slotFrame:
+                slotOff = slotFrame.index(None)
+            else:
+                log.debug('Warning! No enough available slots')
+                return
             txMoteID = ''.join(['%02x' % b for b in txMote[6:]])
             rxMoteID = ''.join(['%02x' % b for b in rxMote[6:]])
             bitIndex = newTrack[txMote][rxMote]['bitIndex']
@@ -104,9 +109,9 @@ class Schedule():
                 self.PARAMS_TRACKID: trackID,
                 self.PARAMS_SHARED: False,
                 self.PARAMS_CHANNELOFF: self.CHANNELOFF_DEFAULT,
-                self.PARAMS_SLOTOFF: slotFrame.index(None)
+                self.PARAMS_SLOTOFF: slotOff
             })
-            slotFrame[slotFrame.index(None)] = slotList[-1]
+            slotFrame[slotOff] = slotList[-1]
         self.configSlot(self.OPT_ADD, slotList)
 
     def configSlot(self, operation, slotList):
@@ -121,7 +126,7 @@ class Schedule():
             occupied = slotFrame[slotInfo[self.PARAMS_SLOTOFF]]
             if shared:
                 if operation== self.OPT_ADD and occupied:
-                    return
+                    continue
                 slotInfo[self.PARAMS_TYPE] = self.TYPE_TXRX
                 self._cmdAllMotes(['schedule',
                                    self.frameID,
@@ -169,50 +174,6 @@ class Schedule():
                            self.frameID, operation,
                            slotFrameInfo])
 
-    def update(self):
-        '''
-        updates runningSlotFrame info from moteStates
-
-        '''
-
-        returnVal = self.sm._dispatchAndGetResult(
-            signal='getStateElem',
-            data='Schedule'
-        )
-
-
-        slotFrame = [None] * self.frameLen
-        # gets the schedule of every mote
-        for mote64bID, moteSchedule in returnVal.items():
-            moteID = ''.join(['%02x' % b for b in mote64bID[6:]])
-            # removes unscheduled cells
-            for slotEntry in moteSchedule[:]:
-                if slotEntry[self.PARAMS_TYPE] == '0 (OFF)':
-                    moteSchedule.remove(slotEntry)
-                    continue
-                t = slotEntry[self.PARAMS_TYPE]
-                existSlot = slotFrame[slotEntry[self.PARAMS_SLOTOFF]]
-                if existSlot:
-                    if t.startswith('1'):
-                        existSlot[self.PARAMS_TXMOTEID] = moteID
-                    elif t.startswith('2'):
-                        existSlot[self.PARAMS_RXMOTELIST].append(moteID)
-                else:
-                    for i in ['lastUsedAsn', 'numTx', 'neighbor', 'numRx', 'numTxACK']:
-                        slotEntry.pop(i)
-                    if t.startswith('1'):
-                        slotEntry.pop('type')
-                        slotEntry[self.PARAMS_TXMOTEID] = moteID
-                        slotEntry[self.PARAMS_RXMOTELIST] = []
-                    elif t.startswith('2'):
-                        slotEntry.pop('type')
-                        slotEntry[self.PARAMS_TXMOTEID] = None
-                        slotEntry[self.PARAMS_RXMOTELIST] = [moteID]
-                    slotFrame[slotEntry[self.PARAMS_SLOTOFF]] = slotEntry
-
-        with self.frameLock:
-            self.slotFrame[:] = slotFrame
-
     def getFrameID(self):
         '''
         :returns frame ID
@@ -225,6 +186,7 @@ class Schedule():
         :returns slotFrame
 
         '''
+        self._update()
         return self.slotFrame
 
     def getFrameLen(self):
@@ -233,6 +195,13 @@ class Schedule():
 
         '''
         return self.frameLen
+
+    def getFirstFreeSlot(self):
+        '''
+        :returns first available slotOffset
+
+        '''
+        return self.slotFrame.index(None) if None in self.slotFrame else 'FULL'
 
     def initWith(self, frameID, frameInfo, rootList):
         '''
@@ -274,6 +243,48 @@ class Schedule():
             }
         )
 
+    def _update(self):
+        '''
+        updates runningSlotFrame info from moteStates
+
+        '''
+
+        returnVal = self.sm._dispatchAndGetResult(
+            signal='getStateElem',
+            data='Schedule'
+        )
+
+        slotFrame = [None] * self.frameLen
+        # gets the schedule of every mote
+        for mote64bID, moteSchedule in returnVal.items():
+            moteID = ''.join(['%02x' % b for b in mote64bID[6:]])
+            # removes unscheduled cells
+            for slotEntry in moteSchedule[:]:
+                if slotEntry[self.PARAMS_TYPE] == '0 (OFF)':
+                    moteSchedule.remove(slotEntry)
+                    continue
+                t = slotEntry[self.PARAMS_TYPE]
+                existSlot = slotFrame[slotEntry[self.PARAMS_SLOTOFF]]
+                if existSlot:
+                    if t.startswith('1'):
+                        existSlot[self.PARAMS_TXMOTEID] = moteID
+                    elif t.startswith('2'):
+                        existSlot[self.PARAMS_RXMOTELIST].append(moteID)
+                else:
+                    for i in ['lastUsedAsn', 'numTx', 'neighbor', 'numRx', 'numTxACK']:
+                        slotEntry.pop(i)
+                    if t.startswith('1'):
+                        slotEntry.pop('type')
+                        slotEntry[self.PARAMS_TXMOTEID] = moteID
+                        slotEntry[self.PARAMS_RXMOTELIST] = []
+                    elif t.startswith('2'):
+                        slotEntry.pop('type')
+                        slotEntry[self.PARAMS_TXMOTEID] = None
+                        slotEntry[self.PARAMS_RXMOTELIST] = [moteID]
+                    slotFrame[slotEntry[self.PARAMS_SLOTOFF]] = slotEntry
+
+        with self.frameLock:
+            self.slotFrame[:] = slotFrame
 
 
 
@@ -310,6 +321,11 @@ class scheduleMgr(eventBusClient):
                     'sender'  : self.WILDCARD,
                     'signal'  : 'installTrack',
                     'callback': self._installTrack
+                },
+                {
+                    'sender'  : self.WILDCARD,
+                    'singal'  : 'getSchedule',
+                    'callback': self._getRunningSlotFrame
                 }
             ]
         )
@@ -337,7 +353,6 @@ class scheduleMgr(eventBusClient):
         :returns: running Schedules for WebUI
 
         '''
-        self.defaultSchedule.update()
         rootlist = [''.join(['%02x' % b for b in addr[6:]]) for addr in self.rootList]
         runningConfig = {}
         runningConfig[self.KEY_ROOTLIST] = rootlist
@@ -345,7 +360,7 @@ class scheduleMgr(eventBusClient):
         runningConfig[self.KEY_SLOTFRAMES]\
             .update({self.defaultSchedule.getFrameID():
                 {
-                    Schedule.PARAMS_FIRSTFREESLOT: self.defaultSchedule.getSlotFrame().index(None),
+                    Schedule.PARAMS_FIRSTFREESLOT: self.defaultSchedule.getFirstFreeSlot(),
                     Schedule.PARAMS_FRAMELENGTH: self.defaultSchedule.getFrameLen(),
                     Schedule.PARAMS_CELL: self.defaultSchedule.getSlotFrame()
                 }})
@@ -379,5 +394,11 @@ class scheduleMgr(eventBusClient):
         '''
         self.defaultSchedule.installTrack(data)
 
+    def _getRunningSlotFrame(self,sender,signal,data):
+        '''
+        :returns default running slotframe
+
+        '''
+        return self.defaultSchedule.getSlotFrame()
 
 

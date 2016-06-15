@@ -36,9 +36,6 @@ class topologyMgr(eventBusClient.eventBusClient):
         self.bitmaps           = {} #{dst:{'single': , 'parallel': , 'full': }}
         self.repType           = self.SINGLE_PATH
 
-
-
-
         #  { <trackID>: DiGraph}
 
 
@@ -225,4 +222,11 @@ class topologyMgr(eventBusClient.eventBusClient):
         self.dispatch(
             signal='installTrack',
             data=newTrack
+        )
+
+    def _getRunningSlotFrame(self, frameID = '1'):
+
+        self.dispatch(
+            signal='getSchedule',
+            data= frameID
         )

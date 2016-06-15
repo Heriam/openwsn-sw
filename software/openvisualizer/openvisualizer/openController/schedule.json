@@ -1,8 +1,8 @@
 {
-  "rootList"                 : ["0001"],
+  "rootList"                 : ["9ed9"],
   "slotFrames": {
     "1": {
-      "frameLength": 25,
+      "frameLength": 20,
       "cells": [
         {
           "slotOffset": 10,
@@ -14,7 +14,7 @@
           "shared": true
         },
         {
-          "slotOffset": 20,
+          "slotOffset": 19,
           "bitIndex": 0,
           "txMoteID": null,
           "rxMoteList": [],
