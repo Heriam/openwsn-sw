@@ -23,6 +23,8 @@ class topologyMgr(eventBusClient.eventBusClient):
     PARALLEL_PATH = 'parallel'
     FULL_PATH     = 'full'
 
+    TRACKID_DEFAULT = 1
+
     def __init__(self):
 
         # log
@@ -32,8 +34,7 @@ class topologyMgr(eventBusClient.eventBusClient):
         self.topoLock         = threading.Lock()
         self.topo              = nx.Graph()
         self.rootEui64List     = []
-        self.tracks            = []
-        self.bitmaps           = {} #{dst:{'single': , 'parallel': , 'full': }}
+        self.track             = nx.DiGraph()
         self.repType           = self.SINGLE_PATH
 
         #  { <trackID>: DiGraph}
@@ -64,22 +65,12 @@ class topologyMgr(eventBusClient.eventBusClient):
     # ============================== public ====================================
 
     def getDagRootList(self):
+
         return self.rootEui64List
 
-    def getBitmap(self, dst):
+    def getTrack(self):
 
-        if dst in self.bitmaps.keys() and self.repType in self.bitmaps[dst]:
-            return self.bitmaps[dst][self.repType]
-        else:
-            return None
-
-    def getTrack(self, dst):
-
-        for DiGraph in self.tracks:
-            if dst in DiGraph:
-                return DiGraph
-
-        return None
+        return self.track
 
     def getRepType(self):
 
@@ -89,10 +80,87 @@ class topologyMgr(eventBusClient.eventBusClient):
 
         self.repType = t
 
+
+    # ================================ private ==============================
+
+
+    def _computeBitmap(self, srcRoute):
+
+        if self.repType == self.SINGLE_PATH:
+
+            bitmap = []
+            while len(bitmap) < self.track.graph['bitOffset']:
+                bitmap.append('0')
+            txMote = None
+            for rxMote in srcRoute:
+                if txMote:
+                    bitIndex = self.track[txMote][rxMote]['bitIndex']
+                    bitmap[bitIndex] = '1'
+                txMote = rxMote
+            newBitmap = ''.join([bit for bit in bitmap])
+
+            return newBitmap
+
+    def _updateTrack(self, graph, srcRoute, track = nx.DiGraph(), newArcs = []):
+
+        if not track:
+            track.graph['trackID'] = self.TRACKID_DEFAULT
+            track.graph['srcArcs'] = []
+            track.graph['bitOffset'] = 0
+            track.add_node(srcRoute[-1])
+        if srcRoute[0] in track:
+            track.graph['newArcs'] = newArcs
+            return track
+        else:
+            _0hop = [node for node in srcRoute if node in track][0]
+            _1hop = [node for node in srcRoute if node not in track][-1]
+
+            arcBits = []
+            arcEdges  = []
+            medNodes  = [_1hop]
+            edgeNode1 = _0hop
+            edgeNode2 = _0hop
+
+            altPaths  = list(nx.shortest_simple_paths(graph, _1hop, _0hop))[1:]
+            for altPath in altPaths:
+                if (altPath[-2] in track and altPath[-2] not in srcRoute) or not track.edges():
+                    medNodes     = [node for node in altPath if node not in track]
+                    edgeNode2    = altPath[altPath.index(medNodes[-1])+1]
+                    break
+
+            preHop = edgeNode1
+            for nexHop in medNodes:
+                arcEdges.append((nexHop, preHop))
+                track.add_edge(nexHop, preHop, {'bitIndex': track.graph['bitOffset']})
+                track.graph['bitOffset'] +=1
+                arcBits.append(track.graph['bitOffset'])
+                preHop = nexHop
+
+            medNodes.reverse()
+
+            preHop = edgeNode2
+            for nexHop in medNodes:
+                arcEdges.append((nexHop, preHop))
+                track.add_edge(nexHop, preHop, {'bitIndex': arcBits.pop()})
+                preHop = nexHop
+
+            track.graph['bitOffset'] += 1
+            track.graph['srcArcs'] = arcEdges + track.graph['srcArcs']
+            newArcs += [arcEdges]
+
+            return self._updateTrack(graph,srcRoute,track, newArcs)
+
+    def _updateTrackSchedule(self, track):
+
+        self.dispatch(
+            signal='updateTrackSchedule',
+            data=track
+        )
+
     # ============================== eventbus ===================================
 
 
-    def _updateTopology(self,sender,signal,data):
+    def _updateTopology(self, sender, signal, data):
         '''
         updates topology
         '''
@@ -101,17 +169,18 @@ class topologyMgr(eventBusClient.eventBusClient):
             signal='getStateElem',
             data='Neighbors'
         )
+        edges = []
+
+        # gets the schedule of every mote
+        for mote64bID, neiList in returnVal.items():
+            for neiInfo in neiList[:]:
+                if neiInfo['addr'] != " (None)":
+                    neiInfo['addr'] = tuple([int(i, 16) for i in neiInfo['addr'].split(' ')[0].split('-')])
+                    edges.append((mote64bID, neiInfo['addr']))
 
         with self.topoLock:
             self.topo.clear()
-            # gets the schedule of every mote
-            for mote64bID, neiList in returnVal.items():
-                for neiInfo in neiList[:]:
-                    if neiInfo['addr'] == " (None)":
-                        neiList.remove(neiInfo)
-                    else:
-                        neiInfo['addr'] = tuple([int(i,16) for i in neiInfo['addr'].split(' ')[0].split('-')])
-                        self.topo.add_edge(mote64bID, neiInfo['addr'])
+            self.topo.add_edges_from(edges)
 
     def _updateRoot(self, sender, signal, data):
         '''
@@ -119,6 +188,7 @@ class topologyMgr(eventBusClient.eventBusClient):
 
         '''
         addr = tuple(data['eui64'])
+
         if data['isDAGroot'] == 1:
             if addr not in self.rootEui64List:
                 self.rootEui64List.append(addr)
@@ -130,103 +200,14 @@ class topologyMgr(eventBusClient.eventBusClient):
         returns bitmap for corresponded destination.
 
         '''
-        dst = tuple(data)
-
-        bitMap = self.getBitmap(dst)
-        if bitMap:
-            print '======  inTrack Destination  ======'
-            return bitMap
-        else:
-            inTrack = self.getTrack(dst)
-            if not inTrack:
-                self._installNewTrack(dst)
-            else:
-                print '======  inTrack Destination  ======'
-            return self._computeBitmap(dst)
-
-    # ================================ private ==============================
-
-
-
-    def _installNewTrack(self, dst):
-
-        newTrack = self._computeNewTrack(dst)
-        newTrackID = len(self.tracks) + 1
-        newTrack.graph['trackID'] = newTrackID
-        self._cmdInstallTrack(newTrack)
-        self.tracks.append(newTrack)
-
-    def _computeBitmap(self, dst):
-        track = self.getTrack(dst)
-        paths = list(nx.shortest_simple_paths(track, self.rootEui64List[0], dst))
-        if self.repType == self.SINGLE_PATH:
-            path = paths[0]
-            bitmap = []
-            while len(bitmap) < track.graph['bitmapLength']:
-                bitmap.append('0')
-            txMote = None
-            for rxMote in path:
-                if txMote:
-                    bitIndex = track[txMote][rxMote]['bitIndex']
-                    bitmap[bitIndex] = '1'
-                txMote = rxMote
-            newBitmap = ''.join([bit for bit in bitmap])
-            if dst not in self.bitmaps:
-                self.bitmaps[dst] = {}
-            self.bitmaps[dst][self.SINGLE_PATH] = newBitmap
-            return newBitmap
-
-    def _computeNewTrack(self, dst):
+        srcRoute = [tuple(hop) for hop in data] + [self.rootEui64List[0]]
 
         with self.topoLock:
-            furthestNode = list(nx.bfs_tree(self.topo, self.rootEui64List[0]))[0]
-            backboneTrack = self._computeTrack(furthestNode)
-            if dst in backboneTrack:
-                return backboneTrack
-            else:
-                return self._computeTrack(dst)
+            self._updateTrack(self.topo, srcRoute, self.track, [])
 
-    def _computeTrack(self, dstAddr):
+        if self.track.graph['newArcs']:
+            self._updateTrackSchedule(self.track)
 
-        shortPath = nx.shortest_path(self.topo, self.rootEui64List[0], dstAddr)
-        newTrack = nx.DiGraph()
-        preNode  = None
-        bitOffset = 0
-        orderList = []
-        for nexNode in shortPath:
-            if preNode:
-                newTrack.add_edge(preNode, nexNode, {'bitIndex': bitOffset})
-                bitOffset +=1
-                orderList.append((preNode, nexNode))
-                protectPaths = list(nx.shortest_simple_paths(self.topo, preNode, nexNode))[1:]
-                if protectPaths:
-                    firstProPath = protectPaths[0]
-                    preProNode = None
-                    for nexProNode in firstProPath:
-                        if preProNode:
-                            if nexProNode in newTrack and preProNode in newTrack[nexProNode].keys():
-                                bitIndex = newTrack[nexProNode][preProNode]['bitIndex']
-                                newTrack.add_edge(preProNode, nexProNode, {'bitIndex': bitIndex})
-                            else:
-                                newTrack.add_edge(preProNode, nexProNode, {'bitIndex': bitOffset})
-                                bitOffset +=1
-                            orderList.append((preProNode, nexProNode))
-                        preProNode = nexProNode
-            preNode = nexNode
-        newTrack.graph['bitmapLength'] = bitOffset
-        newTrack.graph['orderList']    = orderList
-        return newTrack
+        bitMap = self._computeBitmap(srcRoute)
 
-    def _cmdInstallTrack(self, newTrack):
-
-        self.dispatch(
-            signal='installTrack',
-            data=newTrack
-        )
-
-    def _getRunningSlotFrame(self, frameID = '1'):
-
-        self.dispatch(
-            signal='getSchedule',
-            data= frameID
-        )
+        return bitMap

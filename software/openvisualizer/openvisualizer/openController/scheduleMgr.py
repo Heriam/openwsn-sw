@@ -83,35 +83,38 @@ class Schedule():
                 sharedList.append(slot)
         self.configSlot(self.OPT_DELETE, sharedList)
 
-    def installTrack(self, newTrack):
+    def installTrack(self, track):
         '''
         installs a track on slot frame
 
         '''
+
         with self.frameLock:
             slotFrame = self.slotFrame[:]
-        trackID = newTrack.graph['trackID']
-        edges = newTrack.graph['orderList']
+
+        trackID = track.graph['trackID']
+        newArcs = track.graph['newArcs']
         slotList = []
-        for (txMote, rxMote) in edges:
-            if None in slotFrame:
-                slotOff = slotFrame.index(None)
-            else:
-                log.debug('Warning! No enough available slots')
-                return
-            txMoteID = ''.join(['%02x' % b for b in txMote[6:]])
-            rxMoteID = ''.join(['%02x' % b for b in rxMote[6:]])
-            bitIndex = newTrack[txMote][rxMote]['bitIndex']
-            slotList.append({
-                self.PARAMS_TXMOTEID: txMoteID,
-                self.PARAMS_RXMOTELIST: [rxMoteID],
-                self.PARAMS_BITINDEX: bitIndex,
-                self.PARAMS_TRACKID: trackID,
-                self.PARAMS_SHARED: False,
-                self.PARAMS_CHANNELOFF: self.CHANNELOFF_DEFAULT,
-                self.PARAMS_SLOTOFF: slotOff
-            })
-            slotFrame[slotOff] = slotList[-1]
+        for arcEdges in newArcs:
+            for (rxMote, txMote) in arcEdges:
+                if None in slotFrame:
+                    slotOff = slotFrame.index(None)
+                else:
+                    log.debug('Warning! No enough available slots')
+                    return
+                txMoteID = ''.join(['%02x' % b for b in txMote[6:]])
+                rxMoteID = ''.join(['%02x' % b for b in rxMote[6:]])
+                bitIndex = track[rxMote][txMote]['bitIndex']
+                slotList.append({
+                    self.PARAMS_TXMOTEID: txMoteID,
+                    self.PARAMS_RXMOTELIST: [rxMoteID],
+                    self.PARAMS_BITINDEX: bitIndex,
+                    self.PARAMS_TRACKID: trackID,
+                    self.PARAMS_SHARED: False,
+                    self.PARAMS_CHANNELOFF: self.CHANNELOFF_DEFAULT,
+                    self.PARAMS_SLOTOFF: slotOff
+                })
+                slotFrame[slotOff] = slotList[-1]
         self.configSlot(self.OPT_ADD, slotList)
 
     def configSlot(self, operation, slotList):
@@ -315,17 +318,12 @@ class scheduleMgr(eventBusClient):
                 {
                     'sender': self.WILDCARD,
                     'signal': 'infoDagRoot',
-                    'callback': self._updateRoot,
+                    'callback': self._updateRoot
                 },
                 {
                     'sender'  : self.WILDCARD,
-                    'signal'  : 'installTrack',
+                    'signal'  : 'updateTrackSchedule',
                     'callback': self._installTrack
-                },
-                {
-                    'sender'  : self.WILDCARD,
-                    'singal'  : 'getSchedule',
-                    'callback': self._getRunningSlotFrame
                 }
             ]
         )
@@ -393,12 +391,5 @@ class scheduleMgr(eventBusClient):
 
         '''
         self.defaultSchedule.installTrack(data)
-
-    def _getRunningSlotFrame(self,sender,signal,data):
-        '''
-        :returns default running slotframe
-
-        '''
-        return self.defaultSchedule.getSlotFrame()
 
 

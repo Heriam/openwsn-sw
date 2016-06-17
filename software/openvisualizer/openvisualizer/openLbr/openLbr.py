@@ -526,7 +526,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         with self.bierLock:
             if self.sendWithBier:
                 if self.bierAuto:
-                    self.bierBitmap = self._getBitmap(lowpan['dst_addr'][8:])
+                    self.bierBitmap = self._getBitmap(lowpan['route'])
                 s = 0
                 bitmaplen = 0
                 bier_6lorh_type = None
@@ -942,10 +942,10 @@ class OpenLbr(eventBusClient.eventBusClient):
         )
         return returnVal
 
-    def _getBitmap(self, destination):
+    def _getBitmap(self, route):
         returnVal = self._dispatchAndGetResult(
             signal       = 'getBitmap',
-            data         = destination,
+            data         = route,
         )
         return returnVal
 
