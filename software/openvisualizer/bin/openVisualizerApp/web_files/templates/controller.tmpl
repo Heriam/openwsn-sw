@@ -10,13 +10,13 @@
             function showrun() {
                 $.ajax({
                     dataType: "json",
-                    url: "/schedule/"+"showrun"+"@",
+                    url: "/schedule/"+"showrun",
                     success: schedule,
                     error: errorOnAjax
                 });
                 $.ajax({
                     dataType: "json",
-                    url: "/schedule/"+"showstartup"+"@",
+                    url: "/schedule/"+"showstartup",
                     success: startupschedule,
                     error: errorOnAjax
                 });
@@ -179,7 +179,7 @@
                                 .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"install@",
+                                        url: "/schedule/"+"install",
                                         success: schedule,
                                         error: errorOnAjax
                                     });
@@ -191,7 +191,7 @@
                                 .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"clearbier@",
+                                        url: "/schedule/"+"clearbier",
                                         success: schedule,
                                         error: errorOnAjax
                                     });
@@ -215,7 +215,7 @@
                                 .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"clearall@",
+                                        url: "/schedule/"+"clearall",
                                         success: schedule,
                                         error: errorOnAjax
                                     });
@@ -227,7 +227,7 @@
                                 .click(function( event ) {
                                     $.ajax({
                                         dataType: "json",
-                                        url: "/schedule/"+"default@",
+                                        url: "/schedule/"+"default",
                                         success: startupschedule,
                                         error: errorOnAjax
                                     });
@@ -248,8 +248,10 @@
                                     if (evt.target.readyState == FileReader.DONE) {
                                         var scheduleData = evt.target.result;
                                         $.ajax({
+                                            type: "POST",
+                                            url: "/controller/upload",
+                                            data: {'schedule' : scheduleData},
                                             dataType: "json",
-                                            url: "/schedule/"+"upload"+"@"+scheduleData,
                                             success: startupschedule,
                                             error: errorOnAjax
                                         });
