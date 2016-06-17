@@ -88,7 +88,7 @@ class Schedule():
         installs a track on slot frame
 
         '''
-
+        self._update()
         with self.frameLock:
             slotFrame = self.slotFrame[:]
 
@@ -346,7 +346,7 @@ class scheduleMgr(eventBusClient):
             self.defaultSchedule.initWith(Schedule.SLOTFRAME_DEFAULT, frameInfo, newRoots)
             self.dispatch(signal='cmdMote', data={'motelist': newRoots, 'cmd': 'DAGroot'})
 
-    def getRunningSchedules(self):
+    def getRunningFrames(self):
         '''
         :returns: running Schedules for WebUI
 

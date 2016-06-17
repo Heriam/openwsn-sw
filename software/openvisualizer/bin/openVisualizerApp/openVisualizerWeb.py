@@ -82,6 +82,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         if self.ctrlMode:
             self.openController = self.app.getOpenController()
             self.sm             = self.openController.getScheduleMgr()
+            self.tm             = self.openController.getTopoMgr()
             self.startupConfig  = {}
             self._loadConfig()
             self.schedule = self.sm.getSchedule()
@@ -159,7 +160,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'ctrlMode' : self.ctrlMode,
             'sim_mode' : self.simMode,
             'enable_bier' : self.app.getOpenLbr().getSendWithBier(),
-            'auto_bier'   : self.app.getOpenLbr().getBierAuto()
+            'auto_bier'   : self.app.getOpenLbr().getBierAuto(),
+            'path_type'   : self.tm.getRepType()
         }
         return tmplData
 
@@ -178,19 +180,19 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
 
         if  cmd == "install":
             self.sm.installSchedule(self.startupConfig)
-            return json.dumps(self.sm.getRunningSchedules())
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "clearbier":
             self.schedule.configFrame('clear')
-            return json.dumps(self.sm.getRunningSchedules())
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "clearshared":
             self.schedule.clearSharedSlots()
-            return json.dumps(self.sm.getRunningSchedules())
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "clearall":
             self.schedule.configFrame('clear')
             self.schedule.clearSharedSlots()
-            return json.dumps(self.sm.getRunningSchedules())
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "showrun":
-            return json.dumps(self.sm.getRunningSchedules())
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "showstartup":
             return json.dumps(self.startupConfig)
         elif cmd == "default":
@@ -222,14 +224,23 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         if params == 'on' :
             self.app.getOpenLbr().setSendWithBier(True)
             return {"result" : "success"}
-        if params == 'off' :
+        elif params == 'off' :
             self.app.getOpenLbr().setSendWithBier(False)
             return {"result" : "success"}
-        if params == 'autoon':
+        elif params == 'autoon':
             self.app.getOpenLbr().setBierAuto(True)
             return {"result": "success"}
-        if params == 'autooff':
+        elif params == 'autooff':
             self.app.getOpenLbr().setBierAuto(False)
+            return {"result": "success"}
+        elif params == 'singlepath':
+            self.tm.setRepType(0)
+            return {"result": "success"}
+        elif params == 'dualpath':
+            self.tm.setRepType(1)
+            return {"result": "success"}
+        elif params == 'fullpath':
+            self.tm.setRepType(2)
             return {"result": "success"}
         else :
             return {"result": "fail"}

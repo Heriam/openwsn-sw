@@ -19,9 +19,9 @@ log.addHandler(logging.NullHandler())
 
 class topologyMgr(eventBusClient.eventBusClient):
 
-    SINGLE_PATH   = 'single'
-    PARALLEL_PATH = 'parallel'
-    FULL_PATH     = 'full'
+    SINGLE_PATH   = 0
+    PARALLEL_PATH = 1
+    FULL_PATH     = 2
 
     TRACKID_DEFAULT = 1
 
@@ -31,7 +31,7 @@ class topologyMgr(eventBusClient.eventBusClient):
         log.info("create instance")
 
         # store params
-        self.topoLock         = threading.Lock()
+        self.topoLock          = threading.Lock()
         self.topo              = nx.Graph()
         self.rootEui64List     = []
         self.track             = nx.DiGraph()
@@ -76,30 +76,52 @@ class topologyMgr(eventBusClient.eventBusClient):
 
         return self.repType
 
-    def setRepTYpe(self, t):
+    def setRepType(self, t):
 
         self.repType = t
+
+    def getTopo(self):
+
+        return self.topo
 
 
     # ================================ private ==============================
 
 
     def _computeBitmap(self, srcRoute):
-
+        txMote = None
+        bitmap = ['0'] * self.track.graph['bitOffset']
         if self.repType == self.SINGLE_PATH:
-
-            bitmap = []
-            while len(bitmap) < self.track.graph['bitOffset']:
-                bitmap.append('0')
-            txMote = None
             for rxMote in srcRoute:
                 if txMote:
                     bitIndex = self.track[txMote][rxMote]['bitIndex']
                     bitmap[bitIndex] = '1'
                 txMote = rxMote
-            newBitmap = ''.join([bit for bit in bitmap])
 
-            return newBitmap
+        elif self.repType == self.PARALLEL_PATH:
+            mediatNodes = srcRoute[1:-1]
+            if mediatNodes:
+                newTrack = self.track.copy()
+                newTrack.remove_nodes_from(mediatNodes)
+                altPath = nx.shortest_path(newTrack, srcRoute[0], srcRoute[-1])
+            else:
+                altPath = list(nx.shortest_simple_paths(self.track, srcRoute[0], srcRoute[-1]))[1:2][0]
+            for rxMote in srcRoute:
+                if txMote:
+                    bitIndex = self.track[txMote][rxMote]['bitIndex']
+                    bitmap[bitIndex] = '1'
+                txMote = rxMote
+            txMote = None
+            for rxMote in altPath:
+                if txMote:
+                    bitIndex = self.track[txMote][rxMote]['bitIndex']
+                    bitmap[bitIndex] = '1'
+                txMote = rxMote
+
+        elif self.repType == self.FULL_PATH:
+            bitmap = ['1'] * self.track.graph['bitOffset']
+
+        return ''.join([bit for bit in bitmap])
 
     def _updateTrack(self, graph, srcRoute, track = nx.DiGraph(), newArcs = []):
 
