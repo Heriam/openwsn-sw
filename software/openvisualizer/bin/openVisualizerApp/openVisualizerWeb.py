@@ -140,7 +140,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.websrv.route(path='/motesdiscovery/:srcip',              callback=self._motesDiscovery)
         if self.ctrlMode:
             self.websrv.route(path='/controller',                         callback=self._showController)
-            self.websrv.route(path='/schedule/:cmddata',                  callback=self._schedule)
+            self.websrv.route(path='/controller/upload',  method='POST',  callback=self._uploadschedule)
+            self.websrv.route(path='/schedule/:cmd'    ,                  callback=self._schedule)
             self.websrv.route(path='/setbitmap/:bitmap',                  callback=self._setbitmap)
             self.websrv.route(path='/bier/:onoff',                        callback=self._bieronoff)
 
@@ -160,12 +161,15 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         }
         return tmplData
 
-    def _schedule(self, cmddata):
+    def _uploadschedule(self):
+        data = bottle.request.forms.get('schedule')
+        self.openController.loadSchedule(json.loads(data))
+        return json.dumps(self.openController.getStartupSchedule())
+
+    def _schedule(self, cmd):
         '''
             Manipulates schedule through commands.
         '''
-
-        cmd, data = cmddata.split('@')
 
         if   cmd == "install":
             self.openController.installNewSchedule()
@@ -179,9 +183,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         elif cmd == "showrun":
             return json.dumps(self.openController.getRunningSchedule())
         elif cmd == "showstartup":
-            return json.dumps(self.openController.getStartupSchedule())
-        elif cmd == "upload":
-            self.openController.loadSchedule(json.loads(data))
             return json.dumps(self.openController.getStartupSchedule())
         elif cmd == "default":
             self.openController.loadSchedule()
