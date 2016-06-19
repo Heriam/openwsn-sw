@@ -242,6 +242,14 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         elif params == 'fullpath':
             self.tm.setRepType(2)
             return {"result": "success"}
+        elif params == 'gettrack':
+            track = self.tm.getTrack()
+            dict = {
+                'nodes': [ ''.join(['%02x' % b for b in node[6:]]) for node in track.nodes()],
+                'links': [ (''.join(['%02x' % b for b in rxnode[6:]]),''.join(['%02x' % b for b in txnode[6:]])
+                            , track[txnode][rxnode]['bitIndex']) for (txnode,rxnode) in track.edges()]
+            }
+            return json.dumps(dict)
         else :
             return {"result": "fail"}
 

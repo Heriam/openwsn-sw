@@ -136,19 +136,32 @@ class topologyMgr(eventBusClient.eventBusClient):
         else:
             _0hop = [node for node in srcRoute if node in track][0]
             _1hop = [node for node in srcRoute if node not in track][-1]
-
             arcBits = []
             arcEdges  = []
-            medNodes  = [_1hop]
             edgeNode1 = _0hop
-            edgeNode2 = _0hop
-
             altPaths  = list(nx.shortest_simple_paths(graph, _1hop, _0hop))[1:]
+            arcPath   = []
+
+            print '==========Key Hop========'
+            print _0hop, _1hop
+
+            # find a sibling path to build an ARC
             for altPath in altPaths:
                 if (altPath[-2] in track and altPath[-2] not in srcRoute) or not track.edges():
-                    medNodes     = [node for node in altPath if node not in track]
-                    edgeNode2    = altPath[altPath.index(medNodes[-1])+1]
+                    arcPath = altPath
                     break
+            # choose a non-sibling path if not find;
+            if not arcPath:
+                arcPath = altPaths[0] if altPaths else [_1hop, _0hop]
+
+            print '==========ARC Path=========='
+            print arcPath
+
+            medNodes = [node for node in arcPath if node not in track]
+            edgeNode2 = arcPath[arcPath.index(medNodes[-1]) + 1]
+
+            print '==========Intermediate Nodes and Edge Nodes=========='
+            print medNodes, edgeNode1, edgeNode2
 
             preHop = edgeNode1
             for nexHop in medNodes:
@@ -223,7 +236,6 @@ class topologyMgr(eventBusClient.eventBusClient):
 
         '''
         srcRoute = [tuple(hop) for hop in data] + [self.rootEui64List[0]]
-
         with self.topoLock:
             self._updateTrack(self.topo, srcRoute, self.track, [])
 
