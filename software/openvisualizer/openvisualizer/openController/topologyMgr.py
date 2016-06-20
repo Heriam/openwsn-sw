@@ -147,7 +147,7 @@ class topologyMgr(eventBusClient.eventBusClient):
 
             # find a sibling path to build an ARC
             for altPath in altPaths:
-                if (altPath[-2] in track and altPath[-2] not in srcRoute) or not track.edges():
+                if altPath[-2] in track and altPath[-2] not in srcRoute:
                     arcPath = altPath
                     break
             # choose a non-sibling path if not find;
