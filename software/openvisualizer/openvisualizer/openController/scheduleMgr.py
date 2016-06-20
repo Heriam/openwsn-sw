@@ -13,61 +13,61 @@ log = logging.getLogger('scheduleMgr')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 import threading
-import json
 from openvisualizer.eventBus.eventBusClient import eventBusClient
 
 
 class Schedule():
 
     # slot parameters
-    PARAMS_TRACKID = 'trackID'
-    PARAMS_BITINDEX = 'bitIndex'
-    PARAMS_TYPE = 'type'
-    PARAMS_SHARED = 'shared'
-    PARAMS_REMAPSLOTOFF = 'remapSlotOff'
-    PARAMS_REMAPCHANOFF = 'remapChanOff'
-    PARAMS_TXMOTEID = 'txMoteID'
-    PARAMS_RXMOTELIST = 'rxMoteList'
-    PARAMS_SLOTOFF = 'slotOffset'
-    PARAMS_CHANNELOFF = 'channelOffset'
+    PARAMS_TRACKID        = 'trackID'
+    PARAMS_BITINDEX       = 'bitIndex'
+    PARAMS_TYPE           = 'type'
+    PARAMS_SHARED         = 'shared'
+    PARAMS_REMAPSLOTOFF   = 'remapSlotOff'
+    PARAMS_REMAPCHANOFF   = 'remapChanOff'
+    PARAMS_BIER           = 'bier'
+    PARAMS_TXMOTEID       = 'txMoteID'
+    PARAMS_RXMOTELIST     = 'rxMoteList'
+    PARAMS_SLOTOFF        = 'slotOffset'
+    PARAMS_CHANNELOFF     = 'channelOffset'
 
     # schedule parameters
-    PARAMS_FRAMEID = 'frameID'
-    PARAMS_FRAMELENGTH = 'frameLength'
-    PARAMS_FIRSTFREESLOT = 'firstfreeslot'
-    PARAMS_CELL = 'cells'
+    PARAMS_FRAMEID        = 'frameID'
+    PARAMS_FRAMELENGTH    = 'frameLength'
+    PARAMS_FIRSTFREESLOT  = 'firstfreeslot'
+    PARAMS_CELL           = 'cells'
 
     # default values
-    CHANNELOFF_DEFAULT = 0
-    SLOTFRAME_DEFAULT = '1'
-    FRAMELENGTH_DEFAULT = 20
+    CHANNELOFF_DEFAULT    = 0
+    SLOTFRAME_DEFAULT     = '1'
+    FRAMELENGTH_DEFAULT   = 20
 
     # operation types
-    OPT_ADD = 'add'
-    OPT_OVERWRITE = 'overwrite'
-    OPT_REMAP = 'remap'
-    OPT_DELETE = 'delete'
-    OPT_LIST = 'list'
-    OPT_CLEAR = 'clear'
-    OPT_SETFRAMELENGTH = 'setFrameLength'
+    OPT_ADD               = 'add'
+    OPT_OVERWRITE         = 'overwrite'
+    OPT_REMAP             = 'remap'
+    OPT_DELETE            = 'delete'
+    OPT_LIST              = 'list'
+    OPT_CLEAR             = 'clear'
+    OPT_SETFRAMELENGTH    = 'setFrameLength'
     OPT_ALL = [OPT_ADD, OPT_OVERWRITE, OPT_REMAP, OPT_DELETE, OPT_LIST, OPT_CLEAR, OPT_SETFRAMELENGTH]
 
     # cell types
-    TYPE_OFF = 'off'
-    TYPE_TX = 'tx'
-    TYPE_RX = 'rx'
-    TYPE_TXRX = 'txrx'
-    TYPE_SERIALRX = 'serialrx'
-    TYPE_MORESERIALRX = 'moreserx'
+    TYPE_OFF              = 'off'
+    TYPE_TX               = 'tx'
+    TYPE_RX               = 'rx'
+    TYPE_TXRX             = 'txrx'
+    TYPE_SERIALRX         = 'serialrx'
+    TYPE_MORESERIALRX     = 'moreserx'
     TYPE_ALL = [TYPE_OFF, TYPE_TX, TYPE_RX, TYPE_TXRX, TYPE_SERIALRX, TYPE_MORESERIALRX]
 
     def __init__(self, scheduleMgr):
 
-        self.frameLock       = threading.Lock()
-        self.frameLen        = self.FRAMELENGTH_DEFAULT
-        self.frameID         = self.SLOTFRAME_DEFAULT
-        self.slotFrame       = [None] * self.frameLen
-        self.sm              = scheduleMgr
+        self.frameLock    = threading.Lock()
+        self.frameLen     = self.FRAMELENGTH_DEFAULT
+        self.frameID      = self.SLOTFRAME_DEFAULT
+        self.slotFrame    = [None] * self.frameLen
+        self.sm           = scheduleMgr
 
     # ========================== public ===========================
 
