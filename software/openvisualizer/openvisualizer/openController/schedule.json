@@ -1,5 +1,5 @@
 {
-  "rootList"                 : [],
+  "rootList"                 : ["0001"],
   "slotFrames": {
     "1": {
       "frameLength": 16,
@@ -11,7 +11,8 @@
           "rxMoteList": [],
           "channelOffset": 0,
           "trackID": 0,
-          "shared": true
+          "shared": true,
+          "bier": true
         }
       ]
     }

@@ -80,7 +80,11 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
 
         # used for controller mode
         if self.ctrlMode:
-            self.openController = self.app.openController
+            self.openController = self.app.getOpenController()
+            self.sm             = self.openController.getScheduleMgr()
+            self.startupConfig  = {}
+            self._loadConfig()
+            self.schedule = self.sm.getSchedule()
 
         # To find page templates
         bottle.TEMPLATE_PATH.append('{0}/web_files/templates/'.format(self.app.datadir))
@@ -142,7 +146,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.websrv.route(path='/controller/upload',  method='POST',  callback=self._uploadschedule)
             self.websrv.route(path='/schedule/:cmd'    ,                  callback=self._schedule)
             self.websrv.route(path='/setbitmap/:bitmap',                  callback=self._setbitmap)
-            self.websrv.route(path='/bier/:onoff',                        callback=self._bieronoff)
+            self.websrv.route(path='/bier/:params',                       callback=self._bierparams)
 
     @view('controller.tmpl')
     def _showController(self, moteid = None):
@@ -150,42 +154,47 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             Handles the path calculation and resource management of the mesh network
         '''
 
-        motelist = self.app.getMoteDict().keys()
         tmplData = {
-            'motelist': motelist,
-            'requested_mote': moteid if moteid else 'none',
             'roverMode': self.roverMode,
             'ctrlMode' : self.ctrlMode,
-            'sim_mode' : self.simMode
+            'sim_mode' : self.simMode,
+            'enable_bier' : self.app.getOpenLbr().getSendWithBier()
         }
         return tmplData
 
     def _uploadschedule(self):
+        '''
+            Loads schedule from WebUI.
+        '''
         data = bottle.request.forms.get('schedule')
-        self.openController.loadSchedule(json.loads(data))
-        return json.dumps(self.openController.getStartupSchedule())
+        self._loadConfig(json.loads(data))
+        return json.dumps(self.startupConfig)
 
     def _schedule(self, cmd):
         '''
             Manipulates schedule through commands.
         '''
 
-        if   cmd == "install":
-            self.openController.installNewSchedule()
-            return json.dumps(self.openController.getRunningSchedule())
+        if  cmd == "install":
+            self.sm.installSchedule(self.startupConfig)
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "clearbier":
-            self.openController.clearSchedule(includeshared=False)
-            return json.dumps(self.openController.getRunningSchedule())
+            self.schedule.configFrame('clear')
+            return json.dumps(self.sm.getRunningFrames())
+        elif cmd == "clearshared":
+            self.schedule.clearSharedSlots()
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "clearall":
-            self.openController.clearSchedule(includeshared=True)
-            return json.dumps(self.openController.getRunningSchedule())
+            self.schedule.configFrame('clear')
+            self.schedule.clearSharedSlots()
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "showrun":
-            return json.dumps(self.openController.getRunningSchedule())
+            return json.dumps(self.sm.getRunningFrames())
         elif cmd == "showstartup":
-            return json.dumps(self.openController.getStartupSchedule())
+            return json.dumps(self.startupConfig)
         elif cmd == "default":
-            self.openController.loadSchedule()
-            return json.dumps(self.openController.getStartupSchedule())
+            self._loadConfig()
+            return json.dumps(self.startupConfig)
         else:
             return '{"result" : "failed"}'
 
@@ -203,20 +212,36 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         self.app.getOpenLbr().setBierBitmap(bitmap)
         return {"result" : "success"}
 
-    def _bieronoff(self, onoff):
+    def _bierparams(self, params):
         '''
         Enables or disabled the use of BIER to send messages
 
-        :param onoff: string 'on' or 'off'
+        :param params: string of params
         '''
-        if onoff == 'on' :
+        if params == 'on' :
             self.app.getOpenLbr().setSendWithBier(True)
             return {"result" : "success"}
-        if onoff == 'off' :
+        elif params == 'off' :
             self.app.getOpenLbr().setSendWithBier(False)
             return {"result" : "success"}
         else :
             return {"result": "fail"}
+
+    def _loadConfig(self, config=None):
+        '''
+        loads the schedule if explicitly specified
+
+        otherwise it loads the default configFile stored in schedule.json.
+        '''
+
+        if config:
+            self.startupConfig = config
+        else:
+            try:
+                with open('openvisualizer/openController/schedule.json') as json_file:
+                    self.startupConfig = json.load(json_file)
+            except IOError as err:
+                log.debug("failed to load default startupSchedule. {0}".format(err))
 
 
     @view('rovers.tmpl')

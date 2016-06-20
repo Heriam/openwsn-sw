@@ -73,266 +73,332 @@
 
 	            <div class="row">
 	                <div class="col-lg-12">
-		                <input id="bitmap_manual" type="text" placeholder="insert bierbitmap here">
-		                <button id="bitmap_btn" type="button" class="btn btn-default btn-xs">Change bitmap</button>
-		            </div>
-		            <div class="col-lg-12">
-		                <button id="bieron_btn" type="button" class="btn btn-default btn-xs">Enable BIER</button>
-		                <button id="bieroff_btn" type="button" class="btn btn-default btn-xs">Disable BIER</button>
-		            </div>
-                	<div class="col-lg-12">
-                	    <input type="file" id="upload_schedule" style="display: inline-block">
-                	    <button type="button" id="btn_upload" class="btn btn-default btn-xs" style="display: inline-block">Upload</button>
-                	    <button id="resetschedule_btn" type="button" class="btn btn-default btn-xs" style="display: inline-block">Reset Schedule</button>
-                	    <br><br>
-                        <button id="installschedule_btn" type="button" class="btn btn-default btn-xs">Install Schedule</button>
-                        <button id="clearbierslots_btn" type="button" class="btn btn-default btn-xs">Clear BIER Slots</button>
-                        <button id="clearallslots_btn" type="button" class="btn btn-default btn-xs">Clear ALL Slots</button>
-
+	                    <div class = "row">
+	                        <div class = "col-lg-6">
+                                <input id="bitmap_manual" type="text" placeholder="insert bierbitmap here">
+                                <button id="bitmap_btn" type="button" class="btn btn-default btn-xs">Change bitmap</button>&nbsp;&nbsp;
+                                <input type="checkbox" id="bierbool" \
+                                    % if enable_bier:
+                                        checked="checked" \
+                                    % end
+                                /> Enable BIER
+                                <input type="file" id="upload_schedule" style="display: inline-block">
+                                <button type="button" id="btn_upload" class="btn btn-default btn-xs" style="display: inline-block">Upload</button>
+                                <button id="resetschedule_btn" type="button" class="btn btn-default btn-xs" style="display: inline-block">Reset Schedule</button>
+                                <br><br>
+                                <button id="installschedule_btn" type="button" class="btn btn-default btn-xs">Install Schedule</button>
+                                <button id="clearbierslots_btn" type="button" class="btn btn-default btn-xs">Clear BIER Slots</button>
+                                <button id="clearsharedslots_btn" type="button" class="btn btn-default btn-xs">Clear SHARED Slots</button>
+                                <button id="clearallslots_btn" type="button" class="btn btn-default btn-xs">Clear ALL Slots</button>
+                            </div>
+                        </div>
                         <hr>
-                        <div class = "row">
-                            <div class="col-lg-6">
-                                <b >Running Schedule:</b>
-                            </div>
-                            <div class="col-lg-6">
-                                <b style="display: inline-block">DAGroot:</b> <p style="display: inline-block" id = "runnroottxt"></p>
-                            </div>
-                        </div>
-                        <div id="tab-runn-sched" class="table-responsive"></div><br>
-                        <div class = "row">
-                            <div class="col-lg-6">
-                                <b >Startup Schedule:</b>
-                            </div>
-                            <div class="col-lg-6">
-                                <b style="display: inline-block">DAGroot:</b> <p style="display: inline-block" id = "starroottxt"></p>
-                            </div>
-                        </div>
-                        <div id="tab-star-sched" class="table-responsive"></div>
+                        <div class="panel panel-default">
+	                        <div class="panel-heading">
+	                            Information
+	                        </div>
+	                        <div class="panel-body">
+	                            <ul class="nav nav-tabs">
+	                                <li class="active"><a href="#startupSchedule" data-toggle="tab">Startup Schedule</a>
+	                                </li>
+	                                <li><a href="#runningSchedule" data-toggle="tab">Running Schedule</a>
+	                                </li>
+	                            </ul>
+	                            <div class="tab-content">
+	                                <div class="tab-pane fade in active" id="startupSchedule">
+	                                    <br><br>
+                                        <div class = "row">
+                                            <div class="col-lg-6">
+                                                <b >Startup Schedule:</b>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div style="display: inline-block; float: left">
+                                                    <b style="display: inline-block">DAGroot:</b> <p style="display: inline-block" id = "starroottxt"></p>
+                                                </div>
+                                                <div style="display: inline-block; float: right">
+                                                    <b style="display: inline-block">FrameLength:</b> <p style="display: inline-block" id = "startupframelength"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="tab-star-sched" class="table-responsive"></div>
+                                    </div>
+	                                <div class="tab-pane fade" id="runningSchedule">
+	                                    <br><br>
+                                        <div class = "row">
+                                            <div class="col-lg-6">
+                                                <b >Running Schedule:</b>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div style="display: inline-block; float: left">
+                                                    <b style="display: inline-block">DAGroot:</b> <p style="display: inline-block" id = "runnroottxt"></p>
+                                                </div>
+                                                <div style="display: inline-block; float: right">
+                                                    <b style="display: inline-block">FirstFreeSlot:</b> <p style="display: inline-block" id = "firstfreeslot"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="tab-runn-sched" class="table-responsive"></div>
+                                    </div>
+                                </div>
 
-
-                        <script>
-
-                            $( "#bitmap_btn" )
-		                        .button()
-			                    .click(function( event ) {
-			                        if (intervalID != null){
-                                        clearInterval(intervalID);
-                                    }
-                                    newbitmap = $("#bitmap_manual").val();
-                                    if (newbitmap != ''){
+                                <script>
+                                    $("#reptype_select").change(function() {
+                                        reptype =  $(this).val()
                                         $.ajax({
                                             dataType: "json",
-                                            url: "/setbitmap/"+newbitmap,
+                                            url: "/bier/" + reptype,
                                             error: errorOnAjax
                                         });
-                                        console.log('Changed bitmap to : ' + newbitmap);
+                                        console.log('Update for reptype selection: ' + reptype);
+                                    });
+
+                                    $( "#bitmap_btn" )
+                                        .button()
+                                        .click(function( event ) {
+                                            newbitmap = $("#bitmap_manual").val();
+                                            if (newbitmap != ''){
+                                                $.ajax({
+                                                    dataType: "json",
+                                                    url: "/setbitmap/"+newbitmap,
+                                                    error: errorOnAjax
+                                                });
+                                                console.log('Changed bitmap to : ' + newbitmap);
+                                            }
+                                    });
+
+                                    $("#bierbool").on('change',function(){
+                                         if($(this).is(':checked')){
+                                            console.log('Enabling BIER');
+                                            $.ajax({
+                                                dataType: "json",
+                                                url: "/bier/on",
+                                                error: errorOnAjax
+                                            });
+                                         } else{
+                                            console.log('Disabling BIER');
+                                            $.ajax({
+                                                dataType: "json",
+                                                url: "/bier/off",
+                                                error: errorOnAjax
+                                            });
+                                         }
+                                    });
+
+                                    $( "#installschedule_btn" )
+                                        .button()
+                                        .click(function( event ) {
+                                            $.ajax({
+                                                dataType: "json",
+                                                url: "/schedule/"+"install",
+                                                success: schedule,
+                                                error: errorOnAjax
+                                            });
+                                            console.log('Installed new schedule');
+                                    });
+
+                                    $( "#clearbierslots_btn" )
+                                        .button()
+                                        .click(function( event ) {
+                                            $.ajax({
+                                                dataType: "json",
+                                                url: "/schedule/"+"clearbier",
+                                                success: schedule,
+                                                error: errorOnAjax
+                                            });
+                                            console.log('Cleared schedule');
+                                    });
+
+                                    $( "#clearsharedslots_btn" )
+                                        .button()
+                                        .click(function( event ) {
+                                            $.ajax({
+                                                dataType: "json",
+                                                url: "/schedule/"+"clearshared",
+                                                success: schedule,
+                                                error: errorOnAjax
+                                            });
+                                            console.log('Cleared schedule');
+                                    });
+
+                                    $( "#clearallslots_btn" )
+                                        .button()
+                                        .click(function( event ) {
+                                            $.ajax({
+                                                dataType: "json",
+                                                url: "/schedule/"+"clearall",
+                                                success: schedule,
+                                                error: errorOnAjax
+                                            });
+                                            console.log('Cleared schedule');
+                                    });
+
+                                    $( "#resetschedule_btn" )
+                                        .button()
+                                        .click(function( event ) {
+                                            $.ajax({
+                                                dataType: "json",
+                                                url: "/schedule/"+"default",
+                                                success: startupschedule,
+                                                error: errorOnAjax
+                                            });
+                                            console.log('Cleared schedule');
+                                    });
+
+                                    $( "#btn_upload" )
+                                    .button()
+                                    .click(function( evt ) {
+                                        var files = document.getElementById('upload_schedule').files;
+                                        if (!files.length) {
+                                          alert('Please select a file!');
+                                          return;
+                                        }
+                                        var file = files[0];
+                                        var reader = new FileReader();
+                                        reader.onloadend = function(evt) {
+                                            if (evt.target.readyState == FileReader.DONE) {
+                                                var scheduleData = evt.target.result;
+                                                $.ajax({
+                                                    type: "POST",
+                                                    url: "/controller/upload",
+                                                    data: {'schedule' : scheduleData},
+                                                    dataType: "json",
+                                                    success: startupschedule,
+                                                    error: errorOnAjax
+                                                });
+                                                console.log('Overwritten startupSchedule');
+                                            }
+                                        };
+                                        var scheduleFile = file.slice(0, file.size);
+                                        reader.readAsText(scheduleFile);
+                                    });
+
+                                    function schedule(json) {
+                                        if(json.hasOwnProperty('rootList')){
+                                            rootList  = json.rootList;
+                                            document.getElementById('runnroottxt').innerHTML = rootList;
+                                        }
+
+                                        if(json.hasOwnProperty('slotFrames')){
+                                            frameJson = json.slotFrames['1'];
+
+                                            if (frameJson){
+                                                frameLength = frameJson.frameLength;
+                                            } else {
+                                                frameLength = 15;
+                                            }
+                                            firstfreeslot = frameJson.firstfreeslot;
+                                            document.getElementById('firstfreeslot').innerHTML = firstfreeslot + ' / ' + frameLength;
+
+                                            tableNum = frameLength/15;
+                                            var tbl_body = "";
+
+                                            for(k = 0; k < tableNum; k++){
+
+                                                tbl_body += "<table class=\"table table-striped table-bordered table-hover\" id=\"dataTables-example\"><thead><tr><th></th>";
+                                                for (i = k*15; i < (k+1)*15; i++) {
+                                                    tbl_body += "<th>" + i + "</th>";
+                                                }
+                                                tbl_body += "</tr></thead><tbody>";
+
+                                                for(i = 0; i<16; i++){
+                                                    var tbl_row = "<td>" + i + "</td>";
+                                                    for(j=k*15; j < (k+1)*15; j++){
+                                                        tbl_row += "<td>";
+                                                        if (frameJson) {
+                                                        $.each(frameJson.cells, function() {
+                                                            if(this['channelOffset']==i && this['slotOffset']==j) {
+                                                                if(this['shared']){
+                                                                    tbl_row += 'SHARED';
+                                                                } else if (this['type'] == '4 (SERIALRX)'){
+                                                                    tbl_row += 'SERIALRX';
+                                                                } else {
+                                                                    tbl_row += this['txMoteID'] + "-"+ this['bitIndex'] +">" + this['rxMoteList'];
+                                                                }
+                                                            }
+                                                        });
+                                                        }
+                                                        tbl_row += "</td>";
+                                                    }
+                                                    tbl_body += "<tr class=\"odd gradeX\">" + tbl_row + "</tr>";
+                                                }
+                                                tbl_body += "</tbody></table>";
+                                            }
+                                            //console.log(tbl_body);
+                                        } else {
+                                            tbl_body = "";
+                                        }
+                                        $("#tab-runn-sched").html(tbl_body).text();
                                     }
-		                    });
 
-		                    $( "#bieron_btn" )
-			                    .button()
-			                    .click(function( event ) {
-			                        console.log('Enabling BIER');
-			                        $.ajax({
-			                            dataType: "json",
-			                            url: "/bier/on",
-			                            error: errorOnAjax
-			                        });
-			                    });
+                                    function startupschedule(json) {
+                                        if(json.hasOwnProperty('rootList')){
+                                            rootList  = json.rootList;
+                                            document.getElementById('starroottxt').innerHTML = rootList;
+                                        }
 
-			                $( "#bieroff_btn" )
-			                    .button()
-			                    .click(function( event ) {
-			                        console.log('Disabling BIER');
-			                        $.ajax({
-			                            dataType: "json",
-			                            url: "/bier/off",
-			                            error: errorOnAjax
-			                        });
-			                    });
+                                        if(json.hasOwnProperty('slotFrames')){
+                                            frameJson = json.slotFrames['1'];
+                                            if (frameJson){
+                                                frameLength = frameJson.frameLength;
+                                                document.getElementById('startupframelength').innerHTML = frameLength;
+                                            } else {
+                                                frameLength = 15;
+                                            }
 
-                            $( "#installschedule_btn" )
-                                .button()
-                                .click(function( event ) {
-                                    $.ajax({
-                                        dataType: "json",
-                                        url: "/schedule/"+"install",
-                                        success: schedule,
-                                        error: errorOnAjax
-                                    });
-                                    console.log('Installed new schedule');
-                            });
+                                            tableNum = frameLength/15;
+                                            var tbl_body = "";
 
-                            $( "#clearbierslots_btn" )
-                                .button()
-                                .click(function( event ) {
-                                    $.ajax({
-                                        dataType: "json",
-                                        url: "/schedule/"+"clearbier",
-                                        success: schedule,
-                                        error: errorOnAjax
-                                    });
-                                    console.log('Cleared schedule');
-                            });
+                                            for(k = 0; k< tableNum; k++){
 
-                            $( "#clearallslots_btn" )
-                                .button()
-                                .click(function( event ) {
-                                    $.ajax({
-                                        dataType: "json",
-                                        url: "/schedule/"+"clearall",
-                                        success: schedule,
-                                        error: errorOnAjax
-                                    });
-                                    console.log('Cleared schedule');
-                            });
+                                                tbl_body += "<table class=\"table table-striped table-bordered table-hover\" id=\"dataTables-example\"><thead><tr><th></th>";
+                                                for (i = k*15; i < (k+1)*15; i++) {
+                                                    tbl_body += "<th>" + i + "</th>";
+                                                }
+                                                tbl_body += "</tr></thead><tbody>";
 
-                            $( "#resetschedule_btn" )
-                                .button()
-                                .click(function( event ) {
-                                    $.ajax({
-                                        dataType: "json",
-                                        url: "/schedule/"+"default",
-                                        success: startupschedule,
-                                        error: errorOnAjax
-                                    });
-                                    console.log('Cleared schedule');
-                            });
+                                                for(i = 0; i<16; i++){
+                                                    var tbl_row = "<td>" + i + "</td>";
+                                                    for(j=k*15; j < (k+1)*15; j++){
+                                                        tbl_row += "<td>";
+                                                        if (frameJson) {
+                                                        $.each(frameJson.cells, function() {
+                                                            if(this['channelOffset']==i && this['slotOffset']==j) {
+                                                                if(this['shared']){
+                                                                    tbl_row += 'SHARED';
+                                                                } else {
+                                                                    tbl_row += this['txMoteID'] + "-"+ this['bitIndex'] +">" + this['rxMoteList'];
+                                                                }
+                                                            }
+                                                        });
+                                                        }
+                                                        tbl_row += "</td>";
+                                                    }
+                                                    tbl_body += "<tr class=\"odd gradeX\">" + tbl_row + "</tr>";
+                                                }
+                                                tbl_body += "</tbody></table>";
+                                            }
+                                            //console.log(tbl_body);
+                                        } else {
+                                            tbl_body = "";
+                                        }
+                                        $("#tab-star-sched").html(tbl_body).text();
+                                    }
 
-                            $( "#btn_upload" )
-                            .button()
-                            .click(function( evt ) {
-                                var files = document.getElementById('upload_schedule').files;
-                                if (!files.length) {
-                                  alert('Please select a file!');
-                                  return;
-                                }
-                                var file = files[0];
-                                var reader = new FileReader();
-                                reader.onloadend = function(evt) {
-                                    if (evt.target.readyState == FileReader.DONE) {
-                                        var scheduleData = evt.target.result;
-                                        $.ajax({
-                                            type: "POST",
-                                            url: "/controller/upload",
-                                            data: {'schedule' : scheduleData},
-                                            dataType: "json",
-                                            success: startupschedule,
-                                            error: errorOnAjax
+                                    function logresult(json) {
+                                        $.each(json, function(i, option) {
+                                            console.log(i+': ' + option);
                                         });
-                                        console.log('Overwritten startupSchedule');
+                                       }
+
+                                    function errorOnAjax(jqxhr, status, errorstr) {
+                                        var errText = (errorstr == null)
+                                                ? '' : ', error: ' + errorstr;
+                                        console.log('Ajax error: ' + status + errText);
                                     }
-                                };
-                                var scheduleFile = file.slice(0, file.size);
-                                reader.readAsText(scheduleFile);
-                            });
-
-                            function schedule(json) {
-                                if(json.hasOwnProperty('rootList')){
-                                    rootList  = json.rootList;
-                                    document.getElementById('runnroottxt').innerHTML = rootList;
-                                }
-
-                                if(json.hasOwnProperty('slotFrames')){
-                                    frameJson = json.slotFrames['1'];
-                                    frameLength = frameJson.frameLength;
-
-                                    var tbl_body = "<table class=\"table table-striped table-bordered table-hover\" id=\"dataTables-example\"><thead><tr><th></th>";
-                                    for (i = 0; i < frameLength; i++) {
-                                        tbl_body += "<th>" + i + "</th>";
-                                    }
-                                    tbl_body += "</tr></thead><tbody>";
-
-                                    for(i = 0; i<16; i++){
-                                        var tbl_row = "<td>" + i + "</td>";
-                                        for(j=0; j < frameLength; j++){
-                                            tbl_row += "<td>";
-                                            if (frameJson) {
-                                            $.each(frameJson.cells, function() {
-                                                if(this['channelOffset']==i && this['slotOffset']==j) {
-                                                    if(this['shared']){
-                                                        tbl_row += 'SHARED';
-                                                    } else if (this['type'] == '4 (SERIALRX)'){
-                                                        tbl_row += 'SERIALRX';
-                                                    } else {
-                                                        tbl_row += this['txMoteID'] + "-->" + this['rxMoteList'];
-                                                    }
-                                                }
-                                            });
-                                            }
-                                            tbl_row += "</td>";
-                                        }
-                                        tbl_body += "<tr class=\"odd gradeX\">" + tbl_row + "</tr>";
-                                    }
-                                    tbl_body += "</tbody></table>";
-                                    //console.log(tbl_body);
-                                } else {
-                                    tbl_body = "";
-                                }
-                                $("#tab-runn-sched").html(tbl_body).text();
-                            }
-
-                            function startupschedule(json) {
-                                if(json.hasOwnProperty('rootList')){
-                                    rootList  = json.rootList;
-                                    document.getElementById('starroottxt').innerHTML = rootList;
-                                }
-
-                                if(json.hasOwnProperty('slotFrames')){
-                                    frameJson = json.slotFrames['1'];
-                                    if (frameJson){
-                                        frameLength = frameJson.frameLength;
-                                    } else {
-                                        frameLength = 15;
-                                    }
-
-                                    var tbl_body = "<table class=\"table table-striped table-bordered table-hover\" id=\"dataTables-example\"><thead><tr><th></th>";
-                                    for (i = 0; i < frameLength; i++) {
-                                        tbl_body += "<th>" + i + "</th>";
-                                    }
-                                    tbl_body += "</tr></thead><tbody>";
-
-                                    for(i = 0; i<16; i++){
-                                        var tbl_row = "<td>" + i + "</td>";
-                                        for(j=0; j < frameLength; j++){
-                                            tbl_row += "<td>";
-                                            if (frameJson) {
-                                            $.each(frameJson.cells, function() {
-                                                if(this['channelOffset']==i && this['slotOffset']==j) {
-                                                    if(this['shared']){
-                                                        tbl_row += 'SHARED';
-                                                    } else {
-                                                        tbl_row += this['txMoteID'] + "-->" + this['rxMoteList'];
-                                                    }
-                                                }
-                                            });
-                                            }
-                                            tbl_row += "</td>";
-                                        }
-                                        tbl_body += "<tr class=\"odd gradeX\">" + tbl_row + "</tr>";
-                                    }
-                                    tbl_body += "</tbody></table>";
-                                    //console.log(tbl_body);
-                                } else {
-                                    tbl_body = "";
-                                }
-                                $("#tab-star-sched").html(tbl_body).text();
-                            }
-
-                            function logresult(json) {
-                                $.each(json, function(i, option) {
-                                    console.log(i+': ' + option);
-                                });
-						    }
-
-                            function errorOnAjax(jqxhr, status, errorstr) {
-                                var errText = (errorstr == null)
-                                        ? '' : ', error: ' + errorstr;
-                                console.log('Ajax error: ' + status + errText);
-                            }
-                        </script>
-
-                	</div>
+                                </script>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 	        </div>
 	    </div>

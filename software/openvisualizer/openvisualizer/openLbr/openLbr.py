@@ -508,19 +508,20 @@ class OpenLbr(eventBusClient.eventBusClient):
         with self.bierLock:
             if self.sendWithBier:
                 bitmaplen = 0
+                bier_6lorh_type = None
                 if len(self.bierBitmap) <= 256:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_15
                     s = (len(self.bierBitmap) - 1) / 8
                     bitmaplen = (s + 1) * 8
-                elif len(bitmap) <= 512:
+                elif len(self.bierBitmap) <= 512:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_16
                     s = (len(self.bierBitmap) - 1) / 16
                     bitmaplen = (s + 1) * 16
-                elif len(bitmap) <= 1024:
+                elif len(self.bierBitmap) <= 1024:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_17
                     s = (len(self.bierBitmap) - 1) / 32
                     bitmaplen = (s + 1) * 32
-                elif len(bitmap) <= 2048:
+                elif len(self.bierBitmap) <= 2048:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_18
                     s = (len(self.bierBitmap) - 1) / 64
                     bitmaplen = (s + 1) * 64
@@ -708,7 +709,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         returnVal           += lowpan['payload']
 
         if self.sendWithBier :
-            print 'Message sent with bitmap : {0}'.format(self.bierBitmap)
+            print 'Message sent to dst {0} with bitmap : {1}'.format(''.join(['%02x' % b for b in lowpan['dst_addr'][14:]]), self.bierBitmap)
 
         return returnVal
     

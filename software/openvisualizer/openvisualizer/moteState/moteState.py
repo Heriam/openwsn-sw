@@ -283,7 +283,13 @@ class StateIdManager(StateElem):
             return self.data[0]['my16bID'].addr[:]
         except IndexError:
             return None
-    
+
+    def get64bAddr(self):
+        try:
+            return self.data[0]['my64bID'].addr[:]
+        except IndexError:
+            return None
+
     def update(self,notif):
     
         # update state
