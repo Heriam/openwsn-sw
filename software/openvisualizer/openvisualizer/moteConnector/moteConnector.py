@@ -225,6 +225,11 @@ class moteConnector(eventBusClient.eventBusClient):
                     # # set 8. trackId
                     trackId = data[2][openController.openController.PARAMS_TRACKID]
                     dataToSend += [trackId]
+                    # set 9. bier
+                    if data[2][openController.openController.PARAMS_BIER]:
+                        dataToSend.append(1)
+                    else:
+                        dataToSend.append(0)
         except AttributeError as err:
             print "============================================="
             print "Error ! Cannot find parameter! " + err
