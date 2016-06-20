@@ -142,9 +142,6 @@ class topologyMgr(eventBusClient.eventBusClient):
             altPaths  = list(nx.shortest_simple_paths(graph, _1hop, _0hop))[1:]
             arcPath   = []
 
-            print '==========Key Hop========'
-            print _0hop, _1hop
-
             # find a sibling path to build an ARC
             for altPath in altPaths:
                 if altPath[-2] in track and altPath[-2] not in srcRoute:
@@ -154,14 +151,8 @@ class topologyMgr(eventBusClient.eventBusClient):
             if not arcPath:
                 arcPath = altPaths[0] if altPaths else [_1hop, _0hop]
 
-            print '==========ARC Path=========='
-            print arcPath
-
             medNodes = [node for node in arcPath if node not in track]
             edgeNode2 = arcPath[arcPath.index(medNodes[-1]) + 1]
-
-            print '==========Intermediate Nodes and Edge Nodes=========='
-            print medNodes, edgeNode1, edgeNode2
 
             preHop = edgeNode1
             for nexHop in medNodes:
