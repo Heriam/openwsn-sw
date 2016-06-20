@@ -234,9 +234,9 @@ class moteConnector(eventBusClient.eventBusClient):
             print "============================================="
             print "Error ! Cannot find parameter! {0}".format(err)
             return [outcome, dataToSend]
-        except:
+        except Exception as err:
             print "============================================="
-            print "Unrecognized error in parameters !"
+            print "Unrecognized error in parameter {0}".format(err)
             return [outcome, dataToSend]
 
         # the command is legal if I got here

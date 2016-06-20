@@ -38,7 +38,8 @@
           "rxMoteList": [],
           "channelOffset": 0,
           "trackID": 0,
-          "shared": true
+          "shared": true,
+          "bier": true
         }
       ]
     }
