@@ -33,6 +33,7 @@ class openController():
     PARAMS_BITINDEX          = 'bitIndex'
     PARAMS_TYPE              = 'type'
     PARAMS_SHARED            = 'shared'
+    PARAMS_BIER              = 'bier'
     PARAMS_CELL              = 'cells'
     PARAMS_REMAPSLOTOFF      = 'remapSlotOff'
     PARAMS_REMAPCHANOFF      = 'remapChanOff'
