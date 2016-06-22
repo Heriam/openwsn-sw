@@ -222,7 +222,7 @@ class moteConnector(eventBusClient.eventBusClient):
                     # set 7. bitIndex
                     bitIndex = data[2][sm.PARAMS_BITINDEX]
                     dataToSend += [bitIndex >> i & 0xff for i in (8, 0)]
-                    # # set 8. trackId
+                    # set 8. trackId
                     trackId = data[2][sm.PARAMS_TRACKID]
                     dataToSend += [trackId]
                     # set 9. bier
