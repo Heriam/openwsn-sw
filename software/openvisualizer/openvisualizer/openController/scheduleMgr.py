@@ -112,7 +112,8 @@ class Schedule():
                     self.PARAMS_TRACKID: trackID,
                     self.PARAMS_SHARED: False,
                     self.PARAMS_CHANNELOFF: self.CHANNELOFF_DEFAULT,
-                    self.PARAMS_SLOTOFF: slotOff
+                    self.PARAMS_SLOTOFF: slotOff,
+                    self.PARAMS_BIER: True
                 })
                 slotFrame[slotOff] = slotList[-1]
         self.configSlot(self.OPT_ADD, slotList)
