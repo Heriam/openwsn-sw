@@ -11,7 +11,8 @@
           "rxMoteList": [],
           "channelOffset": 0,
           "trackID": 0,
-          "shared": true
+          "shared": true,
+          "bier": false
         },
         {
           "slotOffset": 19,
@@ -20,7 +21,8 @@
           "rxMoteList": [],
           "channelOffset": 0,
           "trackID": 0,
-          "shared": true
+          "shared": true,
+          "bier": false
         },
         {
           "slotOffset": 29,
@@ -29,7 +31,8 @@
           "rxMoteList": [],
           "channelOffset": 0,
           "trackID": 0,
-          "shared": true
+          "shared": true,
+          "bier": false
         },
         {
           "slotOffset": 39,
@@ -39,7 +42,7 @@
           "channelOffset": 0,
           "trackID": 0,
           "shared": true,
-          "bier": true
+          "bier": false
         }
       ]
     }
