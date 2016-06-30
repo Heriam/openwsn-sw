@@ -120,4 +120,6 @@ errorDescriptions = {
   69: "| slotframe Length is set to {0}, maxActiveSlots {1}",
 
   80: "# active cells for Tx: {0}, Rx: {1}",
+  81: "Anormal delay betwwen two BIER packets. Nb of slots : {0}",
+  82: "Non-BIER test msg received. SlotOffset : {0}"
 }
