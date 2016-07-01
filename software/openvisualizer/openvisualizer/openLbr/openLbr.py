@@ -137,7 +137,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.sendWithBier         = False
         self.bierLock             = threading.Lock()
         self.bierBitmap           = '11111111111'
-        self.trackID              = 0
+        self.trackID              = 3
 
         # initialize parent class
         eventBusClient.eventBusClient.__init__(
@@ -255,7 +255,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             #
             # lowpan['route'].pop() #remove last as this is me.
 
-            if self.trackID == 2:
+            if self.trackID == 2 or self.trackID == 1:
                 lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 246],
                                    [0, 18, 75, 0, 6, 13, 158, 216], [0, 18, 75, 0, 6, 13, 159, 74]]
             elif self.trackID == 3:
