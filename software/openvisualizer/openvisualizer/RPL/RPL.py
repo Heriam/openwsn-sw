@@ -272,7 +272,7 @@ class RPL(eventBusClient.eventBusClient):
         # update parents information with parents collected -- calls topology module.
         self.dispatch(          
             signal          = 'updateParents',
-            data            =  (tuple(source),parents)  
+            data            =  (dao_transit_information['Transit_information_path_control'],tuple(source),parents)
         )
         
         #with self.dataLock:

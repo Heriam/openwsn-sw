@@ -9,6 +9,7 @@ stores and manages the information about the devices, their capabilities, reacha
 
 '''
 from openvisualizer.eventBus import eventBusClient
+from openvisualizer.RPL.topology import topology as topo
 import threading
 import logging
 import networkx as nx
@@ -69,8 +70,8 @@ class topologyMgr(eventBusClient.eventBusClient):
         return self.rootEui64List
 
     def getTrack(self):
-
-        return self.track
+        with self.topoLock:
+            return self.track
 
     def getRepType(self):
 
@@ -81,8 +82,8 @@ class topologyMgr(eventBusClient.eventBusClient):
         self.repType = t
 
     def getTopo(self):
-
-        return self.topo
+        with self.topoLock:
+            return self.topo
 
 
     # ================================ private ==============================
@@ -179,7 +180,7 @@ class topologyMgr(eventBusClient.eventBusClient):
     def _updateTrackSchedule(self, track):
 
         self.dispatch(
-            signal='updateTrackSchedule',
+            signal='installTrack',
             data=track
         )
 
@@ -190,23 +191,20 @@ class topologyMgr(eventBusClient.eventBusClient):
         '''
         updates topology
         '''
+        prefer = data[0]
+        source = data[1]
+        parent = tuple(data[2][0])
 
-        returnVal = self._dispatchAndGetResult(
-            signal='getStateElem',
-            data='Neighbors'
-        )
-        edges = []
-
-        # gets the schedule of every mote
-        for mote64bID, neiList in returnVal.items():
-            for neiInfo in neiList[:]:
-                if neiInfo['addr'] != " (None)":
-                    neiInfo['addr'] = tuple([int(i, 16) for i in neiInfo['addr'].split(' ')[0].split('-')])
-                    edges.append((mote64bID, neiInfo['addr']))
-
-        with self.topoLock:
-            self.topo.clear()
-            self.topo.add_edges_from(edges)
+        try:
+            with self.topoLock:
+                if prefer == topo.MAX_PARENT_PREFERENCE:
+                    if source in self.topo.graph and self.topo.graph[source][prefer-1] != parent:
+                        self.topo.remove_edges_from(self.topo.graph[source])
+                    self.topo.graph[source] = [(None,None)]*topo.MAX_PARENT_PREFERENCE
+                self.topo.add_edge(source,parent,{'preference':prefer})
+                self.topo.graph[source][prefer-1] = (source,parent)
+        except KeyError as err:
+            print "RPLTOARC Error: source{0}, parent{1}, preference {2}. {3}".format(source,parent,prefer,err)
 
     def _updateRoot(self, sender, signal, data):
         '''

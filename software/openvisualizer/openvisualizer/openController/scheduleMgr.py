@@ -323,7 +323,7 @@ class scheduleMgr(eventBusClient):
                 },
                 {
                     'sender'  : self.WILDCARD,
-                    'signal'  : 'updateTrackSchedule',
+                    'signal'  : 'installTrack',
                     'callback': self._installTrack
                 }
             ]

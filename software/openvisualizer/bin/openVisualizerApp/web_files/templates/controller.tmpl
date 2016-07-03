@@ -13,14 +13,20 @@
             function showrun() {
                 $.ajax({
                     dataType: "json",
-                    url: "/schedule/"+"showrun",
+                    url: "/schedule/showrun",
                     success: schedule,
                     error: errorOnAjax
                 });
                 $.ajax({
                     dataType: "json",
-                    url: "/schedule/"+"showstartup",
+                    url: "/schedule/showstartup",
                     success: startupschedule,
+                    error: errorOnAjax
+                });
+                $.ajax({
+                    dataType: "json",
+                    url: "/bier/gettopo",
+                    success: generateTopo,
                     error: errorOnAjax
                 });
                 console.log("updating info");
@@ -145,6 +151,10 @@
 	                            <div class="tab-content">
 	                                <div class="tab-pane fade in active" id="pathview">
 	                                    <br><br>
+	                                    <b>Topology:</b>
+	                                    <div id="myTopoDiv" style="border: solid 1px black; background: white; width: 100%; height: 700px"></div>
+	                                    <br><br>
+	                                    <b>Track:</b>
                                         <div id="myDiagramDiv" style="border: solid 1px black; background: white; width: 100%; height: 700px"></div>
                                         <br><p>
                                         Click on a node to show distances from that node to each other node.
@@ -365,7 +375,7 @@
                                             if(firstfreeslot != lastSchedule){
                                                 $.ajax({
                                                     dataType: "json",
-                                                    url: "/bier/"+"gettrack",
+                                                    url: "/bier/gettrack",
                                                     success: generateGraph,
                                                     error: errorOnAjax
                                                 });
@@ -486,6 +496,55 @@
 
                                         var $ = go.GraphObject.make;  // for conciseness in defining templates
 
+                                        myTopo =
+                                          $(go.Diagram, "myTopoDiv", // must be the ID or reference to div
+                                            {
+                                              initialAutoScale: go.Diagram.UniformToFill,
+                                              padding: 10,
+                                              contentAlignment: go.Spot.Center,
+                                              layout: $(go.LayeredDigraphLayout),
+                                              maxSelectionCount: 2,
+                                              "animationManager.isEnabled": false
+                                            });
+
+
+                                        // define the Node template
+                                        myTopo.nodeTemplate =
+                                          $(go.Node, "Horizontal",
+                                            { locationSpot: go.Spot.Center,  // Node.location is the center of the Shape
+                                              locationObjectName: "SHAPE",
+                                              selectionAdorned: false,
+                                              selectionChanged: nodeSelectionChanged },
+                                            $(go.Panel, "Auto",
+                                              $(go.Shape, "Ellipse",
+                                                { name: "SHAPE",
+                                                  fill: "lightgray",  // default value, but also data-bound
+                                                  stroke: "transparent",  // modified by highlighting
+                                                  strokeWidth: 2,
+                                                  desiredSize: new go.Size(45, 45),
+                                                  portId: "" },  // so links will go to the shape, not the whole node
+                                                new go.Binding("fill", "isSelected", function(s, obj) { return s ? "red" : obj.part.data.color; }).ofObject()),
+                                              $(go.TextBlock,
+                                                new go.Binding("text"))));
+
+                                        // define the Link template
+                                        myTopo.linkTemplate =
+                                          $(go.Link,
+                                            {
+                                              selectable: false,      // links cannot be selected by the user
+                                              curve: go.Link.Bezier,
+                                              layerName: "Background"  // don't cross in front of any nodes
+                                            },
+                                            $(go.Shape,  // this shape only shows when it isHighlighted
+                                              { isPanelMain: true, stroke: null, strokeWidth: 10 },
+                                              new go.Binding("stroke", "isHighlighted", function(h) { return h ? "red" : null; }).ofObject()),
+                                            $(go.Shape,
+                                              // mark each Shape to get the link geometry with isPanelMain: true
+                                              { isPanelMain: true, stroke: "black", strokeWidth: 5 },
+                                              new go.Binding("stroke", "color")),
+                                            $(go.TextBlock, new go.Binding("text", "text"))
+                                          );
+
                                         myDiagram =
                                           $(go.Diagram, "myDiagramDiv", // must be the ID or reference to div
                                             {
@@ -582,6 +641,25 @@
                                           }
                                           if (myDiagram.selection.count > 0) break;
                                         }
+                                    }
+
+                                    function generateTopo(json) {
+                                        var colors = ["gainsboro", "gainsboro","lightgray","silver","dimgray"];
+
+                                        var names = json.nodes;
+
+                                        var nodeDataArray = [];
+                                        for (var i = 0; i < names.length; i++) {
+                                          nodeDataArray.push({ key: names[i], text: names[i], color: colors[0] });
+                                        }
+
+                                        var links = json.links;
+                                        var linkDataArray = [];
+                                        for (var i = 0; i < links.length; i++) {
+                                          linkDataArray.push({ from: links[i][0], to: links[i][1], text: links[i][2], color: colors[links[i][2]-1] });
+                                        }
+
+                                        myTopo.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
                                     }
 
                                     function generateGraph(json) {

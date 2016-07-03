@@ -250,6 +250,14 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
                             , track[txnode][rxnode]['bitIndex']) for (txnode,rxnode) in track.edges()]
             }
             return json.dumps(dict)
+        elif params == 'gettopo':
+            topo = self.tm.getTopo()
+            dict1 = {
+                'nodes': [''.join(['%02x' % b for b in node[6:]]) for node in topo.nodes()],
+                'links': [(''.join(['%02x' % b for b in txnode[6:]]),''.join(['%02x' % b for b in rxnode[6:]])
+                            , topo[txnode][rxnode]['preference']) for (txnode,rxnode) in topo.edges()]
+            }
+            return json.dumps(dict1)
         else :
             return {"result": "fail"}
 
