@@ -76,7 +76,7 @@ class openController():
                                   self.SLOTFRAMES : {}}
         self.rootList          = []
         self.slotFrames        = {self.SLOTFRAME_DEFAULT : {
-                                     self.PARAMS_FRAMELENGTH : 20,
+                                     self.PARAMS_FRAMELENGTH : 66,
                                      self.PARAMS_CELL: []
                                  }}
         self.runningSchedule   = {self.ROOTLIST   : self.rootList,
