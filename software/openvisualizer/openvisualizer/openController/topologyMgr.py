@@ -195,16 +195,14 @@ class topologyMgr(eventBusClient.eventBusClient):
         source = data[1]
         parent = tuple(data[2][0])
 
-        try:
-            with self.topoLock:
-                if prefer == topo.MAX_PARENT_PREFERENCE:
-                    if source in self.topo.graph and self.topo.graph[source][prefer-1] != parent:
-                        self.topo.remove_edges_from(self.topo.graph[source])
-                    self.topo.graph[source] = [(None,None)]*topo.MAX_PARENT_PREFERENCE
-                self.topo.add_edge(source,parent,{'preference':prefer})
-                self.topo.graph[source][prefer-1] = (source,parent)
-        except KeyError as err:
-            print "RPLTOARC Error: source{0}, parent{1}, preference {2}. {3}".format(source,parent,prefer,err)
+        with self.topoLock:
+            if prefer == topo.MAX_PARENT_PREFERENCE or source not in self.topo.graph:
+                if source in self.topo.graph and self.topo.graph[source][prefer-1][1] != parent:
+                    print "Parent updated, source{0}, new parent{1}, replaced Parent {2}".format(source,parent,self.topo.graph[source][prefer-1][1])
+                    self.topo.remove_edges_from(self.topo.graph[source])
+                self.topo.graph[source] = [(None,None)]*topo.MAX_PARENT_PREFERENCE
+            self.topo.add_edge(source,parent,{'preference':prefer})
+            self.topo.graph[source][prefer-1] = (source,parent)
 
     def _updateRoot(self, sender, signal, data):
         '''

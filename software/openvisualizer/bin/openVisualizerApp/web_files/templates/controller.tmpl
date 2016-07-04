@@ -536,11 +536,11 @@
                                               layerName: "Background"  // don't cross in front of any nodes
                                             },
                                             $(go.Shape,  // this shape only shows when it isHighlighted
-                                              { isPanelMain: true, stroke: null, strokeWidth: 10 },
+                                              { isPanelMain: true, stroke: null, strokeWidth: 5 },
                                               new go.Binding("stroke", "isHighlighted", function(h) { return h ? "red" : null; }).ofObject()),
                                             $(go.Shape,
                                               // mark each Shape to get the link geometry with isPanelMain: true
-                                              { isPanelMain: true, stroke: "black", strokeWidth: 5 },
+                                              { isPanelMain: true, stroke: "black", strokeWidth: 2 },
                                               new go.Binding("stroke", "color")),
                                             $(go.TextBlock, new go.Binding("text", "text"))
                                           );
