@@ -75,10 +75,9 @@ class topology(eventBusClient.eventBusClient):
         
     def updateParents(self,sender,signal,data):
         ''' inserts parent information into the parents dictionary '''
-        if data[0] == self.MAX_PARENT_PREFERENCE:
-            with self.dataLock:
-                #data[0] == source address, data[1] == list of parents
-                self.parents.update({data[1]:data[2]})
+        with self.dataLock:
+            #data[0] == source address, data[1] == list of parents
+            self.parents.update({data[0]:data[1]})
     
     #======================== private =========================================
     

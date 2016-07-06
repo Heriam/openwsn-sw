@@ -254,8 +254,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             topo = self.tm.getTopo()
             dict1 = {
                 'nodes': [''.join(['%02x' % b for b in node[6:]]) for node in topo.nodes()],
-                'links': [(''.join(['%02x' % b for b in txnode[6:]]),''.join(['%02x' % b for b in rxnode[6:]])
-                            , topo[txnode][rxnode]['preference']) for (txnode,rxnode) in topo.edges()]
+                'links': [(''.join(['%02x' % b for b in txnode[6:]]),''.join(['%02x' % b for b in rxnode[6:]])) for (txnode,rxnode) in topo.edges()]
             }
             return json.dumps(dict1)
         else :

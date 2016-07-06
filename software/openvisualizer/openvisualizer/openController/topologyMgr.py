@@ -191,18 +191,22 @@ class topologyMgr(eventBusClient.eventBusClient):
         '''
         updates topology
         '''
-        prefer = data[0]
-        source = data[1]
-        parent = tuple(data[2][0])
+        returnVal = self._dispatchAndGetResult(
+            signal='getStateElem',
+            data='Neighbors'
+        )
+        edges = []
+
+        # gets the schedule of every mote
+        for mote64bID, neiList in returnVal.items():
+            for neiInfo in neiList[:]:
+                if neiInfo['addr'] != " (None)":
+                    neiInfo['addr'] = tuple([int(i, 16) for i in neiInfo['addr'].split(' ')[0].split('-')])
+                    edges.append((mote64bID, neiInfo['addr']))
 
         with self.topoLock:
-            if prefer == topo.MAX_PARENT_PREFERENCE or source not in self.topo.graph:
-                if source in self.topo.graph and self.topo.graph[source][prefer-1][1] != parent:
-                    print "Parent updated, source{0}, new parent{1}, replaced Parent {2}".format(source,parent,self.topo.graph[source][prefer-1][1])
-                    self.topo.remove_edges_from(self.topo.graph[source])
-                self.topo.graph[source] = [(None,None)]*topo.MAX_PARENT_PREFERENCE
-            self.topo.add_edge(source,parent,{'preference':prefer})
-            self.topo.graph[source][prefer-1] = (source,parent)
+            self.topo.clear()
+            self.topo.add_edges_from(edges)
 
     def _updateRoot(self, sender, signal, data):
         '''

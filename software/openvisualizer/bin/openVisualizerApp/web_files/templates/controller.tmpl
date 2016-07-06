@@ -656,7 +656,7 @@
                                         var links = json.links;
                                         var linkDataArray = [];
                                         for (var i = 0; i < links.length; i++) {
-                                          linkDataArray.push({ from: links[i][0], to: links[i][1], text: links[i][2], color: colors[links[i][2]-1] });
+                                          linkDataArray.push({ from: links[i][0], to: links[i][1], color: colors[4] });
                                         }
 
                                         myTopo.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
