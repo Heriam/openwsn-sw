@@ -74,8 +74,7 @@ class TunReadThread(threading.Thread):
                 p =  os.read(self.tunIf,self.ETHERNET_MTU)
            
                 # convert input from a string to a byte list
-                p = p.encode('hex')
-                p = list(bytearray.fromhex(p))
+                p = [ord(b) for b in p]
 
                 # clear flow label field
                 p[1:4] = [0]*3
