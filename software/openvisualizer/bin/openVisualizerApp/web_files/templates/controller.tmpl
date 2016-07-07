@@ -5,9 +5,10 @@
 	    <script src="https://gojs.net/latest/release/go.js"></script>
 		%include head.tmpl
 	</head>
-	<body onload="diagram();showrun();">
+	<body onload="diagram();showrun();showtopo()">
 	    <script>
 		    var intervalID1 = window.setInterval(showrun, 5000);
+		    var intervalID2 = window.setInterval(showtopo, 20000);
 		    var lastSchedule =0;
 
             function showrun() {
@@ -23,13 +24,16 @@
                     success: startupschedule,
                     error: errorOnAjax
                 });
+                console.log("updating schedule info");
+            }
+            function showtopo(){
                 $.ajax({
                     dataType: "json",
                     url: "/bier/gettopo",
                     success: generateTopo,
                     error: errorOnAjax
                 });
-                console.log("updating info");
+                console.log("updating topology info");
             }
 		</script>
 
@@ -380,7 +384,7 @@
                                                     error: errorOnAjax
                                                 });
                                                 lastSchedule = firstfreeslot;
-                                                console.log('diagram update');
+                                                console.log('updating track info');
                                             }
 
                                             tableNum = frameLength/15;
@@ -644,7 +648,7 @@
                                     }
 
                                     function generateTopo(json) {
-                                        var colors = ["gainsboro", "gainsboro","lightgray","silver","dimgray"];
+                                        var colors = ["gainsboro","gainsboro","lightgray","silver","dimgray"];
 
                                         var names = json.nodes;
 

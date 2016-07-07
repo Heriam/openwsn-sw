@@ -191,18 +191,15 @@ class topologyMgr(eventBusClient.eventBusClient):
         '''
         updates topology
         '''
-        prefer = data[0]
-        source = data[1]
-        parent = tuple(data[2][0])
+        parentList = data[1]
+        source = data[0]
+        newEdges = [(source,tuple(p[1]),{'preference':p[0]}) for p in parentList]
 
         with self.topoLock:
-            if prefer == topo.MAX_PARENT_PREFERENCE or source not in self.topo.graph:
-                if source in self.topo.graph and self.topo.graph[source][prefer-1][1] != parent:
-                    print "Parent updated, source{0}, new parent{1}, replaced Parent {2}".format(source,parent,self.topo.graph[source][prefer-1][1])
-                    self.topo.remove_edges_from(self.topo.graph[source])
-                self.topo.graph[source] = [(None,None)]*topo.MAX_PARENT_PREFERENCE
-            self.topo.add_edge(source,parent,{'preference':prefer})
-            self.topo.graph[source][prefer-1] = (source,parent)
+            if source in self.topo.graph:
+                self.topo.remove_edges_from(self.topo.graph[source])
+            self.topo.add_edges_from(newEdges)
+            self.topo.graph[source] = newEdges
 
     def _updateRoot(self, sender, signal, data):
         '''

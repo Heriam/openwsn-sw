@@ -211,14 +211,14 @@ class RPL(eventBusClient.eventBusClient):
         
         try:
             # RPL header
-            dao_header['RPL_InstanceID']    = dao[0]
-            dao_header['RPL_flags']         = dao[1]
-            dao_header['RPL_Reserved']      = dao[2]
-            dao_header['RPL_DAO_Sequence']  = dao[3]
+            # dao_header['RPL_InstanceID']    = dao[0]
+            dao_header['RPL_flags']         = dao[0]
+            # dao_header['RPL_Reserved']      = dao[2]
+            dao_header['RPL_DAO_Sequence']  = dao[1]
             # DODAGID
-            dao_header['DODAGID']           = dao[4:20]
+            dao_header['DODAGID']           = dao[2:10]
            
-            dao                             = dao[20:]
+            dao                             = dao[10:]
             # retrieve transit information header and parents
             parents                         = []
             children                        = []
@@ -227,24 +227,24 @@ class RPL(eventBusClient.eventBusClient):
                 if   dao[0]==self._TRANSIT_INFORMATION_TYPE: 
                     # transit information option
                     dao_transit_information['Transit_information_type']             = dao[0]
-                    dao_transit_information['Transit_information_length']           = dao[1]
-                    dao_transit_information['Transit_information_flags']            = dao[2]
-                    dao_transit_information['Transit_information_path_control']     = dao[3]
-                    dao_transit_information['Transit_information_path_sequence']    = dao[4]
-                    dao_transit_information['Transit_information_path_lifetime']    = dao[5]
+                    # dao_transit_information['Transit_information_length']           = dao[1]
+                    # dao_transit_information['Transit_information_flags']            = dao[2]
+                    dao_transit_information['Transit_information_path_control']     = dao[1]
+                    dao_transit_information['Transit_information_path_sequence']    = dao[2]
+                    # dao_transit_information['Transit_information_path_lifetime']    = dao[3]
                     # address of the parent
-                    prefix        =  dao[6:14]
-                    parents      += [dao[14:22]]
-                    dao           = dao[22:]
+                    # prefix        =  dao[6:14]
+                    parents      += [(dao[1],dao[3:11])]
+                    dao           = dao[11:]
                 elif dao[0]==self._TARGET_INFORMATION_TYPE:
                     dao_target_information['Target_information_type']               = dao[0]
-                    dao_target_information['Target_information_length']             = dao[1]
-                    dao_target_information['Target_information_flags']              = dao[2]
-                    dao_target_information['Target_information_prefix_length']      = dao[3]
+                    # dao_target_information['Target_information_length']             = dao[1]
+                    # dao_target_information['Target_information_flags']              = dao[2]
+                    # dao_target_information['Target_information_prefix_length']      = dao[2]
                     # address of the child
-                    prefix        =  dao[4:12]
-                    children     += [dao[12:20]]
-                    dao           = dao[20:]
+                    # prefix        =  dao[3:11]
+                    children     += [dao[1:9]]
+                    dao           = dao[9:]
                 else:
                     log.warning("DAO with wrong Option {0}. Neither Transit nor Target.".format(dao[0]))
                     return
@@ -258,7 +258,7 @@ class RPL(eventBusClient.eventBusClient):
         output              += ['received RPL DAO from {0}'.format(u.formatAddr(source))]
         output              += ['- parents:']
         for p in parents:
-            output          += ['   . {0}'.format(u.formatAddr(p))]
+            output          += ['   . {0} : {1}'.format(u.formatAddr(p[1]), p[0])]
         output              += ['- children:']
         for p in children:
             output          += ['   . {0}'.format(u.formatAddr(p))]
@@ -268,11 +268,11 @@ class RPL(eventBusClient.eventBusClient):
         print output
         
         # if you get here, the DAO was parsed correctly
-        
+
         # update parents information with parents collected -- calls topology module.
-        self.dispatch(          
+        self.dispatch(
             signal          = 'updateParents',
-            data            =  (dao_transit_information['Transit_information_path_control'],tuple(source),parents)
+            data            =  (tuple(source),parents)
         )
         
         #with self.dataLock:
