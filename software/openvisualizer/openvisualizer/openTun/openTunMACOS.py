@@ -75,13 +75,13 @@ class TunReadThread(threading.Thread):
            
                 # convert input from a string to a byte list
                 p = [ord(b) for b in p]
-                
+
+                # clear flow label field
+                p[1:4] = [0]*3
+
                 # debug info
                 if log.isEnabledFor(logging.DEBUG):
                     log.debug('packet captured on tun interface: {0}'.format(u.formatBuf(p)))
-    
-                # remove tun ID octets
-                p = p[4:]
                 
                 # make sure it's an IPv6 packet (i.e., starts with 0x6x)
                 if (p[0]&0xf0) != 0x60:
@@ -132,12 +132,10 @@ class OpenTunMACOS(openTun.OpenTun):
         This function forwards the data to the the TUN interface.
         Read from tun interface and forward to 6lowPAN
         '''
-        
-        data = VIRTUALTUNID + data
-        
+
         # convert data to string
         data  = ''.join([chr(b) for b in data])
-        
+
         try:
             # write over tuntap interface
             os.write(self.tunIf, data)
