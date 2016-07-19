@@ -91,7 +91,7 @@ class OpenParser(Parser.Parser):
         self._addSubParser(
             index  = 0,
             val    = self.SERFRAME_MOTE2PC_BITSTRING,
-            PARSER = self.parserBitString.parseInput,
+            parser = self.parserBitString.parseInput,
         )
     #======================== public ==========================================
     
