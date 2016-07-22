@@ -17,7 +17,7 @@ log.addHandler(logging.NullHandler())
 from openvisualizer.eventBus import eventBusClient
 from moteDriver  import moteDriver  as md
 from scheduleMgr import scheduleMgr as sm
-from topologyMgr import topologyMgr as tm
+from trackMgr    import trackMgr    as tm
 
 
 class openController(eventBusClient.eventBusClient):
@@ -34,10 +34,12 @@ class openController(eventBusClient.eventBusClient):
 
         # initiate scheduleMgr
         self.moteDriver     = md(moteStates)
-        self.topologyMgr    = tm()
         self.scheduleMgr    = sm()
+        self.trackMgr       = tm()
 
-        eventBusClient.eventBusClient.__init__(self,"openController", registrations=[])
+        eventBusClient.eventBusClient.__init__(self,"openController", registrations=[
+
+        ])
 
 
     # ==================== public =======================
@@ -54,15 +56,15 @@ class openController(eventBusClient.eventBusClient):
         :returns rootList
 
         '''
-        return self.topologyMgr.getDagRootList()
+        return self.trackMgr.getDagRoot()
 
 
-    def getTopoMgr(self):
+    def getTrackMgr(self):
         '''
-        :returns: topoMgr
+        :returns: trackMgr
 
         '''
-        return self.topologyMgr
+        return self.trackMgr
 
 
     def getScheduleMgr(self):
@@ -74,4 +76,5 @@ class openController(eventBusClient.eventBusClient):
 
 
     # ============================ private ===================================
+
 
