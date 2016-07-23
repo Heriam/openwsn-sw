@@ -82,7 +82,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         if self.ctrlMode:
             self.openController = self.app.getOpenController()
             self.sm             = self.openController.getScheduleMgr()
-            self.tm             = self.openController.getTopoMgr()
+            self.tm             = self.openController.getTrackMgr()
             self.startupConfig  = {}
             self._loadConfig()
             self.schedule = self.sm.getSchedule()
@@ -236,18 +236,15 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         elif params == 'singlepath':
             self.tm.setRepType(0)
             return {"result": "success"}
-        elif params == 'dualpath':
+        elif params == 'fullpath':
             self.tm.setRepType(1)
             return {"result": "success"}
-        elif params == 'fullpath':
-            self.tm.setRepType(2)
-            return {"result": "success"}
         elif params == 'gettrack':
-            track = self.tm.getTrack()
+            tracker = self.tm.getTrackers()
             dict = {
-                'nodes': [ ''.join(['%02x' % b for b in node[6:]]) for node in track.nodes()],
+                'nodes': [ ''.join(['%02x' % b for b in node[6:]]) for node in tracker.track.nodes()] if tracker else [],
                 'links': [ (''.join(['%02x' % b for b in rxnode[6:]]),''.join(['%02x' % b for b in txnode[6:]])
-                            , track[txnode][rxnode]['bitIndex']) for (txnode,rxnode) in track.edges()]
+                            , tracker.track[txnode][rxnode]['bit']) for (txnode,rxnode) in tracker.track.edges()] if tracker else []
             }
             return json.dumps(dict)
         elif params == 'gettopo':
