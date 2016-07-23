@@ -21,8 +21,7 @@ import openvisualizer.openvisualizer_utils as u
 class trackMgr(eventBusClient.eventBusClient):
 
     SINGLE_PATH = 0
-    PARALLEL_PATH = 1
-    FULL_PATH = 2
+    FULL_PATH = 1
 
     def __init__(self):
 
@@ -162,13 +161,7 @@ class trackMgr(eventBusClient.eventBusClient):
             # create a new track
             trackId = len(self.tracks) + 1
             rplRoute = self._dispatchAndGetResult('getSourceRoute', list(dstAddr))
-            if len(rplRoute) >= 2:
-                srcRoute = [tuple(hop) for hop in rplRoute]
-            else:
-                srcRoute = self._getShortestPath(dstAddr)
-                if not srcRoute:
-                    return (None,None)
-
+            srcRoute = [tuple(hop) for hop in rplRoute]
             tracker = self._buildTrack(Tracker(srcRoute,trackId,self.repType))
             self.tracks[trackId] = tracker
         return tracker.getBitmap(dstAddr)
@@ -260,7 +253,6 @@ class Tracker():
         self.srcRoute    = srcRoute
         self.repType     = repType
         self.bitMap      = {}
-        self.seq         = 0
         self.bitStrings  = {}
         self.track       = nx.DiGraph()
 
@@ -295,12 +287,11 @@ class Tracker():
         return self.track
 
     def feedBits(self, data):
-        (moteId, asn, seq, bitBytes) = data
+        (moteId, asn, bitBytes) = data
         print data
 
     def getBitmap(self, dst):
-        self.seq +=1
-        return self.bitStrings.get(dst), self.seq
+        return self.bitStrings.get(dst)
 
     def _computeBitmap(self, dstAddr):
         route = nx.shortest_path(self.track, dstAddr, self.srcRoute[-1])
@@ -312,27 +303,6 @@ class Tracker():
                     bitIndex = self.track[txMote][rxMote]['bit']
                     bitmap[bitIndex] = '1'
                 txMote = rxMote
-
-        elif self.repType == trackMgr.PARALLEL_PATH:
-            mediatNodes = route[1:-1]
-            if mediatNodes:
-                newTrack = self.track.copy()
-                newTrack.remove_nodes_from(mediatNodes)
-                altPath = nx.shortest_path(newTrack, route[0], route[-1])
-            else:
-                altPath = list(nx.shortest_simple_paths(self.track, route[0], route[-1]))[1:2][0]
-            for rxMote in route:
-                if txMote:
-                    bitIndex = self.track[txMote][rxMote]['bit']
-                    bitmap[bitIndex] = '1'
-                txMote = rxMote
-            txMote = None
-            for rxMote in altPath:
-                if txMote:
-                    bitIndex = self.track[txMote][rxMote]['bit']
-                    bitmap[bitIndex] = '1'
-                txMote = rxMote
-
         elif self.repType == trackMgr.FULL_PATH:
             bitmap = ['1'] * self.bitOffset
 

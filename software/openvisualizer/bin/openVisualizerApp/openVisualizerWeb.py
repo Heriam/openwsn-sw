@@ -236,11 +236,8 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         elif params == 'singlepath':
             self.tm.setRepType(0)
             return {"result": "success"}
-        elif params == 'dualpath':
-            self.tm.setRepType(1)
-            return {"result": "success"}
         elif params == 'fullpath':
-            self.tm.setRepType(2)
+            self.tm.setRepType(1)
             return {"result": "success"}
         elif params == 'gettrack':
             tracker = self.tm.getTrackers()

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 	<head>
-	    //<script src="https://cdnjs.cloudflare.com/ajax/libs/gojs/1.6.7/go-debug.js"></script>
 	    <script src="https://gojs.net/latest/release/go.js"></script>
 		%include head.tmpl
 	</head>
@@ -9,6 +8,8 @@
 	    <script>
 		    var intervalID1 = window.setInterval(showrun, 5000);
 		    var lastSchedule =0;
+		    var myTopo;
+		    var myDiagram;
 
             function showrun() {
                 $.ajax({
@@ -120,13 +121,8 @@
                                                 selected="selected" \
                                             % end
                                         >Single</option>
-                                        <option value="dualpath" \
-                                            % if path_type==1:
-                                                selected="selected" \
-                                            % end
-                                        >Parallel</option>
                                         <option value="fullpath" \
-                                            % if path_type==2:
+                                            % if path_type==1:
                                                 selected="selected" \
                                             % end
                                         >Full</option>

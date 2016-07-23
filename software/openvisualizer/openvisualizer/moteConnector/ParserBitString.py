@@ -18,7 +18,7 @@ import openvisualizer.openvisualizer_utils as u
 
 class ParserBitString(Parser.Parser):
     
-    HEADER_LENGTH       = 5
+    HEADER_LENGTH       = 3
     
     def __init__(self):
         
@@ -36,20 +36,20 @@ class ParserBitString(Parser.Parser):
         # ensure input not short longer than header
         self._checkLength(input)
 
-        headerBytes = input[:5]
+        headerBytes = input[:3]
         try:
-            (moteId, trackId, seq) = struct.unpack('<HBH', ''.join([chr(c) for c in headerBytes]))
+            (moteId, trackId) = struct.unpack('<HB', ''.join([chr(c) for c in headerBytes]))
         except struct.error:
             raise ParserException(ParserException.DESERIALIZE,
                                   "could not extract trackId and moteId from {0}".format(headerBytes))
 
-        asnBytes = input[5:10]
+        asnBytes = input[3:8]
         try:
             (asn) = struct.unpack('<HHB',''.join([chr(c) for c in asnBytes]))
         except struct.error:
             raise ParserException(ParserException.DESERIALIZE,
                                   "could not extract asn from {0}".format(asnBytes))
-        bitBytes = (input[10:])
-        returnTuple = (trackId,moteId,asn,seq,bitBytes)
+        bitBytes = (input[8:])
+        returnTuple = (trackId,moteId,asn,bitBytes)
 
         return 'bitString', returnTuple

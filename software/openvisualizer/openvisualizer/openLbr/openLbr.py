@@ -263,25 +263,20 @@ class OpenLbr(eventBusClient.eventBusClient):
                 log.warning('unsupported address format {0}'.format(lowpan['dst_addr']))
 
             lowpan['route'] = self._getSourceRoute(dst_addr)
+            if len(lowpan['route']) < 2:
+                # no source route could be found
+                log.warning('no source route to {0}'.format(lowpan['dst_addr']))
+                # TODO: return ICMPv6 message
+                return
+            lowpan['route'].pop()  # remove last as this is me.
+            lowpan['nextHop'] = lowpan['route'][len(lowpan['route']) - 1]  # get next hop as this has to be the destination address, this is the last element on the list
 
             with self.bierLock:
                 if self.sendWithBier:
                     if self.bierAuto:
-                        (lowpan['bitmap'],lowpan['seq']) = self._getBitmap(dst_addr)
-                        if not lowpan['bitmap']:
-                            log.warning('no route to {0}'.format(lowpan['dst_addr']))
-                            return
+                        lowpan['bitmap'] = self._getBitmap(dst_addr)
                     else:
                         lowpan['bitmap'] = self.bierBitmap
-                else:
-                    if len(lowpan['route'])<2:
-                        # no source route could be found
-                        log.warning('no source route to {0}'.format(lowpan['dst_addr']))
-                        # TODO: return ICMPv6 message
-                        return
-                    lowpan['route'].pop() #remove last as this is me.
-
-            lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
 
             # turn dictionary of fields into raw bytes
             lowpan_bytes     = self.reassemble_lowpan(lowpan)
@@ -293,7 +288,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             #print "output:"
             #print lowpan_bytes
             # dispatch
-            print lowpan['nextHop'], lowpan_bytes
+
             self.dispatch(
                 signal       = 'bytesToMesh',
                 data         = (lowpan['nextHop'],lowpan_bytes),
@@ -567,7 +562,6 @@ class OpenLbr(eventBusClient.eventBusClient):
                 bitmap += [int(bierBitmap[8 * i:8 * (i + 1)], 2)]
 
             returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
-            returnVal += [lowpan['seq'] & 0xFF,(lowpan['seq'] >> 8) & 0xFF]
             returnVal += bitmap
 
         # destination address
@@ -741,7 +735,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         returnVal           += lowpan['payload']
 
         if self.sendWithBier :
-            print 'Message {0} sent to dst {1} with bitmap : {2}'.format(lowpan['seq'],''.join(['%02x' % b for b in lowpan['dst_addr'][14:]]), self.bierBitmap)
+            print 'Message sent to dst {0} with bitmap : {1}'.format(''.join(['%02x' % b for b in lowpan['dst_addr'][14:]]), lowpan['bitmap'])
 
         return returnVal
     
