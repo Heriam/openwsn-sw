@@ -86,6 +86,7 @@ class trackMgr(eventBusClient.eventBusClient):
 
         '''
         self.repType = t
+        self.getTrackers().repType = t
 
     def getTopo(self):
         '''
@@ -106,22 +107,15 @@ class trackMgr(eventBusClient.eventBusClient):
         '''
         updates topology
         '''
-        returnVal = self._dispatchAndGetResult(
-            signal='getStateElem',
-            data='Neighbors'
-        )
-        edges = []
-
-        # gets the schedule of every mote
-        for mote64bID, neiList in returnVal.items():
-            for neiInfo in neiList[:]:
-                if neiInfo['addr'] != " (None)":
-                    neiInfo['addr'] = tuple([int(i, 16) for i in neiInfo['addr'].split(' ')[0].split('-')])
-                    edges.append((mote64bID, neiInfo['addr']))
+        parentList = data[1]
+        source = data[0]
+        newEdges = [(source, tuple(p[1]), {'preference': p[0]}) for p in parentList]
 
         with self.topoLock:
-            self.topo.clear()
-            self.topo.add_edges_from(edges)
+            if source in self.topo.graph:
+                self.topo.remove_edges_from(self.topo.graph[source])
+            self.topo.add_edges_from(newEdges)
+            self.topo.graph[source] = newEdges
 
     def _updateRoot(self, sender, signal, data):
         '''
@@ -291,19 +285,22 @@ class Tracker():
         print data
 
     def getBitmap(self, dst):
-        return self.bitStrings.get(dst)
+
+        return self.bitStrings.get(dst).get(self.repType)
 
     def _computeBitmap(self, dstAddr):
+        entry = {}
         route = nx.shortest_path(self.track, dstAddr, self.srcRoute[-1])
         txMote = None
         bitmap = ['0'] * self.bitOffset
-        if self.repType == trackMgr.SINGLE_PATH:
-            for rxMote in route:
-                if txMote:
-                    bitIndex = self.track[txMote][rxMote]['bit']
-                    bitmap[bitIndex] = '1'
-                txMote = rxMote
-        elif self.repType == trackMgr.FULL_PATH:
-            bitmap = ['1'] * self.bitOffset
-
-        return ''.join([bit for bit in bitmap])
+        # self.repType == trackMgr.SINGLE_PATH:
+        for rxMote in route:
+            if txMote:
+                bitIndex = self.track[txMote][rxMote]['bit']
+                bitmap[bitIndex] = '1'
+            txMote = rxMote
+        entry[trackMgr.SINGLE_PATH] = ''.join([bit for bit in bitmap])
+        # self.repType == trackMgr.FULL_PATH:
+        bitmap = ['1'] * self.bitOffset
+        entry[trackMgr.FULL_PATH] = ''.join([bit for bit in bitmap])
+        return entry
