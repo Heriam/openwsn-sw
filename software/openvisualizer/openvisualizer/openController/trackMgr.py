@@ -304,7 +304,6 @@ class Tracker():
         thisTxBmp   = dt.datetime.now()
         txBmpDelta  = thisTxBmp - self.lastTxBmp
         txRxbmpGap  = thisTxBmp - self.lastRxBmp
-        if bmpGap.seconds >
         return self.bitStrings.get(dst).get(self.repType)
 
     def _computeBitmap(self, dstAddr):
