@@ -119,6 +119,10 @@
                             <button id="addrover_btn" type="button" class="btn btn-default btn-xs">Add</button>
                             <button id="delrover_btn" type="button" class="btn btn-default btn-xs">Delete</button>
 		                </div>
+		                <div align="center">
+		                    <button id="reflash_btn" type="button" class="btn btn-default btn-xs">Reflash all motes</button>
+		                    <button id="reset_btn" type="button" class="btn btn-default btn-xs">Reset all motes</button>
+                        </div>
 
 		                <hr>
 		                <div id="rover_tb" class="table-responsive"></div>
@@ -198,6 +202,28 @@
                                     console.log('Trying to delete rover from list: ' + rovers_del);
                                     setCookie("deleted_rover", rovers_del);
 		                    });
+
+			                $( "#reflash_btn" )
+			                    .button()
+			                    .click(function( event ) {
+			                        console.log('reflashing all motes');
+			                        $.ajax({
+			                            dataType: "json",
+			                            url: "/reflash/all",
+			                            error: errorOnAjax
+			                        });
+			                    });
+
+			                $( "#reset_btn" )
+			                    .button()
+			                    .click(function( event ) {
+			                        console.log('reseting all motes');
+			                        $.ajax({
+			                            dataType: "json",
+			                            url: "/reset/all",
+			                            error: errorOnAjax
+			                        });
+			                    });
 
 			                $( "#motes_btn" )
 			                    .button()

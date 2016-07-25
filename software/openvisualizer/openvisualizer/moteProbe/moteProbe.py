@@ -5,7 +5,7 @@
 # https://openwsn.atlassian.net/wiki/display/OW/License
 import logging
 log = logging.getLogger('moteProbe')
-log.setLevel(logging.ERROR)
+log.setLevel(logging.INFO)
 log.addHandler(logging.NullHandler())
 
 import os
@@ -15,6 +15,7 @@ elif os.name=='posix':  # Linux
    import glob
    import platform      # To recognize MAC OS X
 import threading
+import subprocess
 
 import serial
 import socket
@@ -137,7 +138,7 @@ class moteProbe(threading.Thread):
         self.dataLock             = threading.Lock()
         # flag to permit exit from read loop
         self.goOn                 = True
-        
+        self.restart              = False
         # initialize the parent class
         threading.Thread.__init__(self)
         
@@ -165,7 +166,7 @@ class moteProbe(threading.Thread):
             # log
             log.info("start running")
         
-            while self.goOn:     # open serial port
+            while self.goOn or self.restart:     # open serial port
                 
                 # log 
                 log.info("open port {0}".format(self.portname))
@@ -181,7 +182,11 @@ class moteProbe(threading.Thread):
                     self.serial.connect((self.iotlabmote,20000))
                 else:
                     raise SystemError()
-                
+
+                if self.restart :
+                    self.restart = False
+                    self.goOn = True
+
                 while self.goOn: # read bytes from serial port
                     try:
                         if   self.mode==self.MODE_SERIAL:
@@ -240,6 +245,20 @@ class moteProbe(threading.Thread):
                                             if self.outputBuf:
                                                 outputToWrite = self.outputBuf.pop(0)
                                                 self.serial.write(outputToWrite)
+
+                                                # If the command is ERASE then we should reflash the mote firmware
+                                                if outputToWrite == self.hdlc.hdlcify(chr(OpenParser.OpenParser.SERFRAME_PC2MOTE_ERASE)) :                                                    
+                                                    cwd = ''.join(os.getcwd().split('openwsn-sw')[:-1]+['openwsn-fw'])
+                                                    proc = subprocess.Popen(['scons', 'board=OpenMote-CC2538', 'toolchain=armgcc', 'bootload={0}'.format(self.portname), 'oos_openwsn'], cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                                    for line in iter(proc.stderr.readline, b''):    
+                                                        if 'Write done' in line :
+                                                            log.info('Flashing succeeded')
+                                                        if 'ERROR' in line :
+                                                            log.error('Flashing did not succeed')
+                                                    proc.communicate()
+                                                    self.restart = True
+                                                    self.goOn = False
+
                                     else:
                                         # dispatch
                                         dispatcher.send(
@@ -274,7 +293,6 @@ class moteProbe(threading.Thread):
     #======================== private =========================================
     
     def _bufferDataToSend(self,data):
-
         # abort for IoT-LAB
         if self.mode==self.MODE_IOTLAB:
             return

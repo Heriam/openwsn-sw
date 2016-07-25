@@ -136,8 +136,9 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.dagRootEui64         = None
         self.sendWithBier         = False
         self.bierLock             = threading.Lock()
-        self.bierBitmap           = '11111111'
-         
+        self.bierBitmap           = '11111111111'
+        self.trackID              = 3
+
         # initialize parent class
         eventBusClient.eventBusClient.__init__(
             self,
@@ -244,15 +245,22 @@ class OpenLbr(eventBusClient.eventBusClient):
             else:
                 log.warning('unsupported address format {0}'.format(lowpan['dst_addr']))
                     
-            lowpan['route'] = self._getSourceRoute(dst_addr)
-            
-            if len(lowpan['route'])<2:
-                # no source route could be found
-                log.warning('no source route to {0}'.format(lowpan['dst_addr']))
-                # TODO: return ICMPv6 message
-                return
-            
-            lowpan['route'].pop() #remove last as this is me.
+            # lowpan['route'] = self._getSourceRoute(dst_addr)
+            #
+            # if len(lowpan['route'])<2:
+            #     # no source route could be found
+            #     log.warning('no source route to {0}'.format(lowpan['dst_addr']))
+            #     # TODO: return ICMPv6 message
+            #     return
+            #
+            # lowpan['route'].pop() #remove last as this is me.
+
+            if self.trackID == 2 or self.trackID == 1:
+                lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 246],
+                                   [0, 18, 75, 0, 6, 13, 158, 216], [0, 18, 75, 0, 6, 13, 159, 74]]
+            elif self.trackID == 3:
+                lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 236],
+                                   [0, 18, 75, 0, 6, 13, 158, 199], [0, 18, 75, 0, 6, 13, 159, 2]]
             
             lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
             # turn dictionary of fields into raw bytes
@@ -453,8 +461,17 @@ class OpenLbr(eventBusClient.eventBusClient):
         # tf
         if ipv6['traffic_class']!=0:
             raise NotImplementedError('traffic_class={0} unsupported'.format(ipv6['traffic_class']))
-        if ipv6['flow_label']!=0:
-            raise NotImplementedError('flow_label={0} unsupported'.format(ipv6['flow_label']))
+        #if ipv6['flow_label']!=0:
+        #    raise NotImplementedError('flow_label={0} unsupported'.format(ipv6['flow_label']))
+        if ipv6['flow_label']==1:
+            self.sendWithBier = True
+        else :
+            self.sendWithBier = False
+            if self.trackID == 3 :
+                self.trackID = 1
+            else :
+                self.trackID += 1
+
         lowpan['tf']         = []
         
         # nh
@@ -506,22 +523,21 @@ class OpenLbr(eventBusClient.eventBusClient):
             compressReference = lowpan['src_addr']
 
         with self.bierLock:
-            if self.sendWithBier:
+            if self.sendWithBier or self.trackID == 1:
                 bitmaplen = 0
-                bier_6lorh_type = None
                 if len(self.bierBitmap) <= 256:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_15
                     s = (len(self.bierBitmap) - 1) / 8
                     bitmaplen = (s + 1) * 8
-                elif len(self.bierBitmap) <= 512:
+                elif len(bitmap) <= 512:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_16
                     s = (len(self.bierBitmap) - 1) / 16
                     bitmaplen = (s + 1) * 16
-                elif len(self.bierBitmap) <= 1024:
+                elif len(bitmap) <= 1024:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_17
                     s = (len(self.bierBitmap) - 1) / 32
                     bitmaplen = (s + 1) * 32
-                elif len(self.bierBitmap) <= 2048:
+                elif len(bitmap) <= 2048:
                     bier_6lorh_type = self.TYPE_6LoRH_BIER_18
                     s = (len(self.bierBitmap) - 1) / 64
                     bitmaplen = (s + 1) * 64
@@ -709,7 +725,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         returnVal           += lowpan['payload']
 
         if self.sendWithBier :
-            print 'Message sent to dst {0} with bitmap : {1}'.format(''.join(['%02x' % b for b in lowpan['dst_addr'][14:]]), self.bierBitmap)
+            log.info('Message sent with bitmap : {0}'.format(self.bierBitmap))
 
         return returnVal
     
