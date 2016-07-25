@@ -135,9 +135,10 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.networkPrefix        = None
         self.dagRootEui64         = None
         self.sendWithBier         = False
+        self.bierAuto             = False
         self.bierLock             = threading.Lock()
-        self.bierBitmap           = '11111111111'
         self.trackID              = 3
+        self.bierBitmap           = '111111111111'
 
         # initialize parent class
         eventBusClient.eventBusClient.__init__(
@@ -179,6 +180,14 @@ class OpenLbr(eventBusClient.eventBusClient):
         '''
         return self.sendWithBier
 
+    def getBierAuto(self):
+        '''
+        Returns the boolean self.BierAuto.
+
+        :rtype:        boolean
+        '''
+        return self.bierAuto
+
     def getBierBitmap(self):
         '''
         Returns the bierBitMap currently used.
@@ -193,7 +202,7 @@ class OpenLbr(eventBusClient.eventBusClient):
 
         :param b:      boolean
         '''
-        with self.bierLock :
+        with self.bierLock:
             self.sendWithBier = b
 
     def setBierBitmap(self, b):
@@ -202,8 +211,17 @@ class OpenLbr(eventBusClient.eventBusClient):
 
         :param b:      string representing the bierbitmap to use
         '''
-        with self.bierLock :
+        with self.bierLock:
             self.bierBitmap = b
+
+    def setBierAuto(self, b):
+        '''
+        Specify if we use automatic track setup and scheduling
+
+        :param b:      boolean
+        '''
+        with self.bierLock:
+            self.bierAuto =b
     
     #======================== private =========================================
     
@@ -220,7 +238,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         '''
         
         try:
-            
+
             ipv6_bytes       = data
             
             # turn raw byte into dictionary of fields
@@ -263,13 +281,21 @@ class OpenLbr(eventBusClient.eventBusClient):
                                    [0, 18, 75, 0, 6, 13, 158, 199], [0, 18, 75, 0, 6, 13, 159, 2]]
             
             lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
+
+            with self.bierLock:
+                if self.sendWithBier or self.trackID ==1:
+                    if self.bierAuto:
+                        lowpan['bitmap'] = self._getBitmap(dst_addr)
+                    else:
+                        lowpan['bitmap'] = self.bierBitmap
+
             # turn dictionary of fields into raw bytes
             lowpan_bytes     = self.reassemble_lowpan(lowpan)
-            
+
             # log
             if log.isEnabledFor(logging.DEBUG):
                 log.debug(self._format_lowpan(lowpan,lowpan_bytes))
-            
+
             #print "output:"
             #print lowpan_bytes
             # dispatch
@@ -522,118 +548,120 @@ class OpenLbr(eventBusClient.eventBusClient):
         else:
             compressReference = lowpan['src_addr']
 
-        with self.bierLock:
-            if self.sendWithBier or self.trackID == 1:
-                bitmaplen = 0
-                if len(self.bierBitmap) <= 256:
-                    bier_6lorh_type = self.TYPE_6LoRH_BIER_15
-                    s = (len(self.bierBitmap) - 1) / 8
-                    bitmaplen = (s + 1) * 8
-                elif len(bitmap) <= 512:
-                    bier_6lorh_type = self.TYPE_6LoRH_BIER_16
-                    s = (len(self.bierBitmap) - 1) / 16
-                    bitmaplen = (s + 1) * 16
-                elif len(bitmap) <= 1024:
-                    bier_6lorh_type = self.TYPE_6LoRH_BIER_17
-                    s = (len(self.bierBitmap) - 1) / 32
-                    bitmaplen = (s + 1) * 32
-                elif len(bitmap) <= 2048:
-                    bier_6lorh_type = self.TYPE_6LoRH_BIER_18
-                    s = (len(self.bierBitmap) - 1) / 64
-                    bitmaplen = (s + 1) * 64
-                else:
-                    log.error('Bier bitmap is too long')
+        if 'bitmap' in lowpan:
+            bierBitmap = lowpan['bitmap']
+            s = 0
+            bitmaplen = 0
+            bier_6lorh_type = None
+            if len(bierBitmap) <= 256:
+                bier_6lorh_type = self.TYPE_6LoRH_BIER_15
+                s = (len(bierBitmap) - 1) / 8
+                bitmaplen = (s + 1) * 8
+            elif len(bierBitmap) <= 512:
+                bier_6lorh_type = self.TYPE_6LoRH_BIER_16
+                s = (len(bierBitmap) - 1) / 16
+                bitmaplen = (s + 1) * 16
+            elif len(bierBitmap) <= 1024:
+                bier_6lorh_type = self.TYPE_6LoRH_BIER_17
+                s = (len(bierBitmap) - 1) / 32
+                bitmaplen = (s + 1) * 32
+            elif len(bierBitmap) <= 2048:
+                bier_6lorh_type = self.TYPE_6LoRH_BIER_18
+                s = (len(bierBitmap) - 1) / 64
+                bitmaplen = (s + 1) * 64
+            else:
+                log.error('Bier bitmap is too long')
 
-                # Fill the bitmap with 0 until we have the right bitmap size
-                while len(self.bierBitmap) != bitmaplen:
-                    self.bierBitmap += '0'
+            # Fill the bitmap with 0 until we have the right bitmap size
+            while len(bierBitmap) != bitmaplen:
+                bierBitmap += '0'
 
-                for i in range(((len(self.bierBitmap) - 1) / 8) + 1):
-                    bitmap += [int(self.bierBitmap[8 * i:8 * (i + 1)], 2)]
+            for i in range(((len(bierBitmap) - 1) / 8) + 1):
+                bitmap += [int(bierBitmap[8 * i:8 * (i + 1)], 2)]
 
-                returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
-                returnVal += bitmap
+            returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
+            returnVal += bitmap
 
-            # destination address
-            elif len(lowpan['route']) > 1:
-                # source route needed, get prefix from compression Reference
-                if len(compressReference) == 16:
-                    prefix = compressReference[:8]
+        # destination address
+        elif len(lowpan['route']) > 1:
+            # source route needed, get prefix from compression Reference
+            if len(compressReference) == 16:
+                prefix = compressReference[:8]
 
-                # =======================3. RH3 6LoRH(s) ==============================
-                sizeUnitType = 0xff
-                size = 0
-                hopList = []
+            # =======================3. RH3 6LoRH(s) ==============================
+            sizeUnitType = 0xff
+            size = 0
+            hopList = []
 
-                for hop in list(reversed(lowpan['route'][1:])):
-                    size += 1
-                    if compressReference[-8:-1] == hop[-8:-1]:
-                        if sizeUnitType != 0xff:
-                            if sizeUnitType != self.TYPE_6LoRH_RH3_0:
-                                returnVal += [self.CRITICAL_6LoRH | (size - 2), sizeUnitType]
-                                returnVal += hopList
-                                size = 1
-                                sizeUnitType = self.TYPE_6LoRH_RH3_0
-                                hopList = [hop[-1]]
-                                compressReference = hop
-                            else:
-                                hopList += [hop[-1]]
-                                compressReference = hop
-                        else:
+            for hop in list(reversed(lowpan['route'][1:])):
+                size += 1
+                if compressReference[-8:-1] == hop[-8:-1]:
+                    if sizeUnitType != 0xff:
+                        if sizeUnitType != self.TYPE_6LoRH_RH3_0:
+                            returnVal += [self.CRITICAL_6LoRH | (size - 2), sizeUnitType]
+                            returnVal += hopList
+                            size = 1
                             sizeUnitType = self.TYPE_6LoRH_RH3_0
+                            hopList = [hop[-1]]
+                            compressReference = hop
+                        else:
                             hopList += [hop[-1]]
                             compressReference = hop
-                    elif compressReference[-8:-2] == hop[-8:-2]:
-                        if sizeUnitType != 0xff:
-                            if sizeUnitType != self.TYPE_6LoRH_RH3_1:
-                                returnVal += [self.CRITICAL_6LoRH | (size - 2), sizeUnitType]
-                                returnVal += hopList
-                                size = 1
-                                sizeUnitType = self.TYPE_6LoRH_RH3_1
-                                hopList = hop[-2:]
-                                compressReference = hop
-                            else:
-                                hopList += hop[-2:]
-                                compressReference = hop
-                        else:
+                    else:
+                        sizeUnitType = self.TYPE_6LoRH_RH3_0
+                        hopList += [hop[-1]]
+                        compressReference = hop
+                elif compressReference[-8:-2] == hop[-8:-2]:
+                    if sizeUnitType != 0xff:
+                        if sizeUnitType != self.TYPE_6LoRH_RH3_1:
+                            returnVal += [self.CRITICAL_6LoRH | (size - 2), sizeUnitType]
+                            returnVal += hopList
+                            size = 1
                             sizeUnitType = self.TYPE_6LoRH_RH3_1
+                            hopList = hop[-2:]
+                            compressReference = hop
+                        else:
                             hopList += hop[-2:]
                             compressReference = hop
-                    elif compressReference[-8:-4] == hop[-8:-4]:
-                        if sizeUnitType != 0xff:
-                            if sizeUnitType != self.TYPE_6LoRH_RH3_2:
-                                returnVal += [self.CRITICAL_6LoRH | (size - 2), sizeUnitType]
-                                returnVal += hopList
-                                size = 1
-                                sizeUnitType = self.TYPE_6LoRH_RH3_2
-                                hopList = hop[-4:]
-                                compressReference = hop
-                            else:
-                                hopList += hop[-4:]
-                                compressReference = hop
-                        else:
+                    else:
+                        sizeUnitType = self.TYPE_6LoRH_RH3_1
+                        hopList += hop[-2:]
+                        compressReference = hop
+                elif compressReference[-8:-4] == hop[-8:-4]:
+                    if sizeUnitType != 0xff:
+                        if sizeUnitType != self.TYPE_6LoRH_RH3_2:
+                            returnVal += [self.CRITICAL_6LoRH | (size - 2), sizeUnitType]
+                            returnVal += hopList
+                            size = 1
                             sizeUnitType = self.TYPE_6LoRH_RH3_2
+                            hopList = hop[-4:]
+                            compressReference = hop
+                        else:
                             hopList += hop[-4:]
                             compressReference = hop
                     else:
-                        if sizeUnitType != 0xff:
-                            if sizeUnitType != self.TYPE_6LoRH_RH3_3:
-                                returnVal += [self.CRITICAL_6LoRH | (size - 2), sizeUnitType]
-                                returnVal += hopList
-                                size = 1
-                                sizeUnitType = self.TYPE_6LoRH_RH3_3
-                                hopList = hop
-                                compressReference = hop
-                            else:
-                                hopList += hop
-                                compressReference = hop
-                        else:
+                        sizeUnitType = self.TYPE_6LoRH_RH3_2
+                        hopList += hop[-4:]
+                        compressReference = hop
+                else:
+                    if sizeUnitType != 0xff:
+                        if sizeUnitType != self.TYPE_6LoRH_RH3_3:
+                            returnVal += [self.CRITICAL_6LoRH | (size - 2), sizeUnitType]
+                            returnVal += hopList
+                            size = 1
                             sizeUnitType = self.TYPE_6LoRH_RH3_3
+                            hopList = hop
+                            compressReference = hop
+                        else:
                             hopList += hop
                             compressReference = hop
+                    else:
+                        sizeUnitType = self.TYPE_6LoRH_RH3_3
+                        hopList += hop
+                        compressReference = hop
 
-                returnVal += [self.CRITICAL_6LoRH | (size - 1), sizeUnitType]
-                returnVal += hopList
+            returnVal += [self.CRITICAL_6LoRH | (size - 1), sizeUnitType]
+            returnVal += hopList
 
         # ===================== 2. IPinIP 6LoRH ===============================
 
@@ -936,7 +964,14 @@ class OpenLbr(eventBusClient.eventBusClient):
             data         = destination,
         )
         return returnVal
-    
+
+    def _getBitmap(self, dstAddr):
+        returnVal = self._dispatchAndGetResult(
+            signal       = 'getBitmap',
+            data         = dstAddr,
+        )
+        return returnVal
+
     def _setPrefix_notif(self,sender,signal, data):
         '''
         Record the network prefix.

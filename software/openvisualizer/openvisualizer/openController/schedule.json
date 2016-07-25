@@ -2,17 +2,47 @@
   "rootList"                 : ["0001"],
   "slotFrames": {
     "1": {
-      "frameLength": 16,
+      "frameLength": 40,
       "cells": [
         {
-          "slotOffset": 4,
+          "slotOffset": 9,
           "bitIndex": 0,
           "txMoteID": null,
           "rxMoteList": [],
           "channelOffset": 0,
           "trackID": 0,
           "shared": true,
-          "bier": true
+          "bier": false
+        },
+        {
+          "slotOffset": 19,
+          "bitIndex": 0,
+          "txMoteID": null,
+          "rxMoteList": [],
+          "channelOffset": 0,
+          "trackID": 0,
+          "shared": true,
+          "bier": false
+        },
+        {
+          "slotOffset": 29,
+          "bitIndex": 0,
+          "txMoteID": null,
+          "rxMoteList": [],
+          "channelOffset": 0,
+          "trackID": 0,
+          "shared": true,
+          "bier": false
+        },
+        {
+          "slotOffset": 39,
+          "bitIndex": 0,
+          "txMoteID": null,
+          "rxMoteList": [],
+          "channelOffset": 0,
+          "trackID": 0,
+          "shared": true,
+          "bier": false
         }
       ]
     }

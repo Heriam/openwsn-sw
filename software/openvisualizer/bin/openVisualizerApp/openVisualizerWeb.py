@@ -74,14 +74,15 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         if self.roverMode:
             self.roverMotes = {}
             self.client = coap.coap()
-            self.client.respTimeout = 2
-            self.client.ackTimeout  = 2
+            self.client.respTimeout   = 2
+            self.client.ackTimeout    = 2
             self.client.maxRetransmit = 1
 
         # used for controller mode
         if self.ctrlMode:
             self.openController = self.app.getOpenController()
             self.sm             = self.openController.getScheduleMgr()
+            self.tm             = self.openController.getTrackMgr()
             self.startupConfig  = {}
             self._loadConfig()
             self.schedule = self.sm.getSchedule()
@@ -159,7 +160,9 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'roverMode': self.roverMode,
             'ctrlMode' : self.ctrlMode,
             'sim_mode' : self.simMode,
-            'enable_bier' : self.app.getOpenLbr().getSendWithBier()
+            'enable_bier' : self.app.getOpenLbr().getSendWithBier(),
+            'auto_bier'   : self.app.getOpenLbr().getBierAuto(),
+            'path_type'   : self.tm.getRepType()
         }
         return tmplData
 
@@ -225,6 +228,34 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         elif params == 'off' :
             self.app.getOpenLbr().setSendWithBier(False)
             return {"result" : "success"}
+        elif params == 'autoon':
+            self.app.getOpenLbr().setBierAuto(True)
+            return {"result": "success"}
+        elif params == 'autooff':
+            self.app.getOpenLbr().setBierAuto(False)
+            return {"result": "success"}
+        elif params == 'singlepath':
+            self.tm.setRepType(0)
+            return {"result": "success"}
+        elif params == 'fullpath':
+            self.tm.setRepType(1)
+            return {"result": "success"}
+        elif params == 'gettrack':
+            tracker = self.tm.getTrackers()
+            dict = {
+                'nodes': [ ''.join(['%02x' % b for b in node[6:]]) for node in tracker.track.nodes()] if tracker else [],
+                'links': [ (''.join(['%02x' % b for b in rxnode[6:]]),''.join(['%02x' % b for b in txnode[6:]])
+                            , tracker.track[txnode][rxnode]['bit']) for (txnode,rxnode) in tracker.track.edges()] if tracker else []
+            }
+            return json.dumps(dict)
+        elif params == 'gettopo':
+            topo = self.tm.getTopo()
+            dict1 = {
+                'nodes': [''.join(['%02x' % b for b in node[6:]]) for node in topo.nodes()],
+                'links': [(''.join(['%02x' % b for b in txnode[6:]]),''.join(['%02x' % b for b in rxnode[6:]])
+                            , topo[txnode][rxnode]['preference']) for (txnode,rxnode) in topo.edges()]
+            }
+            return json.dumps(dict1)
         else :
             return {"result": "fail"}
 

@@ -5,8 +5,6 @@
 # https://openwsn.atlassian.net/wiki/display/OW/License
 
 '''
-Contains openController component for centralized scheduling of the motes. It uses self.app.motestates to communicate with motes
-
 
 
 '''
@@ -19,6 +17,7 @@ log.addHandler(logging.NullHandler())
 from openvisualizer.eventBus import eventBusClient
 from moteDriver  import moteDriver  as md
 from scheduleMgr import scheduleMgr as sm
+from trackMgr    import trackMgr    as tm
 
 
 class openController(eventBusClient.eventBusClient):
@@ -36,8 +35,11 @@ class openController(eventBusClient.eventBusClient):
         # initiate scheduleMgr
         self.moteDriver     = md(moteStates)
         self.scheduleMgr    = sm()
+        self.trackMgr       = tm()
 
-        eventBusClient.eventBusClient.__init__(self,"openController", registrations=[])
+        eventBusClient.eventBusClient.__init__(self,"openController", registrations=[
+
+        ])
 
 
     # ==================== public =======================
@@ -49,6 +51,22 @@ class openController(eventBusClient.eventBusClient):
         '''
         return self.moteDriver
 
+    def getDagRootList(self):
+        '''
+        :returns rootList
+
+        '''
+        return self.trackMgr.getDagRoot()
+
+
+    def getTrackMgr(self):
+        '''
+        :returns: trackMgr
+
+        '''
+        return self.trackMgr
+
+
     def getScheduleMgr(self):
         '''
         :returns: scheduleMgr scheduleMgr
@@ -58,4 +76,5 @@ class openController(eventBusClient.eventBusClient):
 
 
     # ============================ private ===================================
+
 

@@ -83,7 +83,7 @@ class Schedule():
                 sharedList.append(slot)
         self.configSlot(self.OPT_DELETE, sharedList)
 
-    def installTrack(self, track):
+    def installTrack(self, trackId, arcs):
         '''
         installs a track on slot frame
 
@@ -92,24 +92,19 @@ class Schedule():
         with self.frameLock:
             slotFrame = self.slotFrame[:]
 
-        trackID = track.graph['trackID']
-        newArcs = track.graph['newArcs']
         slotList = []
-        for arcEdges in newArcs:
-            for (rxMote, txMote) in arcEdges:
+        for arc in arcs:
+            for (rxMote, txMote, bitDict) in arc.edges:
                 if None in slotFrame:
                     slotOff = slotFrame.index(None)
                 else:
                     log.debug('Warning! No enough available slots')
                     return
-                txMoteID = ''.join(['%02x' % b for b in txMote[6:]])
-                rxMoteID = ''.join(['%02x' % b for b in rxMote[6:]])
-                bitIndex = track[rxMote][txMote]['bitIndex']
                 slotList.append({
-                    self.PARAMS_TXMOTEID: txMoteID,
-                    self.PARAMS_RXMOTELIST: [rxMoteID],
-                    self.PARAMS_BITINDEX: bitIndex,
-                    self.PARAMS_TRACKID: trackID,
+                    self.PARAMS_TXMOTEID: ''.join(['%02x' % b for b in txMote[6:]]),
+                    self.PARAMS_RXMOTELIST: [''.join(['%02x' % b for b in rxMote[6:]])],
+                    self.PARAMS_BITINDEX: bitDict['bit'],
+                    self.PARAMS_TRACKID: trackId,
                     self.PARAMS_SHARED: False,
                     self.PARAMS_CHANNELOFF: self.CHANNELOFF_DEFAULT,
                     self.PARAMS_SLOTOFF: slotOff,
@@ -326,7 +321,7 @@ class scheduleMgr(eventBusClient):
                 },
                 {
                     'sender'  : self.WILDCARD,
-                    'signal'  : 'updateTrackSchedule',
+                    'signal'  : 'scheduleTrack',
                     'callback': self._installTrack
                 }
             ]
@@ -394,6 +389,7 @@ class scheduleMgr(eventBusClient):
         installs a new Track
 
         '''
-        self.defaultSchedule.installTrack(data)
+        (trackId, arcs) = data
+        self.defaultSchedule.installTrack(trackId, arcs)
 
 

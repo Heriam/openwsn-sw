@@ -566,7 +566,7 @@ class moteState(eventBusClient.eventBusClient):
                     'sender'      : 'moteConnector@{0}'.format(self.moteConnector.serialport),
                     'signal'      : 'fromMote.status',
                     'callback'    : self._receivedStatus_notif,
-                },
+                }
             ]
         )
     

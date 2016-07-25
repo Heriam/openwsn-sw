@@ -22,6 +22,8 @@ import openvisualizer.openvisualizer_utils as u
 from openvisualizer.eventBus import eventBusClient
 
 class topology(eventBusClient.eventBusClient):
+
+    MAX_PARENT_PREFERENCE = 5
     
     def __init__(self):
         
@@ -73,9 +75,12 @@ class topology(eventBusClient.eventBusClient):
         
     def updateParents(self,sender,signal,data):
         ''' inserts parent information into the parents dictionary '''
-        with self.dataLock:
-            #data[0] == source address, data[1] == list of parents
-            self.parents.update({data[0]:data[1]})
+
+        for p in data[1]:
+            if p[0] == self.MAX_PARENT_PREFERENCE:
+                with self.dataLock:
+                    self.parents.update({data[0]:[p[1]]})
+                break
     
     #======================== private =========================================
     
