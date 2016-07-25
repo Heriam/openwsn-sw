@@ -12,6 +12,7 @@ import networkx as nx
 from collections import namedtuple
 from openvisualizer.eventBus import eventBusClient
 import threading
+import datetime as dt
 import logging
 log = logging.getLogger('trackMgr')
 log.setLevel(logging.ERROR)
@@ -86,7 +87,8 @@ class trackMgr(eventBusClient.eventBusClient):
 
         '''
         self.repType = t
-        self.getTrackers().repType = t
+        if self.getTrackers():
+            self.getTrackers().repType = t
 
     def getTopo(self):
         '''
@@ -249,6 +251,9 @@ class Tracker():
         self.bitMap      = {}
         self.bitStrings  = {}
         self.track       = nx.DiGraph()
+        self.lastTxBmp   = None
+        self.lastRxBmp   = None
+        self.lastRxAsn   = None
 
         # init tracker
         self.track.add_node(srcRoute[-1])
@@ -281,11 +286,25 @@ class Tracker():
         return self.track
 
     def feedBits(self, data):
+        bitString = ''
         (moteId, asn, bitBytes) = data
-        print data
+
+        thisRxAsn = asn[0]+(asn[1]<<16)+(asn[2]<<32)
+        self.lastRxBmp = dt.datetime.now()
+
+        for i in bitBytes:
+            bitMap     = bin(i)[2:]
+            bitMap     = ''.join([bit for bit in ['0']*(8-len(bitMap))]) + bitMap
+            bitString  = bitString + bitMap
+
+        AsnDelta    = thisRxAsn - self.lastRxAsn if self.lastRxAsn else 0
+
 
     def getBitmap(self, dst):
-
+        thisTxBmp   = dt.datetime.now()
+        txBmpDelta  = thisTxBmp - self.lastTxBmp
+        txRxbmpGap  = thisTxBmp - self.lastRxBmp
+        if bmpGap.seconds >
         return self.bitStrings.get(dst).get(self.repType)
 
     def _computeBitmap(self, dstAddr):
