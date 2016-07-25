@@ -401,6 +401,8 @@
                                                                     tbl_row += 'SHARED';
                                                                 } else if (this['type'] == '4 (SERIALRX)'){
                                                                     tbl_row += 'SERIALRX';
+                                                                } else if (this['type'] == '3 (TXRX)'){
+                                                                    tbl_row += 'TXRX';
                                                                 } else {
                                                                     tbl_row += this['txMoteID'] + "-"+ this['bitIndex'] +">" + this['rxMoteList'];
                                                                 }
@@ -455,6 +457,8 @@
                                                             if(this['channelOffset']==i && this['slotOffset']==j) {
                                                                 if(this['shared']){
                                                                     tbl_row += 'SHARED';
+                                                                }else if (this['type'] == '3 (TXRX)'){
+                                                                    tbl_row += 'TXRX';
                                                                 } else {
                                                                     tbl_row += this['txMoteID'] + "-"+ this['bitIndex'] +">" + this['rxMoteList'];
                                                                 }
