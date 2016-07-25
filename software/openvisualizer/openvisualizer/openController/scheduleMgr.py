@@ -268,6 +268,9 @@ class Schedule():
                     moteSchedule.remove(slotEntry)
                     continue
                 t = slotEntry[self.PARAMS_TYPE]
+                if slotEntry[self.PARAMS_SLOTOFF] > self.frameLen -1:
+                    slotFrame += [None] * (slotEntry[self.PARAMS_SLOTOFF] - self.frameLen +1)
+                    self.frameLen = slotEntry[self.PARAMS_SLOTOFF]+1
                 existSlot = slotFrame[slotEntry[self.PARAMS_SLOTOFF]]
                 if existSlot:
                     if t.startswith('1'):
