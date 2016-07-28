@@ -394,4 +394,3 @@ class scheduleMgr(eventBusClient):
         (trackId, arcs) = data
         self.defaultSchedule.installTrack(trackId, arcs)
 
-
