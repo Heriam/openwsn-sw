@@ -41,6 +41,7 @@ class Schedule():
     CHANNELOFF_DEFAULT    = 0
     SLOTFRAME_DEFAULT     = '1'
     FRAMELENGTH_DEFAULT   = 20
+    CHANNELS              = 16
 
     # operation types
     OPT_ADD               = 'add'
@@ -66,7 +67,7 @@ class Schedule():
         self.frameLock    = threading.Lock()
         self.frameLen     = self.FRAMELENGTH_DEFAULT
         self.frameID      = self.SLOTFRAME_DEFAULT
-        self.slotFrame    = [None] * self.frameLen
+        self.slotFrame    = [[None for x in range(self.CHANNELS)] for y in range(self.frameLen)]
         self.sm           = scheduleMgr
 
     # ========================== public ===========================
@@ -78,9 +79,10 @@ class Schedule():
 
         '''
         sharedList = []
-        for slot in self.slotFrame[:]:
-            if slot and slot[self.PARAMS_SHARED] and slot[self.PARAMS_SLOTOFF]:
-                sharedList.append(slot)
+        for t in self.slotFrame[:]:
+            for slot in t:
+                if slot and slot[self.PARAMS_SHARED] and slot[self.PARAMS_SLOTOFF]:
+                    sharedList.append(slot)
         self.configSlot(self.OPT_DELETE, sharedList)
 
     def installTrack(self, trackId, arcs):
@@ -95,8 +97,8 @@ class Schedule():
         slotList = []
         for arc in arcs:
             for (rxMote, txMote, bitDict) in arc.edges:
-                if None in slotFrame:
-                    slotOff = slotFrame.index(None)
+                if [None]*self.CHANNELS in slotFrame:
+                    slotOff = slotFrame.index([None]*self.CHANNELS)
                 else:
                     log.debug('Warning! No enough available slots')
                     return
@@ -110,7 +112,7 @@ class Schedule():
                     self.PARAMS_SLOTOFF: slotOff,
                     self.PARAMS_BIER: True
                 })
-                slotFrame[slotOff] = slotList[-1]
+                slotFrame[slotOff] = [slotList[-1]]
         self.configSlot(self.OPT_ADD, slotList)
 
     def configSlot(self, operation, slotList):
@@ -122,7 +124,7 @@ class Schedule():
             slotFrame = self.slotFrame[:]
         for slotInfo in slotList:
             shared = slotInfo[self.PARAMS_SHARED]
-            occupied = slotFrame[slotInfo[self.PARAMS_SLOTOFF]]
+            occupied = slotFrame[slotInfo[self.PARAMS_SLOTOFF]][slotInfo[self.PARAMS_CHANNELOFF]]
             if shared:
                 if operation== self.OPT_ADD and occupied:
                     continue
@@ -200,7 +202,7 @@ class Schedule():
         :returns first available slotOffset
 
         '''
-        return self.slotFrame.index(None) if None in self.slotFrame else 'FULL'
+        return self.slotFrame.index([None]*self.CHANNELS) if [None]*self.CHANNELS in self.slotFrame else 'FULL'
 
     def initWith(self, frameID, frameInfo, rootList):
         '''
@@ -213,7 +215,7 @@ class Schedule():
         with self.frameLock:
             self.frameID   = frameID
             self.frameLen  = frameInfo[self.PARAMS_FRAMELENGTH]
-            self.slotFrame = [None] * self.frameLen
+            self.slotFrame = [[None for x in range(self.CHANNELS)] for y in range(self.frameLen)]
         self.configFrame(Schedule.OPT_SETFRAMELENGTH, frameInfo, rootList)
         self.configSlot(Schedule.OPT_ADD, frameInfo[Schedule.PARAMS_CELL])
 
@@ -253,7 +255,7 @@ class Schedule():
             data='Schedule'
         )
 
-        slotFrame = [None] * self.frameLen
+        slotFrame = [[None for x in range(self.CHANNELS)] for y in range(self.frameLen)]
         # gets the schedule of every mote
         for mote64bID, moteSchedule in returnVal.items():
             moteID = ''.join(['%02x' % b for b in mote64bID[6:]])
@@ -264,9 +266,9 @@ class Schedule():
                     continue
                 t = slotEntry[self.PARAMS_TYPE]
                 if slotEntry[self.PARAMS_SLOTOFF] > self.frameLen -1:
-                    slotFrame += [None] * (slotEntry[self.PARAMS_SLOTOFF] - self.frameLen +1)
+                    slotFrame += [[None for x in range(self.CHANNELS)] for y in range(slotEntry[self.PARAMS_SLOTOFF] - self.frameLen +1)]
                     self.frameLen = slotEntry[self.PARAMS_SLOTOFF]+1
-                existSlot = slotFrame[slotEntry[self.PARAMS_SLOTOFF]]
+                existSlot = slotFrame[slotEntry[self.PARAMS_SLOTOFF]][slotEntry[self.PARAMS_CHANNELOFF]]
                 if existSlot:
                     if t.startswith('1'):
                         existSlot[self.PARAMS_TXMOTEID] = moteID
@@ -283,7 +285,7 @@ class Schedule():
                         slotEntry.pop('type')
                         slotEntry[self.PARAMS_TXMOTEID] = None
                         slotEntry[self.PARAMS_RXMOTELIST] = [moteID]
-                    slotFrame[slotEntry[self.PARAMS_SLOTOFF]] = slotEntry
+                    slotFrame[slotEntry[self.PARAMS_SLOTOFF]][slotEntry[self.PARAMS_CHANNELOFF]] = slotEntry
 
         with self.frameLock:
             self.slotFrame[:] = slotFrame
@@ -339,7 +341,7 @@ class scheduleMgr(eventBusClient):
         '''
         frameInfo = startupSchedule[self.KEY_SLOTFRAMES][Schedule.SLOTFRAME_DEFAULT]
         newRoots = startupSchedule[self.KEY_ROOTLIST]
-        if self.defaultSchedule.getSlotFrame()[0]:
+        if self.defaultSchedule.getSlotFrame()[0][0]:
             self.defaultSchedule.configSlot(Schedule.OPT_ADD, frameInfo[Schedule.PARAMS_CELL])
         else:
             self.defaultSchedule.initWith(Schedule.SLOTFRAME_DEFAULT, frameInfo, newRoots)
@@ -359,7 +361,7 @@ class scheduleMgr(eventBusClient):
                 {
                     Schedule.PARAMS_FIRSTFREESLOT: self.defaultSchedule.getFirstFreeSlot(),
                     Schedule.PARAMS_FRAMELENGTH: self.defaultSchedule.getFrameLen(),
-                    Schedule.PARAMS_CELL: self.defaultSchedule.getSlotFrame()
+                    Schedule.PARAMS_CELL: [slot for t in self.defaultSchedule.getSlotFrame() for slot in t]
                 }})
         return runningConfig
 
