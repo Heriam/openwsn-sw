@@ -300,13 +300,13 @@ class Tracker():
             bitMap     = ''.join([bit for bit in ['0']*(8-len(bitMap))]) + bitMap
             bitString  = bitString + bitMap
 
-        AsnDelta    = thisRxAsn - self.lastRxAsn if self.lastRxAsn else 0
+        AsnDelta    = (thisRxAsn - self.lastRxAsn) if self.lastRxAsn else 0
 
 
     def getBitmap(self, dst):
         thisTxBmp   = dt.datetime.now()
-        txBmpDelta  = thisTxBmp - self.lastTxBmp
-        txRxbmpGap  = thisTxBmp - self.lastRxBmp
+        txBmpDelta  = (thisTxBmp - self.lastTxBmp) if self.lastTxBmp else 0
+        txRxbmpGap  = (thisTxBmp - self.lastRxBmp) if self.lastRxBmp else 0
         return self.bitStrings.get(dst).get(self.repType)
 
     def _computeBitmap(self, dstAddr):
