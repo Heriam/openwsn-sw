@@ -147,15 +147,14 @@ class trackMgr(eventBusClient.eventBusClient):
         '''
         inTrack = False
         tracker = None
-        dstAddr = tuple(data)
+        trackId = data[0]
+        dstAddr = tuple(data[1])
         # returns bitmap
-        for (trackId,tracker) in self.tracks.items():
-            if dstAddr in tracker.track:
-                inTrack = True
-                break
+        tracker = self.tracks.get(trackId)
+        if tracker and dstAddr in tracker.track:
+            inTrack = True
         if not inTrack:
             # create a new track
-            trackId = len(self.tracks) + 1
             rplRoute = self._dispatchAndGetResult('getSourceRoute', list(dstAddr))
             srcRoute = [tuple(hop) for hop in rplRoute]
             tracker = self._buildTrack(Tracker(srcRoute,trackId,self.repType))
@@ -163,7 +162,11 @@ class trackMgr(eventBusClient.eventBusClient):
         return tracker.getBitmap(dstAddr)
 
     def _bitmapFeedback(self, sender, signal, data):
-        self.tracks.get(data[0]).feedBits(data[1:])
+
+        tracker = self.tracks.get(data[0])
+        print "====received bitmap from track {0}====".format(data[0])
+        if tracker:
+            tracker.feedBits(data[1:])
 
     def _buildTrack(self, tracker):
 

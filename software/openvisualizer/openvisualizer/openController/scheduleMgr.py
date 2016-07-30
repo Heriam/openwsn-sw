@@ -40,7 +40,7 @@ class Schedule():
     # default values
     CHANNELOFF_DEFAULT    = 0
     SLOTFRAME_DEFAULT     = '1'
-    FRAMELENGTH_DEFAULT   = 20
+    FRAMELENGTH_DEFAULT   = 100
     CHANNELS              = 16
 
     # operation types
@@ -92,13 +92,13 @@ class Schedule():
         '''
         self._update()
         with self.frameLock:
-            slotFrame = self.slotFrame[:]
+            slotFrame = self.slotFrame[67:]
 
         slotList = []
         for arc in arcs:
             for (rxMote, txMote, bitDict) in arc.edges:
                 if [None]*self.CHANNELS in slotFrame:
-                    slotOff = slotFrame.index([None]*self.CHANNELS)
+                    slotOff = slotFrame.index([None]*self.CHANNELS) + 67
                 else:
                     log.debug('Warning! No enough available slots')
                     return
@@ -112,7 +112,7 @@ class Schedule():
                     self.PARAMS_SLOTOFF: slotOff,
                     self.PARAMS_BIER: True
                 })
-                slotFrame[slotOff] = [slotList[-1]]
+                slotFrame[slotOff-67] = [slotList[-1]]
         self.configSlot(self.OPT_ADD, slotList)
 
     def configSlot(self, operation, slotList):

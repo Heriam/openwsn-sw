@@ -137,7 +137,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.sendWithBier         = False
         self.bierAuto             = False
         self.bierLock             = threading.Lock()
-        self.trackID              = 3
+        self.trackID              = 4
         self.bierBitmap           = '111111111111'
 
         # initialize parent class
@@ -273,19 +273,19 @@ class OpenLbr(eventBusClient.eventBusClient):
             #
             # lowpan['route'].pop() #remove last as this is me.
 
-            if self.trackID == 2 or self.trackID == 1:
+            if self.trackID == 1 or self.trackID == 2:
                 lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 246],
                                    [0, 18, 75, 0, 6, 13, 158, 216], [0, 18, 75, 0, 6, 13, 159, 74]]
-            elif self.trackID == 3:
+            elif self.trackID == 3 or self.trackID == 4:
                 lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 236],
                                    [0, 18, 75, 0, 6, 13, 158, 199], [0, 18, 75, 0, 6, 13, 159, 2]]
             
             lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
 
             with self.bierLock:
-                if self.sendWithBier or self.trackID ==1:
-                    if self.bierAuto:
-                        lowpan['bitmap'] = self._getBitmap(dst_addr)
+                if self.trackID == 1 or self.trackID == 4 or self.sendWithBier:
+                    if self.trackID ==4 or self.bierAuto:
+                        lowpan['bitmap'] = self._getBitmap(self.trackID, dst_addr)
                     else:
                         lowpan['bitmap'] = self.bierBitmap
 
@@ -301,7 +301,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             # dispatch
             self.dispatch(
                 signal       = 'bytesToMesh',
-                data         = (lowpan['nextHop'],lowpan_bytes),
+                data         = (self.trackID,lowpan['nextHop'],lowpan_bytes),
             )
             
         except (ValueError,NotImplementedError) as err:
@@ -491,9 +491,11 @@ class OpenLbr(eventBusClient.eventBusClient):
         #    raise NotImplementedError('flow_label={0} unsupported'.format(ipv6['flow_label']))
         if ipv6['flow_label']==1:
             self.sendWithBier = True
+            self.bierAuto     = True
         else :
             self.sendWithBier = False
-            if self.trackID == 3 :
+            self.bierAuto     = False
+            if self.trackID == 4 :
                 self.trackID = 1
             else :
                 self.trackID += 1
@@ -965,10 +967,10 @@ class OpenLbr(eventBusClient.eventBusClient):
         )
         return returnVal
 
-    def _getBitmap(self, dstAddr):
+    def _getBitmap(self, trackId, dstAddr):
         returnVal = self._dispatchAndGetResult(
             signal       = 'getBitmap',
-            data         = dstAddr,
+            data         = (trackId,dstAddr),
         )
         return returnVal
 

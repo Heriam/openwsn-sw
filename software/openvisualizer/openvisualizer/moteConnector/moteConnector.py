@@ -326,12 +326,12 @@ class moteConnector(eventBusClient.eventBusClient):
 
     def _bytesToMesh_handler(self,sender,signal,data):
         assert type(data)==tuple
-        assert len(data)==2
+        assert len(data)==3
         
-        (nextHop,lowpan) = data
+        (trackid, nextHop,lowpan) = data
         
         self._sendToMoteProbe(
-            dataToSend = [OpenParser.OpenParser.SERFRAME_PC2MOTE_DATA]+nextHop+lowpan,
+            dataToSend = [OpenParser.OpenParser.SERFRAME_PC2MOTE_DATA, trackid]+nextHop+lowpan,
         )
     
     #======================== public ==========================================
