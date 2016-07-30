@@ -124,5 +124,6 @@ errorDescriptions = {
   82: "Non-BIER test msg received on track 2. SlotOffset : {0}",
   83: "Non-BIER test msg received on track 3. SlotOffset : {0}",
   84: "TX stats of slot {0} reset. Num TX : 255. Successful : {1}.",
-  85: "RX stats of slot {0} reset. Num RX : {1}"
+  85: "RX stats of slot {0} reset. Num RX : {1}",
+  86: "BIER test msg received on track 4. Bitmap : {0:08b}{1:08b}"
 }
