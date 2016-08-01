@@ -356,6 +356,9 @@
                                     });
 
                                     function schedule(json) {
+                                        var colors = ["Blue","Red","Brown","Green","Orange","BurlyWood","Chocolate","ForestGreen","Gold","HotPink","LawnGreen","Lime","LimeGreen","MidnightBlue","MistyRose","Olive",
+                                        "OrangeRed","PaleGreen","PaleVioletRed","PeachPuff","Pink","PowderBlue","Purple","SaddleBrown","SandyBrown","SeaGreen","SkyBlue","SpringGreen","Tomato","Yellow"];
+
                                         if(json.hasOwnProperty('rootList')){
                                             rootList  = json.rootList;
                                             document.getElementById('runnroottxt').innerHTML = rootList;
@@ -406,9 +409,9 @@
                                                                 } else if (this['type'] == '4 (SERIALRX)'){
                                                                     tbl_row += 'SERIALRX';
                                                                 } else if (this['type'] == '3 (TXRX)'){
-                                                                    tbl_row += 'TXRX';
+                                                                    tbl_row += '<t style=\"color:' + colors[this['trackID']] + '\">TXRX</t>';
                                                                 } else {
-                                                                    tbl_row += this['txMoteID'] + "-"+ this['bitIndex'] +">" + this['rxMoteList'];
+                                                                    tbl_row += '<t style=\"color:' + colors[this['trackID']] + '\">' + this['txMoteID'] + "-"+ this['bitIndex'] +">" + this['rxMoteList'] + '</t>';
                                                                 }
                                                             }
                                                         });
