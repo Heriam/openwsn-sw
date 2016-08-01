@@ -301,7 +301,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             # dispatch
             self.dispatch(
                 signal       = 'bytesToMesh',
-                data         = (self.trackID,lowpan['nextHop'],lowpan_bytes),
+                data         = (lowpan['nextHop'],lowpan_bytes),
             )
             
         except (ValueError,NotImplementedError) as err:
