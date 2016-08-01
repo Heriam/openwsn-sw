@@ -259,6 +259,7 @@ class Tracker():
         self.lastRxAsn   = None
 
         # init tracker
+        print srcRoute
         self.track.add_node(srcRoute[-1])
 
 
