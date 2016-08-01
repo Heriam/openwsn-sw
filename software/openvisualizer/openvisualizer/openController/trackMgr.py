@@ -111,10 +111,10 @@ class trackMgr(eventBusClient.eventBusClient):
         '''
         parentList = data[1]
         source     = data[0]
-        children   = tuple(data[2])
+        childList  = data[2]
         newEdges = [(source, tuple(p[1]),{'preference': p[0]}) for p in parentList]
-        newEdges.append((source,children,{'preference': self.topo[source][children]['preference']
-                                if (source in self.topo and children in self.topo[source]) else 0}))
+        newEdges + [(source,tuple(child),{'preference': self.topo[source][tuple(child)]['preference']
+                                if (source in self.topo and tuple(child) in self.topo[source]) else 0}) for child in childList]
         with self.topoLock:
             if source in self.topo.graph:
                 self.topo.remove_edges_from(self.topo.graph[source])
