@@ -137,7 +137,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.sendWithBier         = False
         self.bierAuto             = False
         self.bierLock             = threading.Lock()
-        self.trackID              = 4
+        self.trackID              = 3
         self.bierBitmap           = '111111111111'
 
         # initialize parent class
@@ -494,7 +494,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         else :
             self.sendWithBier = False
             self.bierAuto     = False
-            if self.trackID == 4:
+            if self.trackID == 3:
                 self.trackID = 1
             else :
                 self.trackID += 1
