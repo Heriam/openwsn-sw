@@ -137,7 +137,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.sendWithBier         = False
         self.bierAuto             = False
         self.bierLock             = threading.Lock()
-        self.trackID              = 4
+        self.trackID              = 3
         self.bierBitmap           = '111111111111'
 
         # initialize parent class
@@ -283,7 +283,7 @@ class OpenLbr(eventBusClient.eventBusClient):
             lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
 
             with self.bierLock:
-                if self.trackID == 1 or self.trackID == 4 or self.sendWithBier:
+                if self.trackID == 1 or self.sendWithBier:
                     if self.trackID ==4 or self.bierAuto:
                         lowpan['bitmap'] = self._getBitmap(self.trackID, dst_addr)
                     else:
@@ -495,7 +495,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         else :
             self.sendWithBier = False
             self.bierAuto     = False
-            if self.trackID == 4 :
+            if self.trackID == 3 :
                 self.trackID = 1
             else :
                 self.trackID += 1
