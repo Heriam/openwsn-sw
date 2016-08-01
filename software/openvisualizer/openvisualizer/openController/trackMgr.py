@@ -110,9 +110,10 @@ class trackMgr(eventBusClient.eventBusClient):
         updates topology
         '''
         parentList = data[1]
-        source = data[0]
-        newEdges = [(source, tuple(p[1]), {'preference': p[0]}) for p in parentList]
-
+        source     = data[0]
+        children   = tuple(data[2])
+        newEdges = [(source, tuple(p[1]),{'preference': p[0]}) for p in parentList]
+        newEdges.append((source,children,{'preference': self.topo[source][children]['preference'] if children in self.topo[source] else 0}))
         with self.topoLock:
             if source in self.topo.graph:
                 self.topo.remove_edges_from(self.topo.graph[source])
@@ -229,13 +230,13 @@ class trackMgr(eventBusClient.eventBusClient):
             try:
                 path = nx.shortest_path(self.topo, dst, self.rootEui64)
             except nx.exception.NetworkXNoPath as nopatherr:
-                log.warning('[topologyMgr]:{0}'.format(nopatherr))
+                log.warning('[trackMgr]:{0}'.format(nopatherr))
                 return
             except nx.exception.NetworkXError as err:
-                log.warning('[topologyMgr]:{0}'.format(err))
+                log.warning('[trackMgr]:{0}'.format(err))
                 return
             except:
-                print '[topologyMgr] error when getting shortest path with input {0}'.format(dst)
+                print '[trackMgr] error when getting shortest path with input {0}'.format(dst)
                 return
 
         return path
