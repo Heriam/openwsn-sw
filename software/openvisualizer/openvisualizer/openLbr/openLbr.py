@@ -753,8 +753,8 @@ class OpenLbr(eventBusClient.eventBusClient):
         # payload
         returnVal           += lowpan['payload']
 
-        if self.sendWithBier :
-            log.info('Track {0} BIER message sent with bitmap : {1}'.format(self.trackID, self.bierBitmap))
+        if 'bitmap' in lowpan:
+            print 'Track {0} BIER message sent with bitmap : {1}'.format(self.trackID, self.bierBitmap)
 
         return returnVal
     
