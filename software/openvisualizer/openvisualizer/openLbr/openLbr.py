@@ -137,7 +137,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.sendWithBier         = False
         self.bierAuto             = False
         self.bierLock             = threading.Lock()
-        self.trackID              = 3
+        self.trackID              = 4
         self.bierBitmap           = '111111111111'
 
         # initialize parent class
@@ -283,9 +283,9 @@ class OpenLbr(eventBusClient.eventBusClient):
             lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
 
             with self.bierLock:
-                if self.trackID ==4 or self.bierAuto:
+                if self.bierAuto:
                     lowpan['bitmap'] = self._getBitmap(self.trackID, dst_addr)
-                elif self.trackID ==1 or self.sendWithBier:
+                elif self.trackID ==1 or self.trackID ==4 or self.sendWithBier:
                     lowpan['bitmap'] = self.bierBitmap
 
             # turn dictionary of fields into raw bytes
@@ -489,12 +489,13 @@ class OpenLbr(eventBusClient.eventBusClient):
         #if ipv6['flow_label']!=0:
         #    raise NotImplementedError('flow_label={0} unsupported'.format(ipv6['flow_label']))
         if ipv6['flow_label']==1:
+            print 'processing flow lable [1]'
             self.sendWithBier = True
             self.bierAuto     = True
         else :
             self.sendWithBier = False
             self.bierAuto     = False
-            if self.trackID == 3:
+            if self.trackID == 4:
                 self.trackID = 1
             else :
                 self.trackID += 1
@@ -754,7 +755,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         returnVal           += lowpan['payload']
 
         if 'bitmap' in lowpan:
-            print 'Track {0} BIER message sent with bitmap : {1}'.format(self.trackID, self.bierBitmap)
+            log.info('Track {0} BIER message sent with bitmap : {1}'.format(self.trackID, self.bierBitmap))
 
         return returnVal
     
