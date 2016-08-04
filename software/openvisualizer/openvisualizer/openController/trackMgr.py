@@ -16,7 +16,6 @@ import openvisualizer.openvisualizer_utils as u
 from collections import namedtuple
 from openvisualizer.eventBus import eventBusClient
 from BitmapError import BitmapError
-from stateMgr    import stateMgr
 log = logging.getLogger('trackMgr')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
@@ -39,7 +38,6 @@ class trackMgr(eventBusClient.eventBusClient):
         self.rootEui64         = None
         self.tracks            = {}
         self.topo              = nx.Graph()
-        self.stateMgr          = stateMgr()
 
         # init super class
         eventBusClient.eventBusClient.__init__(

@@ -18,7 +18,7 @@ from openvisualizer.eventBus import eventBusClient
 from moteDriver  import moteDriver  as md
 from scheduleMgr import scheduleMgr as sm
 from trackMgr    import trackMgr    as tm
-
+from stateMgr    import stateMgr    as stm
 
 class openController(eventBusClient.eventBusClient):
 
@@ -36,7 +36,7 @@ class openController(eventBusClient.eventBusClient):
         self.moteDriver     = md(moteStates)
         self.scheduleMgr    = sm()
         self.trackMgr       = tm()
-
+        self.stateMgr       = stm()
         eventBusClient.eventBusClient.__init__(self,"openController", registrations=[
 
         ])
