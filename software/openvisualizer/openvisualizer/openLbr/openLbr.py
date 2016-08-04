@@ -138,7 +138,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.bierAuto             = False
         self.bierLock             = threading.Lock()
         self.trackID              = 4
-        self.bierBitmap           = '111111111111'
+        self.bierBitString           = '111111111111'
 
         # initialize parent class
         eventBusClient.eventBusClient.__init__(
@@ -188,13 +188,13 @@ class OpenLbr(eventBusClient.eventBusClient):
         '''
         return self.bierAuto
 
-    def getBierBitmap(self):
+    def getBierBitString(self):
         '''
-        Returns the bierBitMap currently used.
+        Returns the bierBitString currently used.
 
         :rtype:        string
         '''
-        return self.bierBitmap
+        return self.bierBitString
 
     def setSendWithBier(self, b):
         '''
@@ -205,14 +205,14 @@ class OpenLbr(eventBusClient.eventBusClient):
         with self.bierLock:
             self.sendWithBier = b
 
-    def setBierBitmap(self, b):
+    def setBierBitString(self, b):
         '''
-        Changes the bierBitMap that should be used
+        Changes the bierBitString that should be used
 
-        :param b:      string representing the bierbitmap to use
+        :param b:      string representing the bierBitString to use
         '''
         with self.bierLock:
-            self.bierBitmap = b
+            self.bierBitString = b
 
     def setBierAuto(self, b):
         '''
@@ -284,9 +284,9 @@ class OpenLbr(eventBusClient.eventBusClient):
 
             with self.bierLock:
                 if self.trackID ==4 or self.bierAuto:
-                    lowpan['bitmap'] = self._getBitmap(self.trackID, dst_addr)
+                    lowpan['BitString'] = self._getBitString(self.trackID, dst_addr)
                 elif self.trackID ==1 or self.sendWithBier:
-                    lowpan['bitmap'] = self.bierBitmap
+                    lowpan['BitString'] = self.bierBitString
 
             # turn dictionary of fields into raw bytes
             lowpan_bytes     = self.reassemble_lowpan(lowpan)
@@ -530,7 +530,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         
         :returns: A list of bytes representing the 6LoWPAN packet.
         '''
-        bitmap = []
+        BitString = []
         returnVal            = []
 
         # the 6lowpan packet contains 4 parts
@@ -549,39 +549,39 @@ class OpenLbr(eventBusClient.eventBusClient):
         else:
             compressReference = lowpan['src_addr']
 
-        if 'bitmap' in lowpan:
-            bierBitmap = lowpan['bitmap']
+        if 'BitString' in lowpan:
+            bierBitString = lowpan['BitString']
             s = 0
-            bitmaplen = 0
+            BitStringlen = 0
             bier_6lorh_type = None
-            if len(bierBitmap) <= 256:
+            if len(bierBitString) <= 256:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_15
-                s = (len(bierBitmap) - 1) / 8
-                bitmaplen = (s + 1) * 8
-            elif len(bierBitmap) <= 512:
+                s = (len(bierBitString) - 1) / 8
+                BitStringlen = (s + 1) * 8
+            elif len(bierBitString) <= 512:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_16
-                s = (len(bierBitmap) - 1) / 16
-                bitmaplen = (s + 1) * 16
-            elif len(bierBitmap) <= 1024:
+                s = (len(bierBitString) - 1) / 16
+                BitStringlen = (s + 1) * 16
+            elif len(bierBitString) <= 1024:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_17
-                s = (len(bierBitmap) - 1) / 32
-                bitmaplen = (s + 1) * 32
-            elif len(bierBitmap) <= 2048:
+                s = (len(bierBitString) - 1) / 32
+                BitStringlen = (s + 1) * 32
+            elif len(bierBitString) <= 2048:
                 bier_6lorh_type = self.TYPE_6LoRH_BIER_18
-                s = (len(bierBitmap) - 1) / 64
-                bitmaplen = (s + 1) * 64
+                s = (len(bierBitString) - 1) / 64
+                BitStringlen = (s + 1) * 64
             else:
-                log.error('Bier bitmap is too long')
+                log.error('Bier BitString is too long')
 
-            # Fill the bitmap with 0 until we have the right bitmap size
-            while len(bierBitmap) != bitmaplen:
-                bierBitmap += '0'
+            # Fill the BitString with 0 until we have the right BitString size
+            while len(bierBitString) != BitStringlen:
+                bierBitString += '0'
 
-            for i in range(((len(bierBitmap) - 1) / 8) + 1):
-                bitmap += [int(bierBitmap[8 * i:8 * (i + 1)], 2)]
+            for i in range(((len(bierBitString) - 1) / 8) + 1):
+                BitString += [int(bierBitString[8 * i:8 * (i + 1)], 2)]
 
             returnVal += [self.CRITICAL_6LoRH | s, bier_6lorh_type]
-            returnVal += bitmap
+            returnVal += BitString
 
         # destination address
         elif len(lowpan['route']) > 1:
@@ -753,8 +753,8 @@ class OpenLbr(eventBusClient.eventBusClient):
         # payload
         returnVal           += lowpan['payload']
 
-        if 'bitmap' in lowpan:
-            log.info('Track {0} BIER message sent with bitmap : {1}'.format(self.trackID, self.bierBitmap))
+        if 'BitString' in lowpan:
+            log.info('Track {0} BIER message sent with BitString : {1}'.format(self.trackID, self.bierBitString))
 
         return returnVal
     
@@ -966,9 +966,9 @@ class OpenLbr(eventBusClient.eventBusClient):
         )
         return returnVal
 
-    def _getBitmap(self, trackId, dstAddr):
+    def _getBitString(self, trackId, dstAddr):
         returnVal = self._dispatchAndGetResult(
-            signal       = 'getBitmap',
+            signal       = 'getBitString',
             data         = (trackId,dstAddr),
         )
         return returnVal

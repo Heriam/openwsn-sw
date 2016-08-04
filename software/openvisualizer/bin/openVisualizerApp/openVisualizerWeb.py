@@ -241,7 +241,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.tm.setRepType(1)
             return {"result": "success"}
         elif params == 'gettrack':
-            tracker = self.tm.getTrackers()
+            tracker = self.tm.getTracker()
             dict = {
                 'nodes': [ ''.join(['%02x' % b for b in node[6:]]) for node in tracker.track.nodes()] if tracker else [],
                 'links': [ (''.join(['%02x' % b for b in rxnode[6:]]),''.join(['%02x' % b for b in txnode[6:]])

@@ -9,15 +9,18 @@ stores and manages the information about the devices, their capabilities, reacha
 '''
 
 import networkx as nx
-from collections import namedtuple
-from openvisualizer.eventBus import eventBusClient
 import threading
 import datetime as dt
 import logging
+import openvisualizer.openvisualizer_utils as u
+from collections import namedtuple
+from openvisualizer.eventBus import eventBusClient
+from BitmapError import BitmapError
+from stateMgr    import stateMgr
 log = logging.getLogger('trackMgr')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
-import openvisualizer.openvisualizer_utils as u
+
 
 class trackMgr(eventBusClient.eventBusClient):
 
@@ -36,6 +39,7 @@ class trackMgr(eventBusClient.eventBusClient):
         self.rootEui64         = None
         self.tracks            = {}
         self.topo              = nx.Graph()
+        self.stateMgr          = stateMgr()
 
         # init super class
         eventBusClient.eventBusClient.__init__(
@@ -54,13 +58,8 @@ class trackMgr(eventBusClient.eventBusClient):
                 },
                 {
                     'sender': self.WILDCARD,
-                    'signal': 'getBitmap',
-                    'callback': self._bitmapRequest,
-                },
-                {
-                    'sender': self.WILDCARD,
-                    'signal': 'fromMote.bitString',
-                    'callback': self._bitmapFeedback,
+                    'signal': 'getBitString',
+                    'callback': self._bitStringRequest,
                 }
             ]
         )
@@ -87,8 +86,8 @@ class trackMgr(eventBusClient.eventBusClient):
 
         '''
         self.repType = t
-        if self.getTrackers():
-            self.getTrackers().repType = t
+        if self.getTracker():
+            self.getTracker().repType = t
 
     def getTopo(self):
         '''
@@ -97,11 +96,13 @@ class trackMgr(eventBusClient.eventBusClient):
         with self.topoLock:
             return self.topo
 
-    def getTrackers(self):
+    def getTracker(self, trackId = 4):
         '''
         returns tracks
         '''
-        return self.tracks.get(1)
+        return self.tracks.get(trackId)
+
+
 
     # ======================== private ======================
 
@@ -142,36 +143,34 @@ class trackMgr(eventBusClient.eventBusClient):
                 # clear DAGroot
                 self.rootEui64 = None
 
-    def _bitmapRequest(self, sender, signal, data):
+    def _bitStringRequest(self, sender, signal, data):
         '''
-        returns bitmap for corresponded destination.
+        returns bitString for corresponded destination.
 
         '''
-        inTrack = False
-        tracker = None
         trackId = data[0]
         dstAddr = tuple(data[1])
-        # returns bitmap
+        # returns bitString
         tracker = self.tracks.get(trackId)
-        if tracker and dstAddr in tracker.track:
-            inTrack = True
-        if not inTrack:
+        if tracker and dstAddr == tracker.srcRoute[0]:
+            return tracker.getBitString()
+        else:
             # create a new track
-            rplRoute = self._dispatchAndGetResult('getSourceRoute', list(dstAddr))
-            srcRoute = [tuple(hop) for hop in rplRoute]
-            tracker = self._buildTrack(Tracker(srcRoute,trackId,self.repType))
-            self.tracks[trackId] = tracker
-        return tracker.getBitmap(dstAddr)
-
-    def _bitmapFeedback(self, sender, signal, data):
-
-        tracker = self.tracks.get(data[0])
-        print "====received bitmap from track {0}====".format(data[0])
-        if tracker:
-            tracker.feedBits(data[1:])
+            try:
+                rplRoute = self._dispatchAndGetResult('getSourceRoute', list(dstAddr))
+                srcRoute = [tuple(hop) for hop in rplRoute]
+                tracker = self._buildTrack(Tracker(srcRoute, trackId, self.repType))
+                self.tracks[trackId] = tracker
+                return tracker.getBitString()
+            except KeyError as err:
+                raise BitmapError(BitmapError.COMPUTATION,
+                                  "could not build a new track for destination mote {0}, {1}".format(dstAddr, err))
 
     def _buildTrack(self, tracker):
+        '''
+        returns tracker class
 
+        '''
         if tracker.srcRoute[0] in tracker.track:
             self.dispatch('scheduleTrack', (tracker.trackId, tracker.arcs))
             tracker.postInit()
@@ -243,27 +242,41 @@ class trackMgr(eventBusClient.eventBusClient):
         return path
 
 
-class Tracker():
+class Tracker(eventBusClient.eventBusClient):
 
     def __init__(self, srcRoute, trackId, repType):
 
         # store params
+        self.bitLock     = threading.Lock()
         self.trackId     = trackId
         self.bitOffset   = 0
         self.arcs        = []
         self.srcRoute    = srcRoute
+        self.srcPath     = []
         self.repType     = repType
         self.bitMap      = {}
-        self.bitStrings  = {}
+        self.bitString   = ''
         self.track       = nx.DiGraph()
         self.lastTxBmp   = None
         self.lastRxBmp   = None
         self.lastRxAsn   = None
 
         # init tracker
-        print srcRoute
         self.track.add_node(srcRoute[-1])
 
+        eventBusClient.eventBusClient.__init__(
+            self,
+            "Tracker@{0}".format(trackId),
+            registrations=[
+                {
+                    'sender': self.WILDCARD,
+                    'signal': 'fromMote.bitString',
+                    'callback': self._bitStringFeedback,
+                }
+            ]
+        )
+
+    # ======================= public ===========================
 
     def postInit(self):
 
@@ -273,8 +286,8 @@ class Tracker():
             self.bitMap[bit] = (txMote,rxMote)
 
         # calculate bitStrings
-        for node in self.track.nodes():
-            self.bitStrings[node] = self._computeBitmap(node)
+        self.bitString = ''.join([bit for bit in ['1'] * self.bitOffset])
+        self.srcPath   = self.track.edges()
 
     def getTrackId(self):
         return self.trackId
@@ -285,46 +298,49 @@ class Tracker():
     def getArcs(self):
         return self.arcs
 
+    def getSrcPath(self):
+        return self.srcPath
+
     def getSrcRoute(self):
         return self.srcRoute
 
     def getTrack(self):
         return self.track
 
-    def feedBits(self, data):
-        bitString = ''
-        (moteId, asn, bitBytes) = data
+    def getBitmap(self):
+        return self.bitMap
 
-        thisRxAsn = asn[0]+(asn[1]<<16)+(asn[2]<<32)
-        self.lastRxBmp = dt.datetime.now()
+    def getBitString(self):
+        self.lastTxBmp = dt.datetime.now()
+        self.dispatch('enabledHops', (self.trackId, self.srcPath))
+        return self.bitString
+
+    def updateSrcPath(self, srcPath):
+        newBitString = ['0'] * self.bitOffset
+        with self.bitLock:
+            for (bit,edge) in self.bitMap.items():
+                if edge in srcPath:
+                    newBitString[bit] = '1'
+            self.bitString = ''.join([bit for bit in newBitString])
+            self.srcPath   = srcPath
+
+
+    # ======================== private ===============================
+
+    def _bitStringFeedback(self, sender, signal, data):
+        bitString  = ''
+        failedHops = []
+        (trackId, moteId, asn, bitBytes) = data
 
         for i in bitBytes:
-            bitMap     = bin(i)[2:]
-            bitMap     = ''.join([bit for bit in ['0']*(8-len(bitMap))]) + bitMap
-            bitString  = bitString + bitMap
+            bitVal = bin(i)[2:]
+            bitString = bitString + ''.join([bit for bit in ['0'] * (8 - len(bitVal))]) + bitVal
 
-        AsnDelta    = (thisRxAsn - self.lastRxAsn) if self.lastRxAsn else 0
+        for i in range(self.bitOffset):
+            if bitString[i] == '1':
+                failedHops.append(self.bitMap.get(i))
 
+        if failedHops:
+            self.dispatch('failedHops', (self.trackId, failedHops))
 
-    def getBitmap(self, dst):
-        thisTxBmp   = dt.datetime.now()
-        txBmpDelta  = (thisTxBmp - self.lastTxBmp) if self.lastTxBmp else 0
-        txRxbmpGap  = (thisTxBmp - self.lastRxBmp) if self.lastRxBmp else 0
-        return self.bitStrings.get(dst).get(self.repType)
-
-    def _computeBitmap(self, dstAddr):
-        entry = {}
-        route = nx.shortest_path(self.track, dstAddr, self.srcRoute[-1])
-        txMote = None
-        bitmap = ['0'] * self.bitOffset
-        # self.repType == trackMgr.SINGLE_PATH:
-        for rxMote in route:
-            if txMote:
-                bitIndex = self.track[txMote][rxMote]['bit']
-                bitmap[bitIndex] = '1'
-            txMote = rxMote
-        entry[trackMgr.SINGLE_PATH] = ''.join([bit for bit in bitmap])
-        # self.repType == trackMgr.FULL_PATH:
-        bitmap = ['1'] * self.bitOffset
-        entry[trackMgr.FULL_PATH] = ''.join([bit for bit in bitmap])
-        return entry
+        thisRxAsn = asn[0] + (asn[1] << 16) + (asn[2] << 32)
