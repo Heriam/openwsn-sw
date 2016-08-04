@@ -48,7 +48,9 @@ class stateMgr(eventBusClient.eventBusClient):
         self.threads = []
         t = threading.Thread(target=self._update())
         t.setDaemon(True)
+        print '==='
         t.start()
+        print '++++'
         self.threads.append(t)
 
     # ====================== public ========================
