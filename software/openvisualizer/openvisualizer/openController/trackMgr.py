@@ -172,7 +172,7 @@ class trackMgr(eventBusClient.eventBusClient):
 
         '''
         if tracker.srcRoute[0] in tracker.track:
-            self.dispatch('scheduleTrack', (tracker.trackId, tracker.arcs))
+            # self.dispatch('scheduleTrack', (tracker.trackId, tracker.arcs))
             tracker.postInit()
             return tracker
 
@@ -260,6 +260,22 @@ class Tracker(eventBusClient.eventBusClient):
         self.lastTxBmp   = None
         self.lastRxBmp   = None
         self.lastRxAsn   = None
+        self.hardcodedSchedule = {
+            ((0, 18, 75, 0, 6, 13, 158, 217),(0, 18, 75, 0, 6, 13, 159, 74))  : 0, # 9ed9 -> 9f4a
+            ((0, 18, 75, 0, 6, 13, 158, 217),(0, 18, 75, 0, 6, 13, 159, 2))   : 1, # 9ed9 -> 9f02
+            ((0, 18, 75, 0, 6, 13, 159, 74), (0, 18, 75, 0, 6, 13, 159, 2))   : 2, # 9f4a -> 9f02
+            ((0, 18, 75, 0, 6, 13, 159, 2), (0, 18, 75, 0, 6, 13, 159, 74))   : 2, # 9f02 -> 9f4a
+            ((0, 18, 75, 0, 6, 13, 159, 74), (0, 18, 75, 0, 6, 13, 158, 216)) : 3, # 9f4a -> 9ed8
+            ((0, 18, 75, 0, 6, 13, 159, 2), (0, 18, 75, 0, 6, 13, 158, 199))  : 4, # 9f02 -> 9ec7
+            ((0, 18, 75, 0, 6, 13, 158, 216), (0, 18, 75, 0, 6, 13, 158, 199)): 5, # 9ed8 -> 9ec7
+            ((0, 18, 75, 0, 6, 13, 158, 199), (0, 18, 75, 0, 6, 13, 158, 216)): 5, # 9ec7 -> 9ed8
+            ((0, 18, 75, 0, 6, 13, 158, 216), (0, 18, 75, 0, 6, 13, 158, 246)): 6, # 9ed8 -> 9ef6
+            ((0, 18, 75, 0, 6, 13, 158, 199), (0, 18, 75, 0, 6, 13, 158, 236)): 7, # 9ec7 -> 9eec
+            ((0, 18, 75, 0, 6, 13, 158, 246), (0, 18, 75, 0, 6, 13, 158, 236)): 8, # 9ef6 -> 9eec
+            ((0, 18, 75, 0, 6, 13, 158, 236), (0, 18, 75, 0, 6, 13, 158, 246)): 8, # 9eec -> 9ef6
+            ((0, 18, 75, 0, 6, 13, 158, 246), (0, 18, 75, 0, 6, 13, 158, 195)): 9, # 9ef6 -> 9ec3
+            ((0, 18, 75, 0, 6, 13, 158, 236), (0, 18, 75, 0, 6, 13, 158, 195)): 10,# 9eec -> 9ec3
+        }
 
         # init tracker
         self.track.add_node(srcRoute[-1])
@@ -281,13 +297,11 @@ class Tracker(eventBusClient.eventBusClient):
     def postInit(self):
 
         # build bitMap
-        for (txMote,rxMote) in self.track.edges():
-            bit = self.track[txMote][rxMote]['bit']
-            self.bitMap[bit] = (txMote,rxMote)
+        self.bitMap = self.hardcodedSchedule
 
         # calculate bitStrings
         self.bitString = ''.join([bit for bit in ['1'] * self.bitOffset])
-        self.srcPath   = self.track.edges()
+        self.srcPath   = self.hardcodedSchedule.keys()
 
     def getTrackId(self):
         return self.trackId
@@ -318,12 +332,10 @@ class Tracker(eventBusClient.eventBusClient):
     def updateSrcPath(self, srcPath):
         newBitString = ['0'] * self.bitOffset
         with self.bitLock:
-            for (bit,edge) in self.bitMap.items():
-                if edge in srcPath:
-                    newBitString[bit] = '1'
+            for edge in srcPath:
+                newBitString[self.hardcodedSchedule.get(edge)] = '1'
             self.bitString = ''.join([bit for bit in newBitString])
             self.srcPath   = srcPath
-
 
     # ======================== private ===============================
 
@@ -338,7 +350,9 @@ class Tracker(eventBusClient.eventBusClient):
 
         for i in range(self.bitOffset):
             if bitString[i] == '1':
-                failedHops.append(self.bitMap.get(i))
+                for (edge,bitIndex) in self.bitMap.items():
+                    if bitIndex == i:
+                        failedHops.append(edge)
 
         if failedHops:
             self.dispatch('failedHops', (self.trackId, failedHops))
