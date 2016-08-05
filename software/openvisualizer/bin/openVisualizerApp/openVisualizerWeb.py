@@ -147,7 +147,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.websrv.route(path='/controller',                         callback=self._showController)
             self.websrv.route(path='/controller/upload',  method='POST',  callback=self._uploadschedule)
             self.websrv.route(path='/schedule/:cmd'    ,                  callback=self._schedule)
-            self.websrv.route(path='/setbitmap/:bitmap',                  callback=self._setbitmap)
+            self.websrv.route(path='/setbitString/:bitString',                  callback=self._setbitString)
             self.websrv.route(path='/bier/:params',                       callback=self._bierparams)
 
     @view('controller.tmpl')
@@ -202,18 +202,18 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
         else:
             return '{"result" : "failed"}'
 
-    def _setbitmap(self, bitmap):
+    def _setbitString(self, bitString):
         '''
-        Sets the openLbr bierbitmap to the one entered on the webUI
+        Sets the openLbr bierbitString to the one entered on the webUI
 
-        :param bitmap: bitmap to set (as a string)
+        :param bitString: bitString to set (as a string)
         '''
         try :
-            int(bitmap, 2)
+            int(bitString, 2)
         except ValueError :
-            log.error('A wrong bitmap was entered through webUI. It should only contain 0 and 1')
+            log.error('A wrong bitString was entered through webUI. It should only contain 0 and 1')
             return {"result" : "fail"}
-        self.app.getOpenLbr().setBierBitmap(bitmap)
+        self.app.getOpenLbr().setBierBitString(bitString)
         return {"result" : "success"}
 
     def _bierparams(self, params):

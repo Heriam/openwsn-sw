@@ -89,8 +89,8 @@
 	                <div class="col-lg-12">
 	                    <div class = "row">
 	                        <div class = "col-lg-6">
-                                <input id="bitmap_manual" type="text" placeholder="insert bierbitmap here">
-                                <button id="bitmap_btn" type="button" class="btn btn-default btn-xs">Change bitmap</button>&nbsp;&nbsp;
+                                <input id="bitString_manual" type="text" placeholder="insert bierbitString here">
+                                <button id="bitString_btn" type="button" class="btn btn-default btn-xs">Change bitString</button>&nbsp;&nbsp;
                                 <input type="checkbox" id="bierbool" \
                                     % if enable_bier:
                                         checked="checked" \
@@ -215,17 +215,17 @@
                                         console.log('Update for reptype selection: ' + reptype);
                                     });
 
-                                    $( "#bitmap_btn" )
+                                    $( "#bitString_btn" )
                                         .button()
                                         .click(function( event ) {
-                                            newbitmap = $("#bitmap_manual").val();
-                                            if (newbitmap != ''){
+                                            newbitString = $("#bitString_manual").val();
+                                            if (newbitString != ''){
                                                 $.ajax({
                                                     dataType: "json",
-                                                    url: "/setbitmap/"+newbitmap,
+                                                    url: "/setbitString/"+newbitString,
                                                     error: errorOnAjax
                                                 });
-                                                console.log('Changed bitmap to : ' + newbitmap);
+                                                console.log('Changed bitString to : ' + newbitString);
                                             }
                                     });
 
