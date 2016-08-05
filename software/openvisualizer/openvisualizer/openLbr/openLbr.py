@@ -754,7 +754,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         returnVal           += lowpan['payload']
 
         if 'BitString' in lowpan:
-            log.info('Track {0} BIER message sent with BitString : {1}'.format(self.trackID, self.bierBitString))
+            log.error('Track {0} BIER message sent with BitString : {1}'.format(self.trackID, lowpan['bitString']))
 
         return returnVal
     
