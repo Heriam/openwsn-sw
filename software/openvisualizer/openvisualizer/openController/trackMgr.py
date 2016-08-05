@@ -245,6 +245,7 @@ class Tracker(eventBusClient.eventBusClient):
         # store params
         self.bitLock     = threading.Lock()
         self.trackId     = trackId
+        self.targetRatio = 0.95
         self.bitOffset   = 0
         self.arcs        = []
         self.srcRoute    = srcRoute
@@ -282,11 +283,14 @@ class Tracker(eventBusClient.eventBusClient):
             registrations=[
                 {
                     'sender': self.WILDCARD,
-                    'signal': 'fromMote.bitString',
+                    'signal': 'fromMote.bitString@{0}'.format(self.trackId),
                     'callback': self._bitStringFeedback,
                 }
             ]
         )
+
+        if self.trackId == 4:
+            self.register(sender=self.WILDCARD, signal='updateLinkState', callback=self._updateLinkState)
 
     # ======================= public ===========================
 
@@ -354,3 +358,7 @@ class Tracker(eventBusClient.eventBusClient):
             self.dispatch('failedHops', (self.trackId, failedHops))
 
         thisRxAsn = asn[0] + (asn[1] << 16) + (asn[2] << 32)
+
+    def _updateLinkState(self, sender, singal, data):
+
+        linkStateDict = data

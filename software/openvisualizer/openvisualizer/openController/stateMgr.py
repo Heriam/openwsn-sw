@@ -57,7 +57,6 @@ class stateMgr(eventBusClient.eventBusClient):
         if newRoundTime - self.roundTime > self.timeoutVal:
             self._update()
 
-
     def _hopsFailed_update(self, sender,singal,data):
         (trackId, failedHops, bitMap)  = data
         if self.pendingUpdate.get(trackId):

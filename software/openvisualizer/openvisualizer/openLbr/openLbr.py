@@ -138,7 +138,6 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.bierAuto             = False
         self.bierLock             = threading.Lock()
         self.trackID              = 4
-        self.bierBitString           = '111111111111'
 
         # initialize parent class
         eventBusClient.eventBusClient.__init__(
@@ -284,7 +283,7 @@ class OpenLbr(eventBusClient.eventBusClient):
 
             with self.bierLock:
                 if self.trackID ==4:
-                    lowpan['BitString'] = '11111111'
+                    lowpan['BitString'] = '1111111'
                 elif self.trackID ==1:
                     lowpan['BitString'] = '11111111111'
             # lowpan['BitString'] = self._getBitString(self.trackID, lowpan['route'])
