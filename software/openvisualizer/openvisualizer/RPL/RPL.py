@@ -253,19 +253,18 @@ class RPL(eventBusClient.eventBusClient):
             return
         
         # log
-        output               = []
-        output              += ['']
-        output              += ['received RPL DAO from {0}'.format(u.formatAddr(source))]
-        output              += ['- parents:']
-        for p in parents:
-            output          += ['   . {0} : {1}'.format(u.formatAddr(p[1]), p[0])]
-        output              += ['- children:']
-        for p in children:
-            output          += ['   . {0}'.format(u.formatAddr(p))]
-        output               = '\n'.join(output)
-        if log.isEnabledFor(logging.DEBUG):
-            log.debug(output)
-        print output
+        # output               = []
+        # output              += ['']
+        # output              += ['received RPL DAO from {0}'.format(u.formatAddr(source))]
+        # output              += ['- parents:']
+        # for p in parents:
+        #     output          += ['   . {0} : {1}'.format(u.formatAddr(p[1]), p[0])]
+        # output              += ['- children:']
+        # for p in children:
+        #     output          += ['   . {0}'.format(u.formatAddr(p))]
+        # output               = '\n'.join(output)
+        # if log.isEnabledFor(logging.DEBUG):
+        #     log.debug(output)
         
         # if you get here, the DAO was parsed correctly
 

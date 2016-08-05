@@ -147,16 +147,14 @@ class trackMgr(eventBusClient.eventBusClient):
 
         '''
         trackId = data[0]
-        dstAddr = tuple(data[1])
+        srcRoute = [tuple(hop) for hop in data[1]] + self.rootEui64
         # returns bitString
         tracker = self.tracks.get(trackId)
-        if tracker and dstAddr == tracker.srcRoute[0]:
+        if tracker and srcRoute[0] == tracker.srcRoute[0]:
             return tracker.getBitString()
         else:
             # create a new track
             try:
-                rplRoute = self._dispatchAndGetResult('getSourceRoute', list(dstAddr))
-                srcRoute = [tuple(hop) for hop in rplRoute]
                 tracker = self._buildTrack(Tracker(srcRoute, trackId, self.repType))
                 self.tracks[trackId] = tracker
                 return tracker.getBitString()

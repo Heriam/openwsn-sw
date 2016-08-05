@@ -9,13 +9,13 @@
 
 '''
 import datetime as dt
-import time
 import threading
 from openvisualizer.eventBus import eventBusClient
 import logging
 log = logging.getLogger('stateMgr')
 log.setLevel(logging.INFO)
 log.addHandler(logging.NullHandler())
+
 
 class stateMgr(eventBusClient.eventBusClient):
 
@@ -24,9 +24,9 @@ class stateMgr(eventBusClient.eventBusClient):
         self.dataLock    = threading.Lock()
         self.enabledHops = {}
         self.failedHops  = {}
-        self.timeoutVal  = dt.timedelta(seconds=6)
+        self.timeoutVal  = dt.timedelta(seconds=600)
         self.pendingUpdate = {}
-        self.dropRates   = []
+        self.roundTime   = dt.datetime.now()
 
         eventBusClient.eventBusClient.__init__(
             self,
@@ -45,14 +45,6 @@ class stateMgr(eventBusClient.eventBusClient):
             ]
         )
 
-        self.threads = []
-        t = threading.Thread(target=self._update())
-        t.setDaemon(True)
-        print '==='
-        t.start()
-        print '++++'
-        self.threads.append(t)
-
     # ====================== public ========================
 
 
@@ -61,6 +53,9 @@ class stateMgr(eventBusClient.eventBusClient):
     def _hopsEnabled_update(self, sender,signal,data):
         (trackId, enabledHops, bitMap) = data
         self.pendingUpdate[trackId] = enabledHops
+        newRoundTime = dt.datetime.now()
+        if newRoundTime - self.roundTime > self.timeoutVal:
+            self._update()
 
 
     def _hopsFailed_update(self, sender,singal,data):
@@ -81,13 +76,13 @@ class stateMgr(eventBusClient.eventBusClient):
                         self.failedHops[hop] = 1
 
     def _update(self):
-        while True:
-            time.sleep(600)
-            hopEntry = {}
-            for hop in self.enabledHops.keys():
-                hopEntry[hop] = self.failedHops[hop]*1.000/self.enabledHops[hop] if hop in self.failedHops.keys() else 0
-            self.dropRates.append(hopEntry)
-            with self.dataLock:
-                self.enabledHops.clear()
-                self.failedHops.clear()
-            log.debug('[DropRate] {0}\n'.format(hopEntry))
+
+        reliability = {}
+        for hop in self.enabledHops.keys():
+            reliability[hop] = (1.000 - self.failedHops[hop]*1.000/self.enabledHops[hop]) if hop in self.failedHops.keys() else 1
+        self.dispatch('updateLinkState', reliability)
+        with self.dataLock:
+            self.enabledHops.clear()
+            self.failedHops.clear()
+            self.roundTime = dt.datetime.now()
+        log.debug('[Reliability] {0}\n'.format(reliability))

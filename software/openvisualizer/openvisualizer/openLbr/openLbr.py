@@ -265,11 +265,11 @@ class OpenLbr(eventBusClient.eventBusClient):
                     
             # lowpan['route'] = self._getSourceRoute(dst_addr)
             #
-            # if len(lowpan['route'])<2:
+            if len(self._getSourceRoute(dst_addr))<2:
             #     # no source route could be found
             #     log.warning('no source route to {0}'.format(lowpan['dst_addr']))
             #     # TODO: return ICMPv6 message
-            #     return
+                 return
             #
             # lowpan['route'].pop() #remove last as this is me.
 
@@ -284,7 +284,7 @@ class OpenLbr(eventBusClient.eventBusClient):
 
             with self.bierLock:
                 if self.trackID ==4 or self.trackID ==1:
-                    lowpan['BitString'] = self._getBitString(self.trackID, dst_addr)
+                    lowpan['BitString'] = self._getBitString(self.trackID, lowpan['route'])
 
             # turn dictionary of fields into raw bytes
             lowpan_bytes     = self.reassemble_lowpan(lowpan)
@@ -964,10 +964,10 @@ class OpenLbr(eventBusClient.eventBusClient):
         )
         return returnVal
 
-    def _getBitString(self, trackId, dstAddr):
+    def _getBitString(self, trackId, route):
         returnVal = self._dispatchAndGetResult(
             signal       = 'getBitString',
-            data         = (trackId,dstAddr),
+            data         = (trackId, route),
         )
         return returnVal
 
