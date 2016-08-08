@@ -137,7 +137,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         self.sendWithBier         = False
         self.bierAuto             = False
         self.bierLock             = threading.Lock()
-        self.trackID              = 4
+        self.trackID              = 5
 
         # initialize parent class
         eventBusClient.eventBusClient.__init__(
@@ -278,13 +278,16 @@ class OpenLbr(eventBusClient.eventBusClient):
             elif self.trackID == 3 or self.trackID == 4:
                 lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 236],
                                    [0, 18, 75, 0, 6, 13, 158, 199], [0, 18, 75, 0, 6, 13, 159, 2]]
-            
+	    elif self.trackID == 5:
+                lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 236],
+                                   [0, 18, 75, 0, 6, 13, 158, 199], [0, 18, 75, 0, 6, 13, 159, 5]]           
+ 
             lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
 
             with self.bierLock:
-                if self.trackID ==4:
+                if self.trackID == 4 or self.trackID == 5:
                     lowpan['BitString'] = '1111111'
-                elif self.trackID ==1:
+                elif self.trackID == 1:
                     lowpan['BitString'] = '11111111111'
             # lowpan['BitString'] = self._getBitString(self.trackID, lowpan['route'])
 
@@ -494,7 +497,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         else :
             self.sendWithBier = False
             self.bierAuto     = False
-            if self.trackID == 4:
+            if self.trackID == 5:
                 self.trackID = 1
             else :
                 self.trackID += 1
