@@ -160,7 +160,7 @@ class trackMgr(eventBusClient.eventBusClient):
                 return tracker.getBitString()
             except KeyError as err:
                 raise BitmapError(BitmapError.COMPUTATION,
-                                  "could not build a new track for destination mote {0}, {1}".format(dstAddr, err))
+                                  "could not build a new track for srcroute mote {0}, {1}".format(srcRoute, err))
 
     def _buildTrack(self, tracker):
         '''
@@ -244,8 +244,11 @@ class Tracker(eventBusClient.eventBusClient):
 
         # store params
         self.bitLock     = threading.Lock()
+        self.countLock   = threading.Lock()
         self.trackId     = trackId
-        self.targetRatio = 0.95
+        self.targetPdr   = 0.95
+        self.sentPkt     = 0
+        self.rcvdPkt     = 0
         self.bitOffset   = 0
         self.arcs        = []
         self.srcRoute    = srcRoute
@@ -327,6 +330,8 @@ class Tracker(eventBusClient.eventBusClient):
     def getBitString(self):
         self.lastTxBmp = dt.datetime.now()
         self.dispatch('enabledHops', (self.trackId, self.srcPath))
+        with self.countLock:
+            self.sentPkt += 1
         return self.bitString
 
     def updateSrcPath(self, srcPath):
@@ -356,9 +361,16 @@ class Tracker(eventBusClient.eventBusClient):
 
         if failedHops:
             self.dispatch('failedHops', (self.trackId, failedHops))
-
+        with self.countLock:
+            self.rcvdPkt +=1
         thisRxAsn = asn[0] + (asn[1] << 16) + (asn[2] << 32)
 
     def _updateLinkState(self, sender, singal, data):
 
         linkStateDict = data
+        pdr = self.rcvdPkt*1.000/self.sentPkt
+        if pdr < self.targetPdr:
+            return
+        with self.countLock:
+            self.sentPkt = 0
+            self.rcvdPkt = 0
