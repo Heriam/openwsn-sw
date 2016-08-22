@@ -281,9 +281,8 @@ class OpenLbr(eventBusClient.eventBusClient):
             
             lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
 
-            with self.bierLock:
-                if self.trackID == 4 or self.trackID == 1:
-                    lowpan['BitString'] = self._getBitString(self.trackID, lowpan['route'])
+            if self.trackID == 4 or self.trackID == 1:
+                lowpan['BitString'] = self._getBitString(self.trackID)
 
             # turn dictionary of fields into raw bytes
             lowpan_bytes     = self.reassemble_lowpan(lowpan)
@@ -963,10 +962,10 @@ class OpenLbr(eventBusClient.eventBusClient):
         )
         return returnVal
 
-    def _getBitString(self, trackId, route):
+    def _getBitString(self, trackId):
         returnVal = self._dispatchAndGetResult(
             signal       = 'getBitString',
-            data         = (trackId, route),
+            data         = trackId
         )
         return returnVal
 

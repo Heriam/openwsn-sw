@@ -146,15 +146,12 @@ class trackMgr(eventBusClient.eventBusClient):
         returns bitString for corresponded destination.
 
         '''
-        print '~~~~~~'
         trackId = data[0]
         print data
         print self.rootEui64
         srcRoute = [tuple(hop) for hop in data[1]] + [self.rootEui64]
-        print '987q057409'
         # returns bitString
         tracker = self.tracks.get(trackId)
-        print '4313451451'
         if tracker and srcRoute[0] == tracker.srcRoute[0]:
             return tracker.getBitString()
         else:
@@ -172,32 +169,26 @@ class trackMgr(eventBusClient.eventBusClient):
         returns tracker class
 
         '''
-        print '~~~~~~~1~~~~~'
         if tracker.srcRoute[0] in tracker.track:
             if tracker.trackId == 4:
-                print '~~~~~~~3~~~~~'
                 self.dispatch('scheduleTrack', (tracker.trackId, tracker.arcs))
             tracker.postInit()
             return tracker
-        print '~~~~~~~2~~~~~'
         _0hop = [node for node in tracker.srcRoute if node in tracker.track][0]
         _1hop = [node for node in tracker.srcRoute if node not in tracker.track][-1]
 
         ARC   = namedtuple('ARC', 'arcBits arcEdges arcPath hop')
-        print '~~~~~~~4~~~~~'
         safeNode1 = _0hop
         altPaths = list(nx.shortest_simple_paths(self.topo, _1hop, _0hop))[1:]
         arcPath = []
         arcBits = []
         Bits = []
-        print '~~~~~~~5~~~~~'
         # find a sibling path to build an ARC
         for altPath in altPaths:
             if altPath[-2] in tracker.track and altPath[-2] not in tracker.srcRoute:
                 arcPath = altPath
                 break
         # choose a non-sibling path if not find;
-        print '~~~~~~~6~~~~~'
         if not arcPath:
             arcPath = altPaths[0] if altPaths else [_1hop, _0hop]
 
@@ -210,7 +201,6 @@ class trackMgr(eventBusClient.eventBusClient):
         arcBits.append(tracker.bitOffset)
         tracker.bitOffset += 1
         arcEdges = [edge1,edge2]
-        print '~~~~~~~7~~~~~'
         if tracker.interleave:
             medNodes.reverse()
             tracker.interleave = 0
@@ -224,17 +214,14 @@ class trackMgr(eventBusClient.eventBusClient):
             arcBits.append(tracker.bitOffset)
             tracker.bitOffset += 1
             preHop = nexHop
-        print '~~~~~~~8~~~~~'
         medNodes.reverse()
 
         preHop = medNodes[0]
         for nexHop in medNodes[1:]:
             arcEdges.append((nexHop, preHop, {'bit': Bits.pop()}))
             preHop = nexHop
-        print '~~~~~~~9~~~~~'
         tracker.track.add_edges_from(arcEdges)
         tracker.arcs.append(ARC(arcBits=arcBits,arcEdges=arcEdges,arcPath=arcPath,hop=(_1hop,_0hop)))
-        print '~~~~~~~10~~~~~'
         return self._buildTrack(tracker)
 
 
@@ -305,7 +292,7 @@ class Tracker(eventBusClient.eventBusClient):
             registrations=[
                 {
                     'sender': self.WILDCARD,
-                    'signal': 'fromMote.bitString@{0}'.format(self.trackId),
+                    'signal': 'fromMote.bitString',
                     'callback': self._bitStringFeedback,
                 }
             ]
@@ -352,7 +339,6 @@ class Tracker(eventBusClient.eventBusClient):
 
     def getBitString(self):
         gap =  (dt.datetime.now() - self.lastRxBmp) if self.lastRxBmp else 0
-        print "~~~~~~~~~~~~~~~~"
         if gap > dt.timedelta(seconds= 10) and self.trackId == 4:
             self.updateEnabledHops(self.bitMap.keys())
         return self.bitString

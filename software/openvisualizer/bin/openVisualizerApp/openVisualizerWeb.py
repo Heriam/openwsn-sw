@@ -162,7 +162,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             'sim_mode' : self.simMode,
             'enable_bier' : self.app.getOpenLbr().getSendWithBier(),
             'auto_bier'   : self.app.getOpenLbr().getBierAuto(),
-            'path_type'   : self.tm.getRepType()
         }
         return tmplData
 
@@ -233,12 +232,6 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             return {"result": "success"}
         elif params == 'autooff':
             self.app.getOpenLbr().setBierAuto(False)
-            return {"result": "success"}
-        elif params == 'singlepath':
-            self.tm.setRepType(0)
-            return {"result": "success"}
-        elif params == 'fullpath':
-            self.tm.setRepType(1)
             return {"result": "success"}
         elif params == 'gettrack':
             tracker = self.tm.getTracker()
