@@ -36,7 +36,7 @@ class openController(eventBusClient.eventBusClient):
         self.moteDriver     = md(moteStates)
         self.scheduleMgr    = sm()
         self.trackMgr       = tm()
-        self.stateMgr       = stm()
+        # self.stateMgr       = stm()
         eventBusClient.eventBusClient.__init__(self,"openController", registrations=[
 
         ])
