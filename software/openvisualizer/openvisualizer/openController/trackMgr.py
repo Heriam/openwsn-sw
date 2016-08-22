@@ -148,8 +148,9 @@ class trackMgr(eventBusClient.eventBusClient):
         '''
         print '~~~~~~'
         trackId = data[0]
-        print '1111111'
-        srcRoute = [tuple(hop) for hop in data[1]] + self.rootEui64
+        print data
+        print self.rootEui64
+        srcRoute = [tuple(hop) for hop in data[1]] + [self.rootEui64]
         print '987q057409'
         # returns bitString
         tracker = self.tracks.get(trackId)
