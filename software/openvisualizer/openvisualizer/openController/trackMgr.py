@@ -343,7 +343,8 @@ class Tracker(eventBusClient.eventBusClient):
         return self.bitMap
 
     def getBitString(self):
-        gap =  dt.datetime.now() - self.lastRxBmp
+        gap =  (dt.datetime.now() - self.lastRxBmp) if self.lastRxBmp else 0
+        print "~~~~~~~~~~~~~~~~"
         if gap > dt.timedelta(seconds= 10) and self.trackId == 4:
             self.updateEnabledHops(self.bitMap.keys())
         return self.bitString
