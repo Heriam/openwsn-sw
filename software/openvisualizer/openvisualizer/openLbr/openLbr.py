@@ -264,29 +264,26 @@ class OpenLbr(eventBusClient.eventBusClient):
                     
             # lowpan['route'] = self._getSourceRoute(dst_addr)
             #
-            if len(self._getSourceRoute(dst_addr))<2:
+            #if len(self._getSourceRoute(dst_addr))<2:
             #     # no source route could be found
             #     log.warning('no source route to {0}'.format(lowpan['dst_addr']))
             #     # TODO: return ICMPv6 message
-                 return
+            #     return
             #
             # lowpan['route'].pop() #remove last as this is me.
 
-            if self.trackID == 1 or self.trackID == 2:
+            if self.trackID == 4 or self.trackID == 2:
                 lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 246],
                                    [0, 18, 75, 0, 6, 13, 158, 216], [0, 18, 75, 0, 6, 13, 159, 74]]
-            elif self.trackID == 3 or self.trackID == 4:
+            elif self.trackID == 3 or self.trackID == 1:
                 lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 236],
                                    [0, 18, 75, 0, 6, 13, 158, 199], [0, 18, 75, 0, 6, 13, 159, 2]]
             
             lowpan['nextHop'] = lowpan['route'][len(lowpan['route'])-1] #get next hop as this has to be the destination address, this is the last element on the list
 
             with self.bierLock:
-                if self.trackID ==4:
-                    lowpan['BitString'] = '1111111'
-                elif self.trackID ==1:
-                    lowpan['BitString'] = '11111111111'
-            # lowpan['BitString'] = self._getBitString(self.trackID, lowpan['route'])
+                if self.trackID == 4 or self.trackID == 1:
+                    lowpan['BitString'] = self._getBitString(self.trackID, lowpan['route'])
 
             # turn dictionary of fields into raw bytes
             lowpan_bytes     = self.reassemble_lowpan(lowpan)

@@ -168,20 +168,20 @@ class trackMgr(eventBusClient.eventBusClient):
 
         '''
         if tracker.srcRoute[0] in tracker.track:
-            # self.dispatch('scheduleTrack', (tracker.trackId, tracker.arcs))
+            if tracker.trackId == 4:
+                self.dispatch('scheduleTrack', (tracker.trackId, tracker.arcs))
             tracker.postInit()
             return tracker
 
         _0hop = [node for node in tracker.srcRoute if node in tracker.track][0]
         _1hop = [node for node in tracker.srcRoute if node not in tracker.track][-1]
 
-        ARC   = namedtuple('ARC', 'bits edges arcPath hop')
+        ARC   = namedtuple('ARC', 'arcEdges arcPath hop')
 
-        edgeNode1 = _0hop
+        safeNode1 = _0hop
         altPaths = list(nx.shortest_simple_paths(self.topo, _1hop, _0hop))[1:]
         arcPath = []
         arcBits = []
-        arcEdges= []
 
         # find a sibling path to build an ARC
         for altPath in altPaths:
@@ -192,27 +192,30 @@ class trackMgr(eventBusClient.eventBusClient):
         if not arcPath:
             arcPath = altPaths[0] if altPaths else [_1hop, _0hop]
 
-        medNodes = [node for node in arcPath if node not in tracker.track]
-        edgeNode2 = arcPath[arcPath.index(medNodes[-1]) + 1]
+        medNodes  = [node for node in arcPath if node not in tracker.track]
+        safeNode2 = arcPath[arcPath.index(medNodes[-1]) + 1]
+        edge1     = (medNodes[0], safeNode1, {'bit': tracker.bitOffset})
+        tracker.bitOffset += 1
+        edge2     = (medNodes[-1], safeNode2, {'bit': tracker.bitOffset})
+        tracker.bitOffset += 1
+        arcEdges = [edge1,edge2]
 
-        preHop = edgeNode1
-        for nexHop in medNodes:
+        preHop = medNodes[0]
+        for nexHop in medNodes[1:]:
             arcEdges.append((nexHop, preHop, {'bit': tracker.bitOffset}))
-            tracker.bitOffset += 1
             arcBits.append(tracker.bitOffset)
+            tracker.bitOffset += 1
             preHop = nexHop
 
         medNodes.reverse()
-        bits = arcBits[:]
 
-        preHop = edgeNode2
-        for nexHop in medNodes:
-            arcEdges.append((nexHop, preHop, {'bit': bits.pop()}))
+        preHop = medNodes[0]
+        for nexHop in medNodes[1:]:
+            arcEdges.append((nexHop, preHop, {'bit': arcBits.pop()}))
             preHop = nexHop
 
-        tracker.bitOffset += 1
         tracker.track.add_edges_from(arcEdges)
-        tracker.arcs.append(ARC(bits=arcBits,edges=arcEdges,arcPath=arcPath,hop=(_1hop,_0hop)))
+        tracker.arcs.append(ARC(arcEdges=arcEdges,arcPath=arcPath,hop=(_1hop,_0hop)))
 
         return self._buildTrack(tracker)
 
@@ -303,8 +306,11 @@ class Tracker(eventBusClient.eventBusClient):
         self.bitMap = self.hardcodedSchedule
 
         # calculate bitStrings
-        self.bitString = ''.join([bit for bit in ['1'] * self.bitOffset])
-        self.srcPath   = self.hardcodedSchedule.keys()
+        if self.trackId ==1:
+            self.bitString = ''.join([bit for bit in ['1'] * self.bitOffset])
+            self.srcPath   = self.hardcodedSchedule.keys()
+        elif self.trackId ==4:
+            self.updateSrcPath(self.srcRoute)
 
     def getTrackId(self):
         return self.trackId
@@ -369,8 +375,9 @@ class Tracker(eventBusClient.eventBusClient):
 
         linkStateDict = data
         pdr = self.rcvdPkt*1.000/self.sentPkt
-        if pdr < self.targetPdr:
-            return
+
+        print data
+        print pdr
         with self.countLock:
             self.sentPkt = 0
             self.rcvdPkt = 0

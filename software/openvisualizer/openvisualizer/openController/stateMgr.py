@@ -24,7 +24,7 @@ class stateMgr(eventBusClient.eventBusClient):
         self.dataLock    = threading.Lock()
         self.enabledHops = {}
         self.failedHops  = {}
-        self.timeoutVal  = dt.timedelta(seconds=600)
+        self.timeoutVal  = dt.timedelta(seconds=300)
         self.pendingUpdate = {}
         self.roundTime   = dt.datetime.now()
 

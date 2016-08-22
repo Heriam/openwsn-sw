@@ -92,13 +92,66 @@ class Schedule():
         '''
         self._update()
         with self.frameLock:
-            slotFrame = self.slotFrame[67:]
+            slotFrame = self.slotFrame[32:]
+        channelOffset = 0
 
         slotList = []
         for arc in arcs:
-            for (rxMote, txMote, bitDict) in arc.edges:
+            if [None] * self.CHANNELS in slotFrame:
+                slotOff = slotFrame.index([None] * self.CHANNELS) + 32
+            else:
+                log.debug('Warning! No enough available slots')
+                return
+            (rxMote1, txMote1, bitDict1) = arc.arcEdges[0]
+            (rxMote2, txMote2, bitDict2) = arc.arcEdges[1]
+            slotList += [
+                {
+                    self.PARAMS_TXMOTEID: ''.join(['%02x' % b for b in txMote1[6:]]),
+                    self.PARAMS_RXMOTELIST: [''.join(['%02x' % b for b in rxMote1[6:]])],
+                    self.PARAMS_BITINDEX: bitDict1['bit'],
+                    self.PARAMS_TRACKID: trackId,
+                    self.PARAMS_SHARED: False,
+                    self.PARAMS_CHANNELOFF: channelOffset % 16,
+                    self.PARAMS_SLOTOFF: slotOff,
+                    self.PARAMS_BIER: True
+                },
+                {
+                    self.PARAMS_TXMOTEID: ''.join(['%02x' % b for b in txMote1[6:]]),
+                    self.PARAMS_RXMOTELIST: [''.join(['%02x' % b for b in rxMote1[6:]])],
+                    self.PARAMS_BITINDEX: bitDict1['bit'],
+                    self.PARAMS_TRACKID: trackId,
+                    self.PARAMS_SHARED: False,
+                    self.PARAMS_CHANNELOFF: (channelOffset+1)% 16,
+                    self.PARAMS_SLOTOFF: slotOff+1,
+                    self.PARAMS_BIER: True
+                },
+                {
+                    self.PARAMS_TXMOTEID: ''.join(['%02x' % b for b in txMote2[6:]]),
+                    self.PARAMS_RXMOTELIST: [''.join(['%02x' % b for b in rxMote2[6:]])],
+                    self.PARAMS_BITINDEX: bitDict2['bit'],
+                    self.PARAMS_TRACKID: trackId,
+                    self.PARAMS_SHARED: False,
+                    self.PARAMS_CHANNELOFF: (channelOffset+2) % 16,
+                    self.PARAMS_SLOTOFF: slotOff,
+                    self.PARAMS_BIER: True
+                },
+                {
+                    self.PARAMS_TXMOTEID: ''.join(['%02x' % b for b in txMote2[6:]]),
+                    self.PARAMS_RXMOTELIST: [''.join(['%02x' % b for b in rxMote2[6:]])],
+                    self.PARAMS_BITINDEX: bitDict2['bit'],
+                    self.PARAMS_TRACKID: trackId,
+                    self.PARAMS_SHARED: False,
+                    self.PARAMS_CHANNELOFF: (channelOffset+3) % 16,
+                    self.PARAMS_SLOTOFF: slotOff+1,
+                    self.PARAMS_BIER: True
+                },
+            ]
+            channelOffset += 4
+            slotFrame[slotOff - 32] = [slotList[-2]]
+            slotFrame[slotOff - 31] = [slotList[-1]]
+            for (rxMote, txMote, bitDict) in arc.arcEdges[2:]:
                 if [None]*self.CHANNELS in slotFrame:
-                    slotOff = slotFrame.index([None]*self.CHANNELS) + 67
+                    slotOff = slotFrame.index([None]*self.CHANNELS) + 32
                 else:
                     log.debug('Warning! No enough available slots')
                     return
@@ -108,11 +161,12 @@ class Schedule():
                     self.PARAMS_BITINDEX: bitDict['bit'],
                     self.PARAMS_TRACKID: trackId,
                     self.PARAMS_SHARED: False,
-                    self.PARAMS_CHANNELOFF: self.CHANNELOFF_DEFAULT,
+                    self.PARAMS_CHANNELOFF: channelOffset%16,
                     self.PARAMS_SLOTOFF: slotOff,
                     self.PARAMS_BIER: True
                 })
-                slotFrame[slotOff-67] = [slotList[-1]]
+                channelOffset += 1
+                slotFrame[slotOff-32] = [slotList[-1]]
         self.configSlot(self.OPT_ADD, slotList)
 
     def configSlot(self, operation, slotList):
