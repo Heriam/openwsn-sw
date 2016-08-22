@@ -264,11 +264,11 @@ class OpenLbr(eventBusClient.eventBusClient):
                     
             # lowpan['route'] = self._getSourceRoute(dst_addr)
             #
-            #if len(self._getSourceRoute(dst_addr))<2:
+            if len(self._getSourceRoute(dst_addr))<2:
             #     # no source route could be found
             #     log.warning('no source route to {0}'.format(lowpan['dst_addr']))
             #     # TODO: return ICMPv6 message
-            #     return
+                 return
             #
             # lowpan['route'].pop() #remove last as this is me.
 
