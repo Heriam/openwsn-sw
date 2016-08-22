@@ -26,6 +26,7 @@ class trackMgr(eventBusClient.eventBusClient):
         log.info("create instance")
 
         self.topoLock    = threading.Lock()
+        self.countLock   = threading.Lock()
         self.bitmapLock1 = threading.Lock()
         self.bitmapLock4 = threading.Lock()
         self.track = nx.DiGraph()
@@ -34,22 +35,27 @@ class trackMgr(eventBusClient.eventBusClient):
         self.bitString1 = '11111111111'
         self.lastRxBmp1 = dt.datetime.now()
         self.lastRxBmp4 = dt.datetime.now()
+        self.roundTime  = dt.datetime.now()
+        self.pdrInterval= dt.timedelta(minutes=5)
+        self.timeOutDlta= dt.timedelta(seconds=5)
+        self.failTimes  = [0]*self.BITMAPLEN
+        self.sentTimes  = 0
         self.track.add_edges_from(
             [
-                (self.ED9,self.F4A,{'bit': 0}),  # 9ed9 -> 9f4a
-                (self.ED9,self.F02,{'bit': 1}),  # 9ed9 -> 9f02
-                (self.F4A,self.F02,{'bit': 2}),  # 9f4a -> 9f02
-                (self.F02,self.F4A,{'bit': 2}),  # 9f02 -> 9f4a
-                (self.F4A,self.ED8,{'bit': 3}),  # 9f4a -> 9ed8
-                (self.F02,self.EC7,{'bit': 4}),  # 9f02 -> 9ec7
-                (self.ED8,self.EC7,{'bit': 5}),  # 9ed8 -> 9ec7
-                (self.EC7,self.ED8,{'bit': 5}),  # 9ec7 -> 9ed8
-                (self.ED8,self.EF6,{'bit': 6}),  # 9ed8 -> 9ef6
-                (self.EC7,self.EEC,{'bit': 7}),  # 9ec7 -> 9eec
-                (self.EF6,self.EEC,{'bit': 8}),  # 9ef6 -> 9eec
-                (self.EEC,self.EF6,{'bit': 8}),  # 9eec -> 9ef6
-                (self.EF6,self.EC3,{'bit': 9}),  # 9ef6 -> 9ec3
-                (self.EEC,self.EC3,{'bit': 10})  # 9eec -> 9ec3
+                (self.ED9,self.F4A,{'bit': 0,'pdr':1.000}),  # 9ed9 -> 9f4a
+                (self.ED9,self.F02,{'bit': 1,'pdr':1.000}),  # 9ed9 -> 9f02
+                (self.F4A,self.F02,{'bit': 2,'pdr':1.000}),  # 9f4a -> 9f02
+                (self.F02,self.F4A,{'bit': 2,'pdr':1.000}),  # 9f02 -> 9f4a
+                (self.F4A,self.ED8,{'bit': 3,'pdr':1.000}),  # 9f4a -> 9ed8
+                (self.F02,self.EC7,{'bit': 4,'pdr':1.000}),  # 9f02 -> 9ec7
+                (self.ED8,self.EC7,{'bit': 5,'pdr':1.000}),  # 9ed8 -> 9ec7
+                (self.EC7,self.ED8,{'bit': 5,'pdr':1.000}),  # 9ec7 -> 9ed8
+                (self.ED8,self.EF6,{'bit': 6,'pdr':1.000}),  # 9ed8 -> 9ef6
+                (self.EC7,self.EEC,{'bit': 7,'pdr':1.000}),  # 9ec7 -> 9eec
+                (self.EF6,self.EEC,{'bit': 8,'pdr':1.000}),  # 9ef6 -> 9eec
+                (self.EEC,self.EF6,{'bit': 8,'pdr':1.000}),  # 9eec -> 9ef6
+                (self.EF6,self.EC3,{'bit': 9,'pdr':1.000}),  # 9ef6 -> 9ec3
+                (self.EEC,self.EC3,{'bit': 10,'pdr':1.000})  # 9eec -> 9ec3
              ]
         )
 
@@ -110,14 +116,16 @@ class trackMgr(eventBusClient.eventBusClient):
 
     def _bitStringRequest(self,sender,signal,trackId):
         if trackId == 4:
-            if dt.datetime.now() - self.lastRxBmp4 > dt.timedelta(seconds=5):
+            if dt.datetime.now() - self.lastRxBmp4 > self.timeOutDlta:
                 with self.bitmapLock4:
                     self.bitString4 = '11111111111'
             return self.bitString4
         elif trackId == 1:
-            if dt.datetime.now() - self.lastRxBmp1 > dt.timedelta(seconds=5):
+            if dt.datetime.now() - self.lastRxBmp1 > self.timeOutDlta:
                 with self.bitmapLock1:
                     self.bitString1 = '11111111111'
+                with self.countLock:
+                    self.sentTimes += 1
             return self.bitString1
 
     def _bitStringFeedback(self,sender,singal,data):
@@ -135,17 +143,35 @@ class trackMgr(eventBusClient.eventBusClient):
                 track = self.track.copy()
                 track.remove_edges_from(failedHops)
                 altPath = nx.shortest_path(track, self.ED9, self.EC3)
+                newBitmap = ['0'] * self.BITMAPLEN
+                preHop = altPath[0]
+                for nexHop in altPath[1:]:
+                    newBitmap[self.track[preHop][nexHop]['bit']] = '1'
                 with self.bitmapLock4:
-                    self.bitString4 = self._toBitString(altPath)
+                    self.bitString4 = ''.join([bit for bit in newBitmap])
+
         elif trackId == 1:
             self.lastRxBmp1 = dt.datetime.now()
+            with self.countLock:
+                for bitIndex in failedBits:
+                    self.failTimes[bitIndex] +=1
+            if self.lastRxBmp1 - self.roundTime > self.pdrInterval:
+                self._updatePdr()
 
-    def _toBitString(self, path):
-        bitString = ['0'] * self.BITMAPLEN
-        preHop = path[0]
-        for nexHop in path[1:]:
-            bitString[self.track[preHop][nexHop]['bit']] = '1'
-        return ''.join([bit for bit in bitString])
+    def _updatePdr(self):
+
+        pdr = [ i * (1.000/self.sentTimes) for i in self.failTimes]
+
+        for (t,r) in self.track.edges():
+            self.track[t][r]['pdr'] = pdr[self.track[t][r]['bit']]
+            print pdr
+
+        with self.countLock:
+            self.failTimes = [0] * self.BITMAPLEN
+            self.sentTimes = 0
+
+
+
 
 
 
