@@ -146,10 +146,14 @@ class trackMgr(eventBusClient.eventBusClient):
         returns bitString for corresponded destination.
 
         '''
+        print '~~~~~~'
         trackId = data[0]
+        print '1111111'
         srcRoute = [tuple(hop) for hop in data[1]] + self.rootEui64
+        print '987q057409'
         # returns bitString
         tracker = self.tracks.get(trackId)
+        print '4313451451'
         if tracker and srcRoute[0] == tracker.srcRoute[0]:
             return tracker.getBitString()
         else:
@@ -370,7 +374,7 @@ class Tracker(eventBusClient.eventBusClient):
             bitVal = bin(i)[2:]
             bitString = bitString + ''.join([bit for bit in ['0'] * (8 - len(bitVal))]) + bitVal
 
-        if len(self.enabledHops) == 14:
+        if len(self.enabledHops) == 14 and self.trackId == 4:
             failedBits = [i for i, x in enumerate(bitString) if x == '1']
             failedHops = [i for i, x in self.bitMap.items() if x in failedBits]
             track = self.track.copy()
