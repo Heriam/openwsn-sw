@@ -107,7 +107,7 @@ errorDescriptions = {
   56: "booted",
   57: "invalid serial frame",
   58: "invalid packet frome radio, length {1} (code location {0})",
-  59: "busy receiving when stop of serial activity, buffer input length {1} (code location {0})",
+  59: "",
   60: "wrong CRC in input Buffer (input length {0})",
   61: "frame received at asn {0} with timeCorrection of {1}",
   62: "security error on frameType {0}, code location {1}",
