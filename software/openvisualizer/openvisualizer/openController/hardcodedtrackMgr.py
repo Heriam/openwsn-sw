@@ -127,6 +127,7 @@ class trackMgr(eventBusClient.eventBusClient):
                     self.bitString1 = '11111111111'
             with self.countLock:
                 self.sentTimes += 1
+                print self.sentTimes
             return self.bitString1
 
     def _bitStringFeedback(self,sender,signal,data):
@@ -167,7 +168,6 @@ class trackMgr(eventBusClient.eventBusClient):
                     self.scedTimes[bitIndex] +=1
             if self.lastRxBmp1 - self.roundTime > self.pdrInterval:
                 self._updatePdr()
-
 
     def _updatePdr(self):
 
