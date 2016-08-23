@@ -181,6 +181,7 @@ class trackMgr(eventBusClient.eventBusClient):
         with self.countLock:
             self.scedTimes = [0] * self.BITMAPLEN
             self.sentTimes = 0
+            self.roundTime = dt.datetime.now()
 
 
 
