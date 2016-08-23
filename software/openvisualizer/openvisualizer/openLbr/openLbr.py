@@ -272,10 +272,10 @@ class OpenLbr(eventBusClient.eventBusClient):
             #
             # lowpan['route'].pop() #remove last as this is me.
 
-            if self.trackID == 4 or self.trackID == 2:
+            if self.trackID == 1 or self.trackID == 2:
                 lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 246],
                                    [0, 18, 75, 0, 6, 13, 158, 216], [0, 18, 75, 0, 6, 13, 159, 74]]
-            elif self.trackID == 3 or self.trackID == 1:
+            elif self.trackID == 3 or self.trackID == 4:
                 lowpan['route'] = [[0, 18, 75, 0, 6, 13, 158, 195], [0, 18, 75, 0, 6, 13, 158, 236],
                                    [0, 18, 75, 0, 6, 13, 158, 199], [0, 18, 75, 0, 6, 13, 159, 2]]
             
