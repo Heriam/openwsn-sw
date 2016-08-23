@@ -114,13 +114,13 @@ class trackMgr(eventBusClient.eventBusClient):
             self.topo.add_edges_from(newEdges)
             self.topo.graph[source] = newEdges
 
-    def _bitStringRequest(self,sender,signal,trackId):
-        if trackId == 4:
+    def _bitStringRequest(self,sender,signal,data):
+        if data == 4:
             if dt.datetime.now() - self.lastRxBmp4 > self.timeOutDlta:
                 with self.bitmapLock4:
                     self.bitString4 = '11111111111'
             return self.bitString4
-        elif trackId == 1:
+        elif data == 1:
             if dt.datetime.now() - self.lastRxBmp1 > self.timeOutDlta:
                 with self.bitmapLock1:
                     self.bitString1 = '11111111111'
