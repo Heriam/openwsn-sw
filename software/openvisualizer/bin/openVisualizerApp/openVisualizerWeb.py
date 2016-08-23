@@ -234,11 +234,11 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient):
             self.app.getOpenLbr().setBierAuto(False)
             return {"result": "success"}
         elif params == 'gettrack':
-            tracker = self.tm.getTracker()
+            track = self.tm.getTrack()
             dict = {
-                'nodes': [ ''.join(['%02x' % b for b in node[6:]]) for node in tracker.track.nodes()] if tracker else [],
+                'nodes': [ ''.join(['%02x' % b for b in node[6:]]) for node in track.nodes()] if track else [],
                 'links': [ (''.join(['%02x' % b for b in rxnode[6:]]),''.join(['%02x' % b for b in txnode[6:]])
-                            , tracker.track[txnode][rxnode]['bit']) for (txnode,rxnode) in tracker.track.edges()] if tracker else []
+                            , track[txnode][rxnode]['bit']) for (txnode,rxnode) in track.edges()] if track else []
             }
             return json.dumps(dict)
         elif params == 'gettopo':

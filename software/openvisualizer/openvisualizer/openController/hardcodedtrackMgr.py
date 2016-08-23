@@ -90,7 +90,7 @@ class trackMgr(eventBusClient.eventBusClient):
         with self.topoLock:
             return self.topo
 
-    def getTracker(self):
+    def getTrack(self):
         '''
         returns tracks
         '''
