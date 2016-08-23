@@ -128,7 +128,7 @@ class trackMgr(eventBusClient.eventBusClient):
                     self.sentTimes += 1
             return self.bitString1
 
-    def _bitStringFeedback(self,sender,singal,data):
+    def _bitStringFeedback(self,sender,signal,data):
         bitString = ''
         (trackId, moteId, asn, bitBytes) = data
         for i in bitBytes:
