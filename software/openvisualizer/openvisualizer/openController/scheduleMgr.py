@@ -40,7 +40,7 @@ class Schedule():
     # default values
     CHANNELOFF_DEFAULT    = 0
     SLOTFRAME_DEFAULT     = '1'
-    FRAMELENGTH_DEFAULT   = 100
+    FRAMELENGTH_DEFAULT   = 15
     CHANNELS              = 16
 
     # operation types
