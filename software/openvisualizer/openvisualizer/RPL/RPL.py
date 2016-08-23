@@ -252,20 +252,20 @@ class RPL(eventBusClient.eventBusClient):
             log.warning("DAO too short ({0} bytes), no space for DAO header".format(len(dao)))
             return
         
-        # log
-        # output               = []
-        # output              += ['']
-        # output              += ['received RPL DAO from {0}'.format(u.formatAddr(source))]
-        # output              += ['- parents:']
-        # for p in parents:
-        #     output          += ['   . {0} : {1}'.format(u.formatAddr(p[1]), p[0])]
-        # output              += ['- children:']
-        # for p in children:
-        #     output          += ['   . {0}'.format(u.formatAddr(p))]
-        # output               = '\n'.join(output)
+        #log
+        output               = []
+        output              += ['']
+        output              += ['received RPL DAO from {0}'.format(u.formatAddr(source))]
+        output              += ['- parents:']
+        for p in parents:
+            output          += ['   . {0} : {1}'.format(u.formatAddr(p[1]), p[0])]
+        output              += ['- children:']
+        for p in children:
+            output          += ['   . {0}'.format(u.formatAddr(p))]
+        output               = '\n'.join(output)
         # if log.isEnabledFor(logging.DEBUG):
         #     log.debug(output)
-        
+        print output
         # if you get here, the DAO was parsed correctly
 
         # update parents information with parents collected -- calls topology module.
