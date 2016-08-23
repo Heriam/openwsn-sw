@@ -38,7 +38,7 @@ class trackMgr(eventBusClient.eventBusClient):
         self.roundTime  = dt.datetime.now()
         self.pdrInterval= dt.timedelta(minutes=5)
         self.timeOutDlta= dt.timedelta(seconds=5)
-        self.failTimes  = [0]*self.BITMAPLEN
+        self.scedTimes  = [0]*self.BITMAPLEN
         self.sentTimes  = 0
         self.track.add_edges_from(
             [
@@ -118,7 +118,6 @@ class trackMgr(eventBusClient.eventBusClient):
         if data == 4:
             if dt.datetime.now() - self.lastRxBmp4 > self.timeOutDlta:
                 with self.bitmapLock4:
-                    print '# Lost 2 packet, flooding'
                     self.bitString4 = '11111111111'
             return self.bitString4
         elif data == 1:
@@ -136,14 +135,13 @@ class trackMgr(eventBusClient.eventBusClient):
             bitVal = bin(i)[2:]
             bitString = bitString + ''.join([bit for bit in ['0'] * (8 - len(bitVal))]) + bitVal
         bitString = bitString[:self.BITMAPLEN]
-        failedBits = [i for i, x in enumerate(bitString) if x == '1']
-        failedHops = [(i,x) for i, x in self.track.edges() if self.track[i][x]['bit'] in failedBits]
 
         print '9ec3 [BIER] BIER test msg received on track {0}. Bitmap : {1}'.format(trackId,bitString)
-        print 'failedBits {0}'.format(failedBits)
-        print 'failedHops {0}'.format(failedHops)
+        log.info('9ec3 [BIER] BIER test msg received on track {0}. Bitmap : {1}'.format(trackId, bitString))
 
         if trackId == 4:
+            failedBits = [i for i, x in enumerate(bitString) if x == '1']
+            failedHops = [(i, x) for i, x in self.track.edges() if self.track[i][x]['bit'] in failedBits]
             self.lastRxBmp4 = dt.datetime.now()
             if self.bitString4 == '11111111111':
                 track = self.track.copy()
@@ -156,27 +154,28 @@ class trackMgr(eventBusClient.eventBusClient):
                     preHop = nexHop
                 with self.bitmapLock4:
                     self.bitString4 = ''.join([bit for bit in newBitmap])
-                    print '# Found single path. converging: {0}'.format(self.bitString4)
 
         elif trackId == 1:
+            succedBits = [i for i, x in enumerate(bitString) if x == '0']
             self.lastRxBmp1 = dt.datetime.now()
             with self.countLock:
-                for bitIndex in failedBits:
-                    self.failTimes[bitIndex] +=1
+                for bitIndex in succedBits:
+                    self.scedTimes[bitIndex] +=1
             if self.lastRxBmp1 - self.roundTime > self.pdrInterval:
                 self._updatePdr()
 
+
     def _updatePdr(self):
 
-        pdr = [ i * (1.000/self.sentTimes) for i in self.failTimes]
+        pdr = [ i * (1.000/self.sentTimes) for i in self.scedTimes]
 
         for (t,r) in self.track.edges():
             self.track[t][r]['pdr'] = pdr[self.track[t][r]['bit']]
 
-        print pdr
+        log.info(pdr)
 
         with self.countLock:
-            self.failTimes = [0] * self.BITMAPLEN
+            self.scedTimes = [0] * self.BITMAPLEN
             self.sentTimes = 0
 
 
