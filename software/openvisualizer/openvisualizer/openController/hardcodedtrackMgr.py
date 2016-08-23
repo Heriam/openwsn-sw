@@ -5,7 +5,7 @@ import datetime as dt
 import logging
 from openvisualizer.eventBus import eventBusClient
 log = logging.getLogger('trackMgr')
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
 class trackMgr(eventBusClient.eventBusClient):
