@@ -5,7 +5,7 @@ import datetime as dt
 import logging
 from openvisualizer.eventBus import eventBusClient
 log = logging.getLogger('trackMgr')
-log.setLevel(logging.ERROR)
+log.setLevel(logging.DEBUG)
 log.addHandler(logging.NullHandler())
 
 class trackMgr(eventBusClient.eventBusClient):
@@ -118,6 +118,7 @@ class trackMgr(eventBusClient.eventBusClient):
         if data == 4:
             if dt.datetime.now() - self.lastRxBmp4 > self.timeOutDlta:
                 with self.bitmapLock4:
+                    log.debug('# Lost 2 packets, flooding')
                     self.bitString4 = '11111111111'
             return self.bitString4
         elif data == 1:
@@ -137,7 +138,7 @@ class trackMgr(eventBusClient.eventBusClient):
         bitString = bitString[:self.BITMAPLEN]
 
         print '9ec3 [BIER] BIER test msg received on track {0}. Bitmap : {1}'.format(trackId,bitString)
-        log.info('9ec3 [BIER] BIER test msg received on track {0}. Bitmap : {1}'.format(trackId, bitString))
+        log.debug('9ec3 [BIER] BIER test msg received on track {0}. Bitmap : {1}'.format(trackId, bitString))
 
         if trackId == 4:
             failedBits = [i for i, x in enumerate(bitString) if x == '1']
@@ -154,6 +155,7 @@ class trackMgr(eventBusClient.eventBusClient):
                     preHop = nexHop
                 with self.bitmapLock4:
                     self.bitString4 = ''.join([bit for bit in newBitmap])
+                    log.debug('# Found single path, converging {0}'.format(self.bitString4))
 
         elif trackId == 1:
             succedBits = [i for i, x in enumerate(bitString) if x == '0']
@@ -172,7 +174,7 @@ class trackMgr(eventBusClient.eventBusClient):
         for (t,r) in self.track.edges():
             self.track[t][r]['pdr'] = pdr[self.track[t][r]['bit']]
 
-        log.info(pdr)
+        log.debug('# PDR: {0}'.format(pdr))
 
         with self.countLock:
             self.scedTimes = [0] * self.BITMAPLEN
