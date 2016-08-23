@@ -127,7 +127,6 @@ class trackMgr(eventBusClient.eventBusClient):
                     self.bitString1 = '11111111111'
             with self.countLock:
                 self.sentTimes += 1
-                print self.sentTimes
             return self.bitString1
 
     def _bitStringFeedback(self,sender,signal,data):
