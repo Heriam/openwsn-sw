@@ -118,8 +118,9 @@ class trackMgr(eventBusClient.eventBusClient):
         if data == 4:
             if dt.datetime.now() - self.lastRxBmp4 > self.timeOutDlta:
                 with self.bitmapLock4:
-                    log.error('# Lost 2 packets, flooding')
                     self.bitString4 = '11111111111'
+                    log.error('[Failover] Link failure detected, enable [Replication] with bitString {0}'.format(self.bitString4))
+                    print '[Failover] Link failure detected, enable [Replication] with bitString {0}'.format(self.bitString4)
             return self.bitString4
         elif data == 1:
             if dt.datetime.now() - self.lastRxBmp1 > self.timeOutDlta:
@@ -143,13 +144,11 @@ class trackMgr(eventBusClient.eventBusClient):
         if trackId == 4:
             failedBits = [i for i, x in enumerate(bitString) if x == '1']
             failedHops = [(i, x) for i, x in self.track.edges() if self.track[i][x]['bit'] in failedBits]
-            log.error('# Found failedHops {0}'.format(failedHops))
             self.lastRxBmp4 = dt.datetime.now()
             if self.bitString4 == '11111111111':
                 track = self.track.copy()
                 track.remove_edges_from(failedHops)
                 altPath = nx.shortest_path(track, self.ED9, self.EC3)
-                log.error('# Found secondary path {0}'.format(altPath))
                 newBitmap = ['0'] * self.BITMAPLEN
                 preHop = altPath[0]
                 for nexHop in altPath[1:]:
@@ -157,7 +156,8 @@ class trackMgr(eventBusClient.eventBusClient):
                     preHop = nexHop
                 with self.bitmapLock4:
                     self.bitString4 = ''.join([bit for bit in newBitmap])
-                    log.error('# Reset Bitmap {0}'.format(self.bitString4))
+                    log.error('[Failover] Use secondary path with BitString {0}'.format(self.bitString4))
+                    print '[Failover] Use secondary path with BitString {0}'.format(self.bitString4)
 
         elif trackId == 1:
             succedBits = [i for i, x in enumerate(bitString) if x == '0']
@@ -175,7 +175,8 @@ class trackMgr(eventBusClient.eventBusClient):
         for (t,r) in self.track.edges():
             self.track[t][r]['pdr'] = pdr[self.track[t][r]['bit']]
 
-        log.error('# PDR: {0}'.format(pdr))
+        log.error('[PDR] Packet Delivery Ratio: {0}'.format(pdr))
+        print '[PDR] Packet Delivery Ratio: {0}'.format(pdr)
 
         with self.countLock:
             self.scedTimes = [0] * self.BITMAPLEN
