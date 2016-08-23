@@ -146,6 +146,11 @@ class trackMgr(eventBusClient.eventBusClient):
                 newBitmap = ['0'] * self.BITMAPLEN
                 preHop = altPath[0]
                 for nexHop in altPath[1:]:
+                    print newBitmap
+                    print preHop
+                    print nexHop
+                    print self.track[preHop]
+                    print self.track.edges()
                     newBitmap[self.track[preHop][nexHop]['bit']] = '1'
                 with self.bitmapLock4:
                     self.bitString4 = ''.join([bit for bit in newBitmap])
