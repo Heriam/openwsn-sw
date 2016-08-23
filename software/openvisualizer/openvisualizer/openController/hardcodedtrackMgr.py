@@ -157,6 +157,7 @@ class trackMgr(eventBusClient.eventBusClient):
                 with self.bitmapLock4:
                     self.bitString4 = ''.join([bit for bit in newBitmap])
                     log.error('[Failover] Use secondary path with BitString {0}'.format(self.bitString4))
+                    print '[Failover] Found broken links {0}'.format([''.join(['%02x' % b for b in txnode[6:]])+ '->' +''.join(['%02x' % b for b in rxnode[6:]]) for (txnode,rxnode) in failedHops])
                     print '[Failover] Use secondary path with BitString {0}'.format(self.bitString4)
 
         elif trackId == 1:
