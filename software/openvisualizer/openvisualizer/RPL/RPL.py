@@ -15,10 +15,9 @@ import logging
 log = logging.getLogger('RPL')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
-
 import threading
 import struct
-from datetime import datetime
+import datetime as dt
 
 from pydispatch import dispatcher
 
@@ -87,6 +86,7 @@ class RPL(eventBusClient.eventBusClient):
         self.dagRootEui64         = None
         self.sourceRoute          = SourceRoute.SourceRoute()
         self.latencyStats         = {}
+        self.startTime            = dt.datetime.now()
     
     #======================== public ==========================================
     
@@ -265,7 +265,9 @@ class RPL(eventBusClient.eventBusClient):
         output               = '\n'.join(output)
         # if log.isEnabledFor(logging.DEBUG):
         #     log.debug(output)
-        print output
+        if (dt.datetime.now() - self.startTime < dt.timedelta(minutes=1)):
+            print output
+
         # if you get here, the DAO was parsed correctly
 
         # update parents information with parents collected -- calls topology module.
