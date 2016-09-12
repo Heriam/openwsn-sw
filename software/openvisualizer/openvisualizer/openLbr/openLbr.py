@@ -239,7 +239,7 @@ class OpenLbr(eventBusClient.eventBusClient):
         try:
 
             ipv6_bytes       = data
-            
+            ipv6_bytes[35]   = 204
             # turn raw byte into dictionary of fields
             ipv6             = self.disassemble_ipv6(ipv6_bytes)
 
@@ -474,10 +474,10 @@ class OpenLbr(eventBusClient.eventBusClient):
         lowpan = {}
         
         # tf
-        if ipv6['traffic_class']!=0:
-            raise NotImplementedError('traffic_class={0} unsupported'.format(ipv6['traffic_class']))
-        if ipv6['flow_label']!=0:
-            raise NotImplementedError('flow_label={0} unsupported'.format(ipv6['flow_label']))
+        # if ipv6['traffic_class']!=0:
+        #     raise NotImplementedError('traffic_class={0} unsupported'.format(ipv6['traffic_class']))
+        # if ipv6['flow_label']!=0:
+        #     raise NotImplementedError('flow_label={0} unsupported'.format(ipv6['flow_label']))
         lowpan['tf']         = []
         
         # nh
