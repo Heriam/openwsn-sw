@@ -253,7 +253,7 @@ class Tracker():
         self.track       = nx.DiGraph()
         self.lastTxBmp   = dt.datetime.now()
         self.lastRxBmp   = dt.datetime.now()
-        self.lastRxAsn   = dt.datetime.now()
+        self.lastRxAsn   = 0
 
         # init tracker
         self.track.add_node(srcRoute[-1])
@@ -297,7 +297,9 @@ class Tracker():
             bitMap     = ''.join([bit for bit in ['0']*(8-len(bitMap))]) + bitMap
             bitString  = bitString + bitMap
 
-        AsnDelta    = thisRxAsn - self.lastRxAsn if self.lastRxAsn else 0
+        print "[bitString Feedback] received bitString from Mote {0}: {1}".format(moteId, bitString)
+
+        # AsnDelta    = thisRxAsn - self.lastRxAsn if self.lastRxAsn else 0
 
 
     def getBitmap(self, dst):
