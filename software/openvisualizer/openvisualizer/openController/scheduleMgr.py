@@ -97,8 +97,8 @@ class Schedule():
         slotList = []
         for arc in arcs:
             for (rxMote, txMote, bitDict) in arc.edges:
-                if None in slotFrame:
-                    slotOff = slotFrame.index(None)
+                if [None]*self.CHANNELS in slotFrame:
+                    slotOff = slotFrame.index([None]*self.CHANNELS)
                 else:
                     log.debug('Warning! No enough available slots')
                     return

@@ -251,9 +251,9 @@ class Tracker():
         self.bitMap      = {}
         self.bitStrings  = {}
         self.track       = nx.DiGraph()
-        self.lastTxBmp   = None
-        self.lastRxBmp   = None
-        self.lastRxAsn   = None
+        self.lastTxBmp   = dt.datetime.now()
+        self.lastRxBmp   = dt.datetime.now()
+        self.lastRxAsn   = dt.datetime.now()
 
         # init tracker
         self.track.add_node(srcRoute[-1])
