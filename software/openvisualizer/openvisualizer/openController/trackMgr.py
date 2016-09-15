@@ -194,8 +194,8 @@ class trackMgr(eventBusClient.eventBusClient):
 
         medNodes = [node for node in arcPath if node not in tracker.track]
         edgeNode2 = arcPath[arcPath.index(medNodes[-1]) + 1]
-
-        preHop = edgeNode1
+        medNodes.reverse()
+        preHop = edgeNode2
         for nexHop in medNodes:
             arcEdges.append((nexHop, preHop, {'bit': tracker.bitOffset}))
             tracker.bitOffset += 1
@@ -204,11 +204,13 @@ class trackMgr(eventBusClient.eventBusClient):
 
         medNodes.reverse()
         bits = arcBits[:]
-
-        preHop = edgeNode2
-        for nexHop in medNodes:
-            arcEdges.append((nexHop, preHop, {'bit': bits.pop()}))
-            preHop = nexHop
+        preHop = edgeNode1
+        if _1hop != tracker.srcRoute[0]:
+            for nexHop in medNodes:
+                arcEdges.append((nexHop, preHop, {'bit': bits.pop()}))
+                preHop = nexHop
+        else:
+            arcEdges.append((medNodes[0],preHop, {'bit':bits.pop()}))
 
         tracker.bitOffset += 1
         tracker.track.add_edges_from(arcEdges)
